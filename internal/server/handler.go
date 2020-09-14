@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/Decentr-net/vulcan/internal/service"
 )
@@ -15,7 +14,7 @@ import (
 func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /register Vulcan Register
 	//
-	// Sends confirmation link via email. After confirmation a wallet will be created.
+	// Sends confirmation link via email. After confirmation stakes will be sent.
 	//
 	// ---
 	// produces:
@@ -52,12 +51,12 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strfmt.IsEmail(req.Email.String()) {
-		writeError(w, http.StatusBadRequest, "invalid email")
+	if err := req.validate(); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := s.s.Register(r.Context(), req.Email.String()); err != nil {
+	if err := s.s.Register(r.Context(), req.Email.String(), req.Address); err != nil {
 		if errors.Is(err, service.ErrEmailIsBusy) {
 			writeError(w, http.StatusConflict, "email is busy")
 		} else {
@@ -73,7 +72,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /confirm/{owner}/{code} Vulcan Confirm
 	//
-	// Confirms registration and creates wallet.
+	// Confirms registration and sends stakes.
 	//
 	// ---
 	// produces:
@@ -92,8 +91,8 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	//   required: true
 	//   type: string
 	// responses:
-	//   '201':
-	//     description: wallet was created
+	//   '200':
+	//     description: stakes was sent
 	//     schema:
 	//       "$ref": "#/definitions/ConfirmResponse"
 	//   '404':
@@ -107,8 +106,7 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 
 	owner, code := chi.URLParam(r, "owner"), chi.URLParam(r, "code")
 
-	info, err := s.s.Confirm(r.Context(), owner, code)
-	if err != nil {
+	if err := s.s.Confirm(r.Context(), owner, code); err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not found")
 		} else {
@@ -117,9 +115,5 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOK(w, http.StatusCreated, ConfirmResponse{
-		Address:  info.Address,
-		PubKey:   info.PubKey,
-		Mnemonic: info.Mnemonic,
-	})
+	writeOK(w, http.StatusOK, EmptyResponse{})
 }

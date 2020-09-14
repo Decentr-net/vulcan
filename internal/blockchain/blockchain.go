@@ -14,6 +14,5 @@ type AccountInfo struct {
 
 // Blockchain is interface for interacting with the blockchain.
 type Blockchain interface {
-	CreateWallet(ctx context.Context) (AccountInfo, error)
 	SendStakes(ctx context.Context, address string, amount int64) error
 }

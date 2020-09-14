@@ -34,46 +34,47 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // IsRegistered mocks base method
-func (m *MockStorage) IsRegistered(ctx context.Context, owner string) (bool, error) {
+func (m *MockStorage) IsRegistered(ctx context.Context, owner, address string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRegistered", ctx, owner)
+	ret := m.ctrl.Call(m, "IsRegistered", ctx, owner, address)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IsRegistered indicates an expected call of IsRegistered
-func (mr *MockStorageMockRecorder) IsRegistered(ctx, owner interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) IsRegistered(ctx, owner, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRegistered", reflect.TypeOf((*MockStorage)(nil).IsRegistered), ctx, owner)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRegistered", reflect.TypeOf((*MockStorage)(nil).IsRegistered), ctx, owner, address)
 }
 
 // CreateRequest mocks base method
-func (m *MockStorage) CreateRequest(ctx context.Context, owner, code string) error {
+func (m *MockStorage) CreateRequest(ctx context.Context, owner, address, code string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateRequest", ctx, owner, code)
+	ret := m.ctrl.Call(m, "CreateRequest", ctx, owner, address, code)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateRequest indicates an expected call of CreateRequest
-func (mr *MockStorageMockRecorder) CreateRequest(ctx, owner, code interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) CreateRequest(ctx, owner, address, code interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRequest", reflect.TypeOf((*MockStorage)(nil).CreateRequest), ctx, owner, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRequest", reflect.TypeOf((*MockStorage)(nil).CreateRequest), ctx, owner, address, code)
 }
 
-// CheckRequest mocks base method
-func (m *MockStorage) CheckRequest(ctx context.Context, owner, code string) error {
+// GetAccountAddress mocks base method
+func (m *MockStorage) GetAccountAddress(ctx context.Context, owner, code string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckRequest", ctx, owner, code)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetAccountAddress", ctx, owner, code)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// CheckRequest indicates an expected call of CheckRequest
-func (mr *MockStorageMockRecorder) CheckRequest(ctx, owner, code interface{}) *gomock.Call {
+// GetAccountAddress indicates an expected call of GetAccountAddress
+func (mr *MockStorageMockRecorder) GetAccountAddress(ctx, owner, code interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRequest", reflect.TypeOf((*MockStorage)(nil).CheckRequest), ctx, owner, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountAddress", reflect.TypeOf((*MockStorage)(nil).GetAccountAddress), ctx, owner, code)
 }
 
 // MarkRequestProcessed mocks base method

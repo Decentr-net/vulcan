@@ -27,7 +27,7 @@
         "tags": [
           "Vulcan"
         ],
-        "summary": "Confirms registration and creates wallet.",
+        "summary": "Confirms registration and sends stakes.",
         "operationId": "Confirm",
         "parameters": [
           {
@@ -46,8 +46,8 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": "wallet was created",
+          "200": {
+            "description": "stakes was sent",
             "schema": {
               "$ref": "#/definitions/ConfirmResponse"
             }
@@ -78,7 +78,7 @@
         "tags": [
           "Vulcan"
         ],
-        "summary": "Sends confirmation link via email. After confirmation a wallet will be created.",
+        "summary": "Sends confirmation link via email. After confirmation stakes will be sent.",
         "operationId": "Register",
         "parameters": [
           {
@@ -120,28 +120,6 @@
     }
   },
   "definitions": {
-    "ConfirmResponse": {
-      "type": "object",
-      "title": "ConfirmResponse ...",
-      "properties": {
-        "address": {
-          "type": "string",
-          "x-go-name": "Address"
-        },
-        "mnemonic": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Mnemonic"
-        },
-        "public_key": {
-          "type": "string",
-          "x-go-name": "PubKey"
-        }
-      },
-      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
-    },
     "RegisterRequest": {
       "type": "object",
       "title": "RegisterRequest ...",
@@ -149,6 +127,10 @@
         "email"
       ],
       "properties": {
+        "address": {
+          "type": "string",
+          "x-go-name": "Address"
+        },
         "email": {
           "type": "string",
           "format": "email",

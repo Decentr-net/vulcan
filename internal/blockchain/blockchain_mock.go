@@ -33,21 +33,6 @@ func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 	return m.recorder
 }
 
-// CreateWallet mocks base method
-func (m *MockBlockchain) CreateWallet(ctx context.Context) (AccountInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateWallet", ctx)
-	ret0, _ := ret[0].(AccountInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateWallet indicates an expected call of CreateWallet
-func (mr *MockBlockchainMockRecorder) CreateWallet(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWallet", reflect.TypeOf((*MockBlockchain)(nil).CreateWallet), ctx)
-}
-
 // SendStakes mocks base method
 func (m *MockBlockchain) SendStakes(ctx context.Context, address string, amount int64) error {
 	m.ctrl.T.Helper()

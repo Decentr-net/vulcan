@@ -27,15 +27,8 @@ const salt = "decentr-vulcan"
 
 // Service ...
 type Service interface {
-	Register(ctx context.Context, email string) error
-	Confirm(ctx context.Context, owner, code string) (AccountInfo, error)
-}
-
-// AccountInfo contains private and public info about created decentr account.
-type AccountInfo struct {
-	Address  string
-	PubKey   string
-	Mnemonic []string
+	Register(ctx context.Context, email, address string) error
+	Confirm(ctx context.Context, owner, code string) error
 }
 
 // Service ...
@@ -57,10 +50,10 @@ func New(storage storage.Storage, sender mail.Sender, b blockchain.Blockchain, i
 	}
 }
 
-func (s *service) Register(ctx context.Context, email string) error {
+func (s *service) Register(ctx context.Context, email, address string) error {
 	owner := getEmailHash(email)
 
-	isRegistered, err := s.storage.IsRegistered(ctx, owner)
+	isRegistered, err := s.storage.IsRegistered(ctx, owner, address)
 	if err != nil {
 		return fmt.Errorf("failed to check existence: %w", err)
 	}
@@ -70,7 +63,7 @@ func (s *service) Register(ctx context.Context, email string) error {
 	}
 
 	code := randomCode()
-	if err := s.storage.CreateRequest(ctx, owner, code); err != nil {
+	if err := s.storage.CreateRequest(ctx, owner, address, code); err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
@@ -81,32 +74,24 @@ func (s *service) Register(ctx context.Context, email string) error {
 	return nil
 }
 
-func (s *service) Confirm(ctx context.Context, owner, code string) (AccountInfo, error) {
-	if err := s.storage.CheckRequest(ctx, owner, code); err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			return AccountInfo{}, ErrNotFound
-		}
-		return AccountInfo{}, fmt.Errorf("failed to check request: %w", err)
-	}
-
-	acc, err := s.bc.CreateWallet(ctx)
+func (s *service) Confirm(ctx context.Context, owner, code string) error {
+	address, err := s.storage.GetAccountAddress(ctx, owner, code)
 	if err != nil {
-		return AccountInfo{}, fmt.Errorf("failed to create wallet: %w", err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return ErrNotFound
+		}
+		return fmt.Errorf("failed to check request: %w", err)
 	}
 
-	if err := s.bc.SendStakes(ctx, acc.Address, s.initialStakes); err != nil {
-		return AccountInfo{}, fmt.Errorf("failed to send stakes to %s: %w", owner, err)
+	if err := s.bc.SendStakes(ctx, address, s.initialStakes); err != nil {
+		return fmt.Errorf("failed to send stakes to %s: %w", owner, err)
 	}
 
 	if err := s.storage.MarkRequestProcessed(ctx, owner); err != nil {
-		return AccountInfo{}, fmt.Errorf("failed to mark request processed: %w", err)
+		return fmt.Errorf("failed to mark request processed: %w", err)
 	}
 
-	return AccountInfo{
-		Address:  acc.Address,
-		PubKey:   acc.PubKey,
-		Mnemonic: acc.Mnemonic,
-	}, nil
+	return nil
 }
 
 func getEmailHash(email string) string {
