@@ -1,0 +1,161 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "The Vulcan is an users' wallets creator.",
+    "title": "Vulcan",
+    "version": "1.0.0"
+  },
+  "basePath": "/v1",
+  "paths": {
+    "/confirm/{owner}/{code}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "summary": "Confirms registration and creates wallet.",
+        "operationId": "Confirm",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "email hash",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "confirmation code",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "wallet was created",
+            "schema": {
+              "$ref": "#/definitions/ConfirmResponse"
+            }
+          },
+          "404": {
+            "description": "no one register request was found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "summary": "Sends confirmation link via email. After confirmation a wallet will be created.",
+        "operationId": "Register",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RegisterRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "confirmation link was sent",
+            "schema": {
+              "$ref": "#/definitions/EmptyResponse"
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "wallet has already created for this email",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ConfirmResponse": {
+      "type": "object",
+      "title": "ConfirmResponse ...",
+      "properties": {
+        "address": {
+          "type": "string",
+          "x-go-name": "Address"
+        },
+        "mnemonic": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Mnemonic"
+        },
+        "public_key": {
+          "type": "string",
+          "x-go-name": "PubKey"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "RegisterRequest": {
+      "type": "object",
+      "title": "RegisterRequest ...",
+      "required": [
+        "email"
+      ],
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "x-go-name": "Email"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    }
+  }
+}
