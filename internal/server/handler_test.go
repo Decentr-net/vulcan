@@ -31,7 +31,7 @@ func Test_Register(t *testing.T) {
 	}{
 		{
 			name:       "success",
-			body:       []byte(`{"email":"decentr@decentr.xyz"}`),
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
 			serviceErr: nil,
 			rcode:      http.StatusOK,
 			rdata:      `{}`,
@@ -39,15 +39,23 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			name:       "invalid email",
-			body:       []byte(`{"email":"decentrdecentr.xyz"}`),
+			body:       []byte(`{"email":"decentrdecentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
 			serviceErr: errSkip,
 			rcode:      http.StatusBadRequest,
-			rdata:      `{"error": "invalid email"}`,
+			rdata:      `{"error": "invalid request: invalid email"}`,
+			rlog:       "",
+		},
+		{
+			name:       "invalid address",
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqg"}`),
+			serviceErr: errSkip,
+			rcode:      http.StatusBadRequest,
+			rdata:      `{"error": "invalid request: invalid address"}`,
 			rlog:       "",
 		},
 		{
 			name:       "already registered",
-			body:       []byte(`{"email":"decentr@decentr.xyz"}`),
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
 			serviceErr: service.ErrEmailIsBusy,
 			rcode:      http.StatusConflict,
 			rdata:      `{"error": "email is busy"}`,
@@ -55,7 +63,7 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			name:       "internal error",
-			body:       []byte(`{"email":"decentr@decentr.xyz"}`),
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
 			serviceErr: errTest,
 			rcode:      http.StatusInternalServerError,
 			rdata:      `{"error": "internal error"}`,
@@ -76,7 +84,7 @@ func Test_Register(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
-				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz").Return(tc.serviceErr)
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga").Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()
@@ -104,7 +112,6 @@ func Test_Confirm(t *testing.T) {
 	tt := []struct {
 		name       string
 		serviceErr error
-		serviceRes service.AccountInfo
 		rcode      int
 		rdata      string
 		rlog       string
@@ -112,14 +119,9 @@ func Test_Confirm(t *testing.T) {
 		{
 			name:       "success",
 			serviceErr: nil,
-			serviceRes: service.AccountInfo{
-				Address:  "1234",
-				PubKey:   "5678",
-				Mnemonic: []string{"1", "2"},
-			},
-			rcode: http.StatusCreated,
-			rdata: `{"address":"1234","public_key":"5678","mnemonic":["1","2"]}`,
-			rlog:  "",
+			rcode:      http.StatusOK,
+			rdata:      `{}`,
+			rlog:       "",
 		},
 		{
 			name:       "not found",
@@ -150,7 +152,7 @@ func Test_Confirm(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
-				srv.EXPECT().Confirm(gomock.Not(gomock.Nil()), "1234", "5678").Return(tc.serviceRes, tc.serviceErr)
+				srv.EXPECT().Confirm(gomock.Not(gomock.Nil()), "1234", "5678").Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()
