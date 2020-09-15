@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
@@ -16,6 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/vulcan/internal/health"
+	"github.com/Decentr-net/vulcan/internal/mail/sendpulse"
 	"github.com/Decentr-net/vulcan/internal/server"
 	"github.com/Decentr-net/vulcan/internal/service"
 	"github.com/Decentr-net/vulcan/internal/storage/postgres"
@@ -28,9 +30,17 @@ var opts = struct {
 
 	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 
+	SendpulseClientID        string        `long:"sendpulse.client_id" env:"SENDPULSE_CLIENT_ID" description:"client_id for sendpulse.com oauth"`
+	SendpulseClientSecret    string        `long:"sendpulse.client_secret" env:"SENDPULSE_CLIENT_SECRET" description:"client_secret for sendpulse.com oauth"`
+	SendpulseClientTimeout   time.Duration `long:"sendpulse.client_timeout" env:"SENDPULSE_CLIENT_TIMEOUT" default:"10s" description:"timeout for sendpulse's' http client"`
+	SendpulseEmailSubject    string        `long:"sendpulse.email_subject" env:"SENDPULSE_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
+	SendpulseEmailTemplateID uint64        `long:"sendpulse.email_template_id" env:"SENDPULSE_EMAIL_TEMPLATE_ID" description:"sendpulse's template to be sent"`
+	SendpulseFromName        string        `long:"sendpulse.from_name" env:"SENDPULSE_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
+	SendpulseFromEmail       string        `long:"sendpulse.from_email" env:"SENDPULSE_FROM_NAME" default:"norepty@decentrdev.com" description:"email for emails sender"`
+
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
-	InitialStakes int64 `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"10000" description:"initial stakes for a new wallet. A denominator is 1000"`
+	InitialStakes int64 `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1" description:"stakes count to be sent"`
 }{}
 
 var errTerminated = errors.New("terminated")
@@ -66,9 +76,17 @@ func main() {
 		logrus.WithError(err).Fatal("failed to ping postgres")
 	}
 
-	server.SetupRouter(service.New(postgres.New(db), nil, nil, opts.InitialStakes), r)
+	sp, spp := sendpulse.New(opts.SendpulseClientID, opts.SendpulseClientSecret, opts.SendpulseClientTimeout, sendpulse.Config{
+		Subject:    opts.SendpulseEmailSubject,
+		TemplateID: opts.SendpulseEmailTemplateID,
+		FromName:   opts.SendpulseFromName,
+		FromEmail:  opts.SendpulseFromEmail,
+	})
+
+	server.SetupRouter(service.New(postgres.New(db), sp, nil, opts.InitialStakes), r)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
+		spp,
 	)
 
 	srv := http.Server{
