@@ -56,7 +56,7 @@ func Test_Register(t *testing.T) {
 		{
 			name:       "already registered",
 			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
-			serviceErr: service.ErrEmailIsBusy,
+			serviceErr: service.ErrAlreadyExists,
 			rcode:      http.StatusConflict,
 			rdata:      `{"error": "email is busy"}`,
 			rlog:       "",
