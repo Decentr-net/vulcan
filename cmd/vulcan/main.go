@@ -30,13 +30,13 @@ var opts = struct {
 
 	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 
-	SendpulseClientID      string        `long:"sendpulse.client_id" env:"SENDPULSE_CLIENT_ID" description:"client_id for sendpulse.com oauth"`
-	SendpulseClientSecret  string        `long:"sendpulse.client_secret" env:"SENDPULSE_CLIENT_SECRET" description:"client_secret for sendpulse.com oauth"`
-	SendpulseClientTimeout time.Duration `long:"sendpulse.client_timeout" env:"SENDPULSE_CLIENT_TIMEOUT" default:"10s" description:"timeout for sendpulse's' http client"`
-	SendpulseEmailSubject  string        `long:"sendpulse.email_subject" env:"SENDPULSE_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
-	SendpulseEmailTemplate uint64        `long:"sendpulse.email_template" env:"SENDPULSE_EMAIL_TEMPLATE" description:"sendpulse's template to be sent"`
-	SendpulseFromName      string        `long:"sendpulse.from_name" env:"SENDPULSE_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
-	SendpulseFromEmail     string        `long:"sendpulse.from_email" env:"SENDPULSE_FROM_NAME" default:"norepty@decentrdev.com" description:"email for emails sender"`
+	SendpulseClientID        string        `long:"sendpulse.client_id" env:"SENDPULSE_CLIENT_ID" description:"client_id for sendpulse.com oauth"`
+	SendpulseClientSecret    string        `long:"sendpulse.client_secret" env:"SENDPULSE_CLIENT_SECRET" description:"client_secret for sendpulse.com oauth"`
+	SendpulseClientTimeout   time.Duration `long:"sendpulse.client_timeout" env:"SENDPULSE_CLIENT_TIMEOUT" default:"10s" description:"timeout for sendpulse's' http client"`
+	SendpulseEmailSubject    string        `long:"sendpulse.email_subject" env:"SENDPULSE_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
+	SendpulseEmailTemplateID uint64        `long:"sendpulse.email_template_id" env:"SENDPULSE_EMAIL_TEMPLATE_ID" description:"sendpulse's template to be sent"`
+	SendpulseFromName        string        `long:"sendpulse.from_name" env:"SENDPULSE_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
+	SendpulseFromEmail       string        `long:"sendpulse.from_email" env:"SENDPULSE_FROM_NAME" default:"norepty@decentrdev.com" description:"email for emails sender"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
@@ -78,7 +78,7 @@ func main() {
 
 	sp, spp := sendpulse.New(opts.SendpulseClientID, opts.SendpulseClientSecret, opts.SendpulseClientTimeout, sendpulse.Config{
 		Subject:    opts.SendpulseEmailSubject,
-		TemplateID: opts.SendpulseEmailTemplate,
+		TemplateID: opts.SendpulseEmailTemplateID,
 		FromName:   opts.SendpulseFromName,
 		FromEmail:  opts.SendpulseFromEmail,
 	})

@@ -1,7 +1,7 @@
 # Vulcan
 ![img](https://img.shields.io/docker/cloud/build/decentr/vulcan.svg)
 
-Vulcan sends stakes to new accounts. ```will be fixed```
+Vulcan provides Decentr off-chain functionality.
 
 ## Run
 ### Docker
@@ -34,7 +34,7 @@ go run cmd/vulcan/main.go \
 | sendpulse.client_secret    | SENDPULSE_CLIENT_SECRET    |   | client_secret for sendpulse.com oauth
 | sendpulse.client_timeout    | SENDPULSE_CLIENT_TIMEOUT    | 10s  | timeout for sendpulse's' http client
 | sendpulse.email_subject    | SENDPULSE_EMAIL_SUBJECT    | decentr.xyz - Verification  | subject for emails
-| sendpulse.email_template    | SENDPULSE_EMAIL_TEMPLATE    |   | sendpulse's template to be sent
+| sendpulse.email_template_id    | SENDPULSE_EMAIL_TEMPLATE_ID    |   | sendpulse's template to be sent
 | sendpulse.from_name    | SENDPULSE_FROM_NAME    | decentr.xyz  | name for emails sender
 | sendpulse.from_email    | SENDPULSE_FROM_NAME    | norepty@decentrdev.com  | email for emails sender
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
