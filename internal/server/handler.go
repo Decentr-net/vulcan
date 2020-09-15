@@ -57,7 +57,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.s.Register(r.Context(), req.Email.String(), req.Address); err != nil {
-		if errors.Is(err, service.ErrEmailIsBusy) {
+		if errors.Is(err, service.ErrAlreadyExists) {
 			writeError(w, http.StatusConflict, "email is busy")
 		} else {
 			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to register request")
