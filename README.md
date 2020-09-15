@@ -1,7 +1,7 @@
 # Vulcan
 ![img](https://img.shields.io/docker/cloud/build/decentr/vulcan.svg)
 
-Vulcan is a Decentr wallet backend service. Vulcan creates decentr wallets and sends to it stakes.
+Vulcan sends stakes to new accounts. ```will be fixed```
 
 ## Run
 ### Docker
@@ -16,8 +16,9 @@ make image
 docker-compose -f scripts/docker-compose.yml up -d
 ```
 ### From source
+`will be fixed later`
 ```
-go run cmd/cerberus/main.go \
+go run cmd/vulcan/main.go \
     --http.host=0.0.0.0 \
     --http.port=8080 \
     --log.level=debug
@@ -28,8 +29,16 @@ go run cmd/cerberus/main.go \
 |---------------|------------------|---------------|---------------------------------
 | http.host         | HTTP_HOST         | 0.0.0.0  | host to bind server
 | http.port    | HTTP_PORT    | 8080  | port to listen
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | postgres dsn
+| sendpulse.client_id    | SENDPULSE_CLIENT_ID    |   | client_id for sendpulse.com oauth
+| sendpulse.client_secret    | SENDPULSE_CLIENT_SECRET    |   | client_secret for sendpulse.com oauth
+| sendpulse.client_timeout    | SENDPULSE_CLIENT_TIMEOUT    | 10s  | timeout for sendpulse's' http client
+| sendpulse.email_subject    | SENDPULSE_EMAIL_SUBJECT    | decentr.xyz - Verification  | subject for emails
+| sendpulse.email_template    | SENDPULSE_EMAIL_TEMPLATE    |   | sendpulse's template to be sent
+| sendpulse.from_name    | SENDPULSE_FROM_NAME    | decentr.xyz  | name for emails sender
+| sendpulse.from_email    | SENDPULSE_FROM_NAME    | norepty@decentrdev.com  | email for emails sender
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
-| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 10000 | initial stakes for a new wallet. A denominator is 1000.
+| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1 | stakes count to be sent
 
 
 ## Development

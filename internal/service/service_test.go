@@ -137,14 +137,14 @@ func TestService_Confirm(t *testing.T) {
 
 			s := New(storage, nil, bc, testInitialStakes)
 
-			storage.EXPECT().GetAccountAddress(ctx, testOwner, testCode).Return(tc.address, tc.getAddrErr)
+			storage.EXPECT().GetNotConfirmedAccountAddress(ctx, testOwner, testCode).Return(tc.address, tc.getAddrErr)
 
 			if tc.getAddrErr == nil {
 				if tc.createErr == nil {
 					bc.EXPECT().SendStakes(ctx, tc.address, testInitialStakes).Return(tc.sendErr)
 
 					if tc.sendErr == nil {
-						storage.EXPECT().MarkRequestProcessed(ctx, testOwner).Return(tc.markErr)
+						storage.EXPECT().MarkConfirmed(ctx, testOwner).Return(tc.markErr)
 					}
 				}
 			}

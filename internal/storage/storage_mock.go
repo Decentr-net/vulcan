@@ -6,9 +6,8 @@ package storage
 
 import (
 	context "context"
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockStorage is a mock of Storage interface
@@ -32,21 +31,6 @@ func NewMockStorage(ctrl *gomock.Controller) *MockStorage {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
-}
-
-// IsRegistered mocks base method
-func (m *MockStorage) IsRegistered(ctx context.Context, owner, address string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRegistered", ctx, owner, address)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsRegistered indicates an expected call of IsRegistered
-func (mr *MockStorageMockRecorder) IsRegistered(ctx, owner, address interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRegistered", reflect.TypeOf((*MockStorage)(nil).IsRegistered), ctx, owner, address)
 }
 
 // CreateRequest mocks base method
@@ -73,7 +57,7 @@ func (m *MockStorage) GetNotConfirmedAccountAddress(ctx context.Context, owner, 
 }
 
 // GetNotConfirmedAccountAddress indicates an expected call of GetNotConfirmedAccountAddress
-func (mr *MockStorageMockRecorder) GetAccountAddress(ctx, owner, code interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) GetNotConfirmedAccountAddress(ctx, owner, code interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotConfirmedAccountAddress", reflect.TypeOf((*MockStorage)(nil).GetNotConfirmedAccountAddress), ctx, owner, code)
 }
@@ -87,7 +71,7 @@ func (m *MockStorage) MarkConfirmed(ctx context.Context, owner string) error {
 }
 
 // MarkConfirmed indicates an expected call of MarkConfirmed
-func (mr *MockStorageMockRecorder) MarkRequestProcessed(ctx, owner interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) MarkConfirmed(ctx, owner interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkConfirmed", reflect.TypeOf((*MockStorage)(nil).MarkConfirmed), ctx, owner)
 }
