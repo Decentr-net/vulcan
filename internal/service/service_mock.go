@@ -34,26 +34,25 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // Register mocks base method
-func (m *MockService) Register(ctx context.Context, email string) error {
+func (m *MockService) Register(ctx context.Context, email, address string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Register", ctx, email)
+	ret := m.ctrl.Call(m, "Register", ctx, email, address)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Register indicates an expected call of Register
-func (mr *MockServiceMockRecorder) Register(ctx, email interface{}) *gomock.Call {
+func (mr *MockServiceMockRecorder) Register(ctx, email, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockService)(nil).Register), ctx, email)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockService)(nil).Register), ctx, email, address)
 }
 
 // Confirm mocks base method
-func (m *MockService) Confirm(ctx context.Context, owner, code string) (AccountInfo, error) {
+func (m *MockService) Confirm(ctx context.Context, owner, code string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Confirm", ctx, owner, code)
-	ret0, _ := ret[0].(AccountInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Confirm indicates an expected call of Confirm

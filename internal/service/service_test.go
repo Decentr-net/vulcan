@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	errTest   = fmt.Errorf("test")
-	testOwner = "be0e9f2c97c4df30483a97ab305a4046"
-	testEmail = "decentr@decentr.xyz"
-	testCode  = "1234"
+	errTest     = fmt.Errorf("test")
+	testOwner   = "be0e9f2c97c4df30483a97ab305a4046"
+	testAddress = "decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"
+	testEmail   = "decentr@decentr.xyz"
+	testCode    = "1234"
 
 	testInitialStakes = int64(10)
 )
@@ -76,11 +77,11 @@ func TestService_Register(t *testing.T) {
 
 			s := New(storage, sender, nil, testInitialStakes)
 
-			storage.EXPECT().IsRegistered(ctx, testOwner).Return(tc.isRegistered, tc.isRegisteredErr)
+			storage.EXPECT().IsRegistered(ctx, testOwner, testAddress).Return(tc.isRegistered, tc.isRegisteredErr)
 			if tc.isRegisteredErr == nil && !tc.isRegistered {
 				var code string
 
-				storage.EXPECT().CreateRequest(ctx, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, c string) error {
+				storage.EXPECT().CreateRequest(ctx, testOwner, testAddress, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
 					require.NotEmpty(t, c)
 
 					code = c
@@ -95,43 +96,34 @@ func TestService_Register(t *testing.T) {
 				}
 			}
 
-			assert.True(t, errors.Is(s.Register(ctx, testEmail), tc.err))
+			assert.True(t, errors.Is(s.Register(ctx, testEmail, testAddress), tc.err))
 		})
 	}
 }
 
 func TestService_Confirm(t *testing.T) {
 	tt := []struct {
-		name      string
-		checkErr  error
-		createErr error
-		sendErr   error
-		markErr   error
-		err       error
-		res       AccountInfo
+		name       string
+		address    string
+		getAddrErr error
+		createErr  error
+		sendErr    error
+		markErr    error
+		err        error
 	}{
 		{
-			name: "success",
-			res: AccountInfo{
-				Address:  "1234",
-				PubKey:   "5678",
-				Mnemonic: []string{"1", "2"},
-			},
+			name:    "success",
+			address: testAddress,
 		},
 		{
-			name:     "not found",
-			checkErr: storage.ErrNotFound,
-			err:      ErrNotFound,
+			name:       "not found",
+			getAddrErr: storage.ErrNotFound,
+			err:        ErrNotFound,
 		},
 		{
-			name:     "check error",
-			checkErr: errTest,
-			err:      errTest,
-		},
-		{
-			name:      "create error",
-			createErr: errTest,
-			err:       errTest,
+			name:       "check error",
+			getAddrErr: errTest,
+			err:        errTest,
 		},
 		{
 			name:    "send error",
@@ -159,23 +151,11 @@ func TestService_Confirm(t *testing.T) {
 
 			s := New(storage, nil, bc, testInitialStakes)
 
-			storage.EXPECT().CheckRequest(ctx, testOwner, testCode).Return(tc.checkErr)
+			storage.EXPECT().GetAccountAddress(ctx, testOwner, testCode).Return(tc.address, tc.getAddrErr)
 
-			if tc.checkErr == nil {
-				bc.EXPECT().CreateWallet(ctx).DoAndReturn(func(_ context.Context) (blockchain.AccountInfo, error) {
-					if tc.createErr != nil {
-						return blockchain.AccountInfo{}, tc.createErr
-					}
-
-					return blockchain.AccountInfo{
-						Mnemonic: tc.res.Mnemonic,
-						PubKey:   tc.res.PubKey,
-						Address:  tc.res.Address,
-					}, nil
-				})
-
+			if tc.getAddrErr == nil {
 				if tc.createErr == nil {
-					bc.EXPECT().SendStakes(ctx, tc.res.Address, testInitialStakes).Return(tc.sendErr)
+					bc.EXPECT().SendStakes(ctx, tc.address, testInitialStakes).Return(tc.sendErr)
 
 					if tc.sendErr == nil {
 						storage.EXPECT().MarkRequestProcessed(ctx, testOwner).Return(tc.markErr)
@@ -183,9 +163,7 @@ func TestService_Confirm(t *testing.T) {
 				}
 			}
 
-			acc, err := s.Confirm(ctx, testOwner, testCode)
-			assert.True(t, errors.Is(err, tc.err))
-			assert.Equal(t, tc.res, acc)
+			assert.True(t, errors.Is(s.Confirm(ctx, testOwner, testCode), tc.err))
 		})
 	}
 }
