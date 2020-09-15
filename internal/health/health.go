@@ -4,6 +4,7 @@ package health
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -17,6 +18,29 @@ import (
 // Pinger pings external service.
 type Pinger interface {
 	Ping(ctx context.Context) error
+}
+
+type subjectPinger struct {
+	f func(ctx context.Context) error
+	s string
+}
+
+// Ping ...
+func (p subjectPinger) Ping(ctx context.Context) error {
+	if err := p.f(ctx); err != nil {
+		return fmt.Errorf("failed to ping %s: %w", p.s, err)
+	}
+
+	return nil
+}
+
+// SubjectPinger returns wrapper over Ping function which adds subject to error message.
+// It is helpful for external Ping function, e.g. (sql.DB).Ping.
+func SubjectPinger(s string, f func(ctx context.Context) error) Pinger {
+	return subjectPinger{
+		f: f,
+		s: s,
+	}
 }
 
 // SetupRouter setups all pingers to /health.

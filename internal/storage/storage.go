@@ -10,14 +10,16 @@ import (
 // ErrNotFound ...
 var ErrNotFound = fmt.Errorf("not found")
 
+// ErrAlreadyExists ...
+var ErrAlreadyExists = fmt.Errorf("email or address have been already used")
+
 // Storage provides methods for interacting with database.
 type Storage interface {
-	// IsRegistered checks if email or address has been already registered.
-	IsRegistered(ctx context.Context, owner, address string) (bool, error)
 	// CreateRequest creates initial registration request.
+	// It returns ErrAlreadyExists if email or address have been already used.
 	CreateRequest(ctx context.Context, owner, address, code string) error
-	// GetAccountAddress returns accounts address by owner and code or ErrNotFound if request is not found.
-	GetAccountAddress(ctx context.Context, owner, code string) (string, error)
-	// MarkRequestProcessed marks request as processed.
-	MarkRequestProcessed(ctx context.Context, owner string) error
+	// GetNotConfirmedAccountAddress returns accounts address by owner and code or ErrNotFound if request is not found.
+	GetNotConfirmedAccountAddress(ctx context.Context, owner, code string) (string, error)
+	// MarkRequestConfirmed marks request as confirmed.
+	MarkRequestConfirmed(ctx context.Context, owner string) error
 }

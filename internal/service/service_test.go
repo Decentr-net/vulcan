@@ -27,39 +27,28 @@ var (
 
 func TestService_Register(t *testing.T) {
 	tt := []struct {
-		name            string
-		isRegistered    bool
-		isRegisteredErr error
-		createErr       error
-		senderErr       error
-		err             error
+		name      string
+		createErr error
+		senderErr error
+		err       error
 	}{
 		{
-			name:         "success",
-			isRegistered: false,
+			name: "success",
 		},
 		{
-			name:         "already registered",
-			isRegistered: true,
-			err:          ErrEmailIsBusy,
+			name:      "already registered",
+			createErr: storage.ErrAlreadyExists,
+			err:       ErrAlreadyExists,
 		},
 		{
-			name:            "isRegisteredFailed",
-			isRegistered:    false,
-			isRegisteredErr: errTest,
-			err:             errTest,
+			name:      "createFailed",
+			createErr: errTest,
+			err:       errTest,
 		},
 		{
-			name:         "createFailed",
-			isRegistered: false,
-			createErr:    errTest,
-			err:          errTest,
-		},
-		{
-			name:         "senderFailed",
-			isRegistered: false,
-			senderErr:    errTest,
-			err:          errTest,
+			name:      "senderFailed",
+			senderErr: errTest,
+			err:       errTest,
 		},
 	}
 
@@ -77,23 +66,20 @@ func TestService_Register(t *testing.T) {
 
 			s := New(storage, sender, nil, testInitialStakes)
 
-			storage.EXPECT().IsRegistered(ctx, testOwner, testAddress).Return(tc.isRegistered, tc.isRegisteredErr)
-			if tc.isRegisteredErr == nil && !tc.isRegistered {
-				var code string
+			var code string
 
-				storage.EXPECT().CreateRequest(ctx, testOwner, testAddress, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
-					require.NotEmpty(t, c)
+			storage.EXPECT().CreateRequest(ctx, testOwner, testAddress, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
+				require.NotEmpty(t, c)
 
-					code = c
-					return tc.createErr
+				code = c
+				return tc.createErr
+			})
+			if tc.createErr == nil {
+				sender.EXPECT().Send(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
+					require.Equal(t, code, c)
+
+					return tc.senderErr
 				})
-				if tc.createErr == nil {
-					sender.EXPECT().Send(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
-						require.Equal(t, code, c)
-
-						return tc.senderErr
-					})
-				}
 			}
 
 			assert.True(t, errors.Is(s.Register(ctx, testEmail, testAddress), tc.err))
@@ -151,14 +137,14 @@ func TestService_Confirm(t *testing.T) {
 
 			s := New(storage, nil, bc, testInitialStakes)
 
-			storage.EXPECT().GetAccountAddress(ctx, testOwner, testCode).Return(tc.address, tc.getAddrErr)
+			storage.EXPECT().GetNotConfirmedAccountAddress(ctx, testOwner, testCode).Return(tc.address, tc.getAddrErr)
 
 			if tc.getAddrErr == nil {
 				if tc.createErr == nil {
 					bc.EXPECT().SendStakes(ctx, tc.address, testInitialStakes).Return(tc.sendErr)
 
 					if tc.sendErr == nil {
-						storage.EXPECT().MarkRequestProcessed(ctx, testOwner).Return(tc.markErr)
+						storage.EXPECT().MarkRequestConfirmed(ctx, testOwner).Return(tc.markErr)
 					}
 				}
 			}

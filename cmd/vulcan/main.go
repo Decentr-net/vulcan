@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,12 +18,15 @@ import (
 	"github.com/Decentr-net/vulcan/internal/health"
 	"github.com/Decentr-net/vulcan/internal/server"
 	"github.com/Decentr-net/vulcan/internal/service"
+	"github.com/Decentr-net/vulcan/internal/storage/postgres"
 )
 
 // nolint:lll,gochecknoglobals
 var opts = struct {
 	Host string `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
 	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+
+	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
@@ -54,8 +58,18 @@ func main() {
 
 	r := chi.NewMux()
 
-	server.SetupRouter(service.New(nil, nil, nil, opts.InitialStakes), r)
-	health.SetupRouter(r)
+	db, err := sql.Open("postgres", opts.Postgres)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create postgres connection")
+	}
+	if err := db.PingContext(context.Background()); err != nil {
+		logrus.WithError(err).Fatal("failed to ping postgres")
+	}
+
+	server.SetupRouter(service.New(postgres.New(db), nil, nil, opts.InitialStakes), r)
+	health.SetupRouter(r,
+		health.SubjectPinger("postgres", db.PingContext),
+	)
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

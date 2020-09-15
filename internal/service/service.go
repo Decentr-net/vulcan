@@ -17,8 +17,8 @@ const codeSize = 16
 
 //go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
 
-// ErrEmailIsBusy is returned when wallet is already created for requested email.
-var ErrEmailIsBusy = fmt.Errorf("email is busy")
+// ErrAlreadyExists is returned when request is already created for requested email or address.
+var ErrAlreadyExists = fmt.Errorf("email or address is busy")
 
 // ErrNotFound is returned when request not found for owner/code pair.
 var ErrNotFound = fmt.Errorf("not found")
@@ -53,17 +53,11 @@ func New(storage storage.Storage, sender mail.Sender, b blockchain.Blockchain, i
 func (s *service) Register(ctx context.Context, email, address string) error {
 	owner := getEmailHash(email)
 
-	isRegistered, err := s.storage.IsRegistered(ctx, owner, address)
-	if err != nil {
-		return fmt.Errorf("failed to check existence: %w", err)
-	}
-
-	if isRegistered {
-		return ErrEmailIsBusy
-	}
-
 	code := randomCode()
 	if err := s.storage.CreateRequest(ctx, owner, address, code); err != nil {
+		if errors.Is(err, storage.ErrAlreadyExists) {
+			return ErrAlreadyExists
+		}
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
@@ -75,7 +69,7 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 }
 
 func (s *service) Confirm(ctx context.Context, owner, code string) error {
-	address, err := s.storage.GetAccountAddress(ctx, owner, code)
+	address, err := s.storage.GetNotConfirmedAccountAddress(ctx, owner, code)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
@@ -87,7 +81,7 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 		return fmt.Errorf("failed to send stakes to %s: %w", owner, err)
 	}
 
-	if err := s.storage.MarkRequestProcessed(ctx, owner); err != nil {
+	if err := s.storage.MarkRequestConfirmed(ctx, owner); err != nil {
 		return fmt.Errorf("failed to mark request processed: %w", err)
 	}
 
