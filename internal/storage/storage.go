@@ -20,6 +20,6 @@ type Storage interface {
 	CreateRequest(ctx context.Context, owner, address, code string) error
 	// GetNotConfirmedAccountAddress returns accounts address by owner and code or ErrNotFound if request is not found.
 	GetNotConfirmedAccountAddress(ctx context.Context, owner, code string) (string, error)
-	// MarkConfirmed marks request as confirmed.
-	MarkConfirmed(ctx context.Context, owner string) error
+	// MarkRequestConfirmed marks request as confirmed.
+	MarkRequestConfirmed(ctx context.Context, owner string) error
 }

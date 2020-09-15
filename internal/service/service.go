@@ -81,7 +81,7 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 		return fmt.Errorf("failed to send stakes to %s: %w", owner, err)
 	}
 
-	if err := s.storage.MarkConfirmed(ctx, owner); err != nil {
+	if err := s.storage.MarkRequestConfirmed(ctx, owner); err != nil {
 		return fmt.Errorf("failed to mark request processed: %w", err)
 	}
 

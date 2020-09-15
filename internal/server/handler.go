@@ -92,7 +92,7 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	//   type: string
 	// responses:
 	//   '200':
-	//     description: stakes was sent
+	//     description: stakes were sent
 	//     schema:
 	//       "$ref": "#/definitions/ConfirmResponse"
 	//   '404':

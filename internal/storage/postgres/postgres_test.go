@@ -144,13 +144,13 @@ func TestPg_MarkConfirmed(t *testing.T) {
 	defer cleanup(t)
 
 	require.NoError(t, s.CreateRequest(ctx, "owner", "address", "code"))
-	require.NoError(t, s.MarkConfirmed(ctx, "owner"))
+	require.NoError(t, s.MarkRequestConfirmed(ctx, "owner"))
 
 	_, err := s.GetNotConfirmedAccountAddress(ctx, "owner", "code")
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, storage.ErrNotFound))
 
-	err = s.MarkConfirmed(ctx, "unknown")
+	err = s.MarkRequestConfirmed(ctx, "unknown")
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, storage.ErrNotFound))
 }

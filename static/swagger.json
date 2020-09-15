@@ -47,7 +47,7 @@
         ],
         "responses": {
           "200": {
-            "description": "stakes was sent",
+            "description": "stakes were sent",
             "schema": {
               "$ref": "#/definitions/ConfirmResponse"
             }

@@ -53,7 +53,7 @@ func (p pg) GetNotConfirmedAccountAddress(ctx context.Context, owner, code strin
 	return address, nil
 }
 
-func (p pg) MarkConfirmed(ctx context.Context, owner string) error {
+func (p pg) MarkRequestConfirmed(ctx context.Context, owner string) error {
 	res, err := p.db.ExecContext(ctx, `
 		UPDATE request SET confirmed_at = current_timestamp WHERE owner = $1
 	`, owner)

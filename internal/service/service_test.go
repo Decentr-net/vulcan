@@ -144,7 +144,7 @@ func TestService_Confirm(t *testing.T) {
 					bc.EXPECT().SendStakes(ctx, tc.address, testInitialStakes).Return(tc.sendErr)
 
 					if tc.sendErr == nil {
-						storage.EXPECT().MarkConfirmed(ctx, testOwner).Return(tc.markErr)
+						storage.EXPECT().MarkRequestConfirmed(ctx, testOwner).Return(tc.markErr)
 					}
 				}
 			}
