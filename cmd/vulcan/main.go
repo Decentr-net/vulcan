@@ -9,15 +9,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
+	mc "github.com/keighl/mandrill"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/vulcan/internal/health"
-	"github.com/Decentr-net/vulcan/internal/mail/sendpulse"
+	"github.com/Decentr-net/vulcan/internal/mail/mandrill"
 	"github.com/Decentr-net/vulcan/internal/server"
 	"github.com/Decentr-net/vulcan/internal/service"
 	"github.com/Decentr-net/vulcan/internal/storage/postgres"
@@ -30,13 +30,11 @@ var opts = struct {
 
 	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 
-	SendpulseClientID        string        `long:"sendpulse.client_id" env:"SENDPULSE_CLIENT_ID" description:"client_id for sendpulse.com oauth"`
-	SendpulseClientSecret    string        `long:"sendpulse.client_secret" env:"SENDPULSE_CLIENT_SECRET" description:"client_secret for sendpulse.com oauth"`
-	SendpulseClientTimeout   time.Duration `long:"sendpulse.client_timeout" env:"SENDPULSE_CLIENT_TIMEOUT" default:"10s" description:"timeout for sendpulse's' http client"`
-	SendpulseEmailSubject    string        `long:"sendpulse.email_subject" env:"SENDPULSE_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
-	SendpulseEmailTemplateID uint64        `long:"sendpulse.email_template_id" env:"SENDPULSE_EMAIL_TEMPLATE_ID" description:"sendpulse's template to be sent"`
-	SendpulseFromName        string        `long:"sendpulse.from_name" env:"SENDPULSE_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
-	SendpulseFromEmail       string        `long:"sendpulse.from_email" env:"SENDPULSE_FROM_NAME" default:"norepty@decentrdev.com" description:"email for emails sender"`
+	MandrillAPIKey            string `long:"mandrill.api_key" env:"MANDRILL_API_KEY" description:"mandrillapp.com api key"`
+	MandrillEmailSubject      string `long:"mandrill.email_subject" env:"MANDRILL_API_KEY_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
+	MandrillEmailTemplateName string `long:"mandrill.email_template_id" env:"MANDRILL_API_KEY_EMAIL_TEMPLATE_ID" description:"sendpulse's template to be sent"`
+	MandrillFromName          string `long:"mandrill.from_name" env:"MANDRILL_API_KEY_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
+	MandrillFromEmail         string `long:"mandrill.from_email" env:"MANDRILL_API_KEY_FROM_NAME" default:"noreply@decentrdev.com" description:"email for emails sender"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
@@ -76,17 +74,21 @@ func main() {
 		logrus.WithError(err).Fatal("failed to ping postgres")
 	}
 
-	sp, spp := sendpulse.New(opts.SendpulseClientID, opts.SendpulseClientSecret, opts.SendpulseClientTimeout, sendpulse.Config{
-		Subject:    opts.SendpulseEmailSubject,
-		TemplateID: opts.SendpulseEmailTemplateID,
-		FromName:   opts.SendpulseFromName,
-		FromEmail:  opts.SendpulseFromEmail,
+	mandrillClient := mc.ClientWithKey(opts.MandrillAPIKey)
+
+	mailSender := mandrill.New(mandrillClient, mandrill.Config{
+		Subject:      opts.MandrillEmailSubject,
+		TemplateName: opts.MandrillEmailTemplateName,
+		FromEmail:    opts.MandrillFromEmail,
 	})
 
-	server.SetupRouter(service.New(postgres.New(db), sp, nil, opts.InitialStakes), r)
+	server.SetupRouter(service.New(postgres.New(db), mailSender, nil, opts.InitialStakes), r)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
-		spp,
+		health.SubjectPinger("mandrill", func(_ context.Context) error {
+			_, err := mandrillClient.Ping()
+			return err
+		}),
 	)
 
 	srv := http.Server{
