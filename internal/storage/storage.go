@@ -3,6 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/lib/pq"
 )
 
 //go:generate mockgen -destination=./storage_mock.go -package=storage -source=storage.go
@@ -10,16 +13,19 @@ import (
 // ErrNotFound ...
 var ErrNotFound = fmt.Errorf("not found")
 
-// ErrAlreadyExists ...
-var ErrAlreadyExists = fmt.Errorf("email or address have been already used")
+// Request ...
+type Request struct {
+	Owner       string      `db:"owner"`
+	Address     string      `db:"address"`
+	Code        string      `db:"code"`
+	CreatedAt   time.Time   `db:"created_at"`
+	ConfirmedAt pq.NullTime `db:"confirmed_at"`
+}
 
 // Storage provides methods for interacting with database.
 type Storage interface {
-	// CreateRequest creates initial registration request.
-	// It returns ErrAlreadyExists if email or address have been already used.
-	CreateRequest(ctx context.Context, owner, address, code string) error
-	// GetNotConfirmedAccountAddress returns accounts address by owner and code or ErrNotFound if request is not found.
-	GetNotConfirmedAccountAddress(ctx context.Context, owner, code string) (string, error)
-	// MarkRequestConfirmed marks request as confirmed.
-	MarkRequestConfirmed(ctx context.Context, owner string) error
+	// GetRequest returns request by owner or address.
+	GetRequest(ctx context.Context, owner, address string) (*Request, error)
+	// SetRequest sets request.
+	SetRequest(ctx context.Context, r *Request) error
 }

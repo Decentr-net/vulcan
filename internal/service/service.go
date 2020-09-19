@@ -7,6 +7,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/lib/pq"
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/mail"
@@ -14,6 +17,7 @@ import (
 )
 
 const codeSize = 16
+const throttlingInterval = time.Minute
 
 //go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
 
@@ -22,6 +26,9 @@ var ErrAlreadyExists = fmt.Errorf("email or address is busy")
 
 // ErrNotFound is returned when request not found for owner/code pair.
 var ErrNotFound = fmt.Errorf("not found")
+
+// ErrTooManyAttempts is returned when throttling interval didn't pass.
+var ErrTooManyAttempts = fmt.Errorf("too many attempts")
 
 const salt = "decentr-vulcan"
 
@@ -51,17 +58,31 @@ func New(storage storage.Storage, sender mail.Sender, b blockchain.Blockchain, i
 }
 
 func (s *service) Register(ctx context.Context, email, address string) error {
-	owner := getEmailHash(email)
+	request := storage.Request{
+		Owner:     getEmailHash(email),
+		Address:   address,
+		Code:      randomCode(),
+		CreatedAt: time.Now(),
+	}
 
-	code := randomCode()
-	if err := s.storage.CreateRequest(ctx, owner, address, code); err != nil {
-		if errors.Is(err, storage.ErrAlreadyExists) {
+	if r, err := s.storage.GetRequest(ctx, request.Owner, address); err == nil {
+		if r.CreatedAt.Add(throttlingInterval).After(time.Now()) {
+			return ErrTooManyAttempts
+		}
+		if r.ConfirmedAt.Valid {
 			return ErrAlreadyExists
 		}
+
+		request.Code = r.Code
+	} else if !errors.Is(err, storage.ErrNotFound) {
+		return fmt.Errorf("failed to check conflicts: %w", err)
+	}
+
+	if err := s.storage.SetRequest(ctx, &request); err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if err := s.sender.Send(ctx, email, owner, code); err != nil {
+	if err := s.sender.Send(ctx, email, request.Owner, request.Code); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -69,7 +90,7 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 }
 
 func (s *service) Confirm(ctx context.Context, owner, code string) error {
-	address, err := s.storage.GetNotConfirmedAccountAddress(ctx, owner, code)
+	req, err := s.storage.GetRequest(ctx, owner, "")
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
@@ -77,12 +98,25 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 		return fmt.Errorf("failed to check request: %w", err)
 	}
 
-	if err := s.bc.SendStakes(ctx, address, s.initialStakes); err != nil {
+	if req.ConfirmedAt.Valid {
+		return ErrAlreadyExists
+	}
+
+	if req.Code != code {
+		return ErrNotFound
+	}
+
+	if err := s.bc.SendStakes(req.Address, s.initialStakes); err != nil {
 		return fmt.Errorf("failed to send stakes to %s: %w", owner, err)
 	}
 
-	if err := s.storage.MarkRequestConfirmed(ctx, owner); err != nil {
-		return fmt.Errorf("failed to mark request processed: %w", err)
+	req.ConfirmedAt = pq.NullTime{
+		Time:  time.Now(),
+		Valid: true,
+	}
+
+	if err := s.storage.SetRequest(ctx, req); err != nil {
+		return fmt.Errorf("failed to update request: %w", err)
 	}
 
 	return nil

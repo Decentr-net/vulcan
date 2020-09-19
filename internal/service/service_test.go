@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/mail"
@@ -28,25 +29,44 @@ var (
 func TestService_Register(t *testing.T) {
 	tt := []struct {
 		name      string
-		createErr error
+		req       *storage.Request
+		getErr    error
+		setErr    error
 		senderErr error
 		err       error
 	}{
 		{
-			name: "success",
+			name:   "success",
+			getErr: storage.ErrNotFound,
 		},
 		{
-			name:      "already registered",
-			createErr: storage.ErrAlreadyExists,
-			err:       ErrAlreadyExists,
+			name: "already registered",
+			req:  &storage.Request{ConfirmedAt: pq.NullTime{Valid: true}},
+			err:  ErrAlreadyExists,
 		},
 		{
-			name:      "createFailed",
-			createErr: errTest,
-			err:       errTest,
+			name: "too many attempts",
+			req:  &storage.Request{CreatedAt: time.Now()},
+			err:  ErrTooManyAttempts,
+		},
+		{
+			name: "not confirmed request already exists",
+			req:  &storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+		},
+		{
+			name:   "getFailed",
+			getErr: errTest,
+			err:    errTest,
+		},
+		{
+			name:   "setFailed",
+			getErr: storage.ErrNotFound,
+			setErr: errTest,
+			err:    errTest,
 		},
 		{
 			name:      "senderFailed",
+			getErr:    storage.ErrNotFound,
 			senderErr: errTest,
 			err:       errTest,
 		},
@@ -59,27 +79,37 @@ func TestService_Register(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 
-			storage := storage.NewMockStorage(ctrl)
+			st := storage.NewMockStorage(ctrl)
 			sender := mail.NewMockSender(ctrl)
 
 			ctx := context.Background()
 
-			s := New(storage, sender, nil, testInitialStakes)
+			s := New(st, sender, nil, testInitialStakes)
 
 			var code string
+			st.EXPECT().GetRequest(ctx, testOwner, testAddress).Return(tc.req, tc.getErr)
+			if tc.getErr == nil || tc.getErr == storage.ErrNotFound {
+				st.EXPECT().SetRequest(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, r *storage.Request) error {
+					assert.False(t, r.CreatedAt.IsZero())
 
-			storage.EXPECT().CreateRequest(ctx, testOwner, testAddress, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
-				require.NotEmpty(t, c)
+					assert.Equal(t, testOwner, r.Owner)
+					assert.Equal(t, testAddress, r.Address)
 
-				code = c
-				return tc.createErr
-			})
-			if tc.createErr == nil {
-				sender.EXPECT().Send(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
-					require.Equal(t, code, c)
+					if tc.getErr == storage.ErrNotFound {
+						code = r.Code
+					} else {
+						code = tc.req.Code
+					}
 
-					return tc.senderErr
+					return tc.setErr
 				})
+
+				if tc.setErr == nil {
+					sender.EXPECT().Send(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
+						assert.Equal(t, code, c)
+						return tc.senderErr
+					})
+				}
 			}
 
 			assert.True(t, errors.Is(s.Register(ctx, testEmail, testAddress), tc.err))
@@ -89,37 +119,44 @@ func TestService_Register(t *testing.T) {
 
 func TestService_Confirm(t *testing.T) {
 	tt := []struct {
-		name       string
-		address    string
-		getAddrErr error
-		createErr  error
-		sendErr    error
-		markErr    error
-		err        error
+		name    string
+		req     storage.Request
+		getErr  error
+		setErr  error
+		sendErr error
+		err     error
 	}{
 		{
-			name:    "success",
-			address: testAddress,
+			name: "success",
+			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
 		},
 		{
-			name:       "not found",
-			getAddrErr: storage.ErrNotFound,
-			err:        ErrNotFound,
+			name:   "not found",
+			getErr: storage.ErrNotFound,
+			err:    ErrNotFound,
 		},
 		{
-			name:       "check error",
-			getAddrErr: errTest,
-			err:        errTest,
+			name: "wrong code",
+			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: "wrong"},
+			err:  ErrNotFound,
+		},
+
+		{
+			name:   "check error",
+			getErr: errTest,
+			err:    errTest,
 		},
 		{
 			name:    "send error",
+			req:     storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
 			sendErr: errTest,
 			err:     errTest,
 		},
 		{
-			name:    "mark error",
-			markErr: errTest,
-			err:     errTest,
+			name:   "set error",
+			req:    storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+			setErr: errTest,
+			err:    errTest,
 		},
 	}
 
@@ -130,26 +167,32 @@ func TestService_Confirm(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 
-			storage := storage.NewMockStorage(ctrl)
+			st := storage.NewMockStorage(ctrl)
 			bc := blockchain.NewMockBlockchain(ctrl)
 
 			ctx := context.Background()
 
-			s := New(storage, nil, bc, testInitialStakes)
+			s := New(st, nil, bc, testInitialStakes)
 
-			storage.EXPECT().GetNotConfirmedAccountAddress(ctx, testOwner, testCode).Return(tc.address, tc.getAddrErr)
+			st.EXPECT().GetRequest(ctx, testOwner, "").Return(&tc.req, tc.getErr)
 
-			if tc.getAddrErr == nil {
-				if tc.createErr == nil {
-					bc.EXPECT().SendStakes(ctx, tc.address, testInitialStakes).Return(tc.sendErr)
+			if tc.getErr == nil {
+				bc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.sendErr)
 
-					if tc.sendErr == nil {
-						storage.EXPECT().MarkRequestConfirmed(ctx, testOwner).Return(tc.markErr)
-					}
+				if tc.sendErr == nil {
+					st.EXPECT().SetRequest(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, r *storage.Request) error {
+						assert.Equal(t, tc.req.Owner, r.Owner)
+						assert.Equal(t, tc.req.Address, r.Address)
+						assert.True(t, r.ConfirmedAt.Valid)
+						assert.False(t, r.ConfirmedAt.Time.IsZero())
+
+						return tc.setErr
+					})
 				}
 			}
 
-			assert.True(t, errors.Is(s.Confirm(ctx, testOwner, testCode), tc.err))
+			err := s.Confirm(ctx, testOwner, testCode)
+			assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
 		})
 	}
 }

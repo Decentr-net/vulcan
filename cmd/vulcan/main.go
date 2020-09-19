@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"database/sql"
 	"errors"
@@ -8,14 +9,25 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 
+	clicontext "github.com/cosmos/cosmos-sdk/client/context"
+	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	mc "github.com/keighl/mandrill"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"github.com/tendermint/tendermint/libs/cli"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/Decentr-net/decentr/app"
+
+	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/health"
 	"github.com/Decentr-net/vulcan/internal/mail/mandrill"
 	"github.com/Decentr-net/vulcan/internal/server"
@@ -82,7 +94,7 @@ func main() {
 		FromEmail:    opts.MandrillFromEmail,
 	})
 
-	server.SetupRouter(service.New(postgres.New(db), mailSender, nil, opts.InitialStakes), r)
+	server.SetupRouter(service.New(postgres.New(db), mailSender, mustGetBlockchain(), opts.InitialStakes), r)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
 		health.SubjectPinger("mandrill", func(_ context.Context) error {
@@ -119,4 +131,28 @@ func main() {
 	if err := gr.Wait(); err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, http.ErrServerClosed) {
 		logrus.WithError(err).Fatal("service unexpectedly closed")
 	}
+}
+
+func mustGetBlockchain() blockchain.Blockchain {
+	cdc := app.MakeCodec()
+
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
+	config.Seal()
+
+	cfgFile := path.Join(viper.GetString(cli.HomeFlag), "config", "config.toml")
+	if _, err := os.Stat(cfgFile); err == nil {
+		viper.SetConfigFile(cfgFile)
+
+		if err := viper.ReadInConfig(); err != nil {
+			logrus.WithError(err).Fatal("failed to read config")
+		}
+	}
+
+	in := bufio.NewReader(os.Stdin)
+	cliCtx := clicontext.NewCLIContextWithInputAndFrom(in, viper.GetString(cliflags.FlagFrom)).
+		WithCodec(cdc).WithBroadcastMode(cliflags.BroadcastSync)
+	txBldr := auth.NewTxBuilderFromCLI(in).WithTxEncoder(utils.GetTxEncoder(cdc))
+
+	return blockchain.NewBlockchain(cliCtx, txBldr)
 }
