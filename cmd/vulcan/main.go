@@ -20,6 +20,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	mc "github.com/keighl/mandrill"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
