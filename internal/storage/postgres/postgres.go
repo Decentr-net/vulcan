@@ -7,63 +7,40 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
-const uniqueViolation = "unique_violation"
-
 type pg struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 // New creates new instance of pg.
 func New(db *sql.DB) storage.Storage {
 	return pg{
-		db: db,
+		db: sqlx.NewDb(db, "postgres"),
 	}
 }
 
-func (p pg) CreateRequest(ctx context.Context, owner, address, code string) error {
-	if _, err := p.db.ExecContext(ctx, `
-		INSERT INTO request VALUES($1, $2, $3, current_timestamp)
-	`, owner, address, code); err != nil {
-		if pqErr, isPqError := err.(*pq.Error); isPqError && pqErr.Code.Name() == uniqueViolation {
-			return storage.ErrAlreadyExists
-		}
-		return fmt.Errorf("failed to insert request: %w", err)
-	}
-
-	return nil
-}
-
-func (p pg) GetNotConfirmedAccountAddress(ctx context.Context, owner, code string) (string, error) {
-	var address string
-
-	if err := p.db.QueryRowContext(ctx, `
-		SELECT address FROM request WHERE owner=$1 AND code=$2 AND confirmed_at IS NULL
-	`, owner, code).Scan(&address); err != nil {
+func (p pg) GetRequest(ctx context.Context, owner, address string) (*storage.Request, error) {
+	var r storage.Request
+	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM request WHERE owner=$1 OR address=$2`, owner, address); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", storage.ErrNotFound
+			return nil, storage.ErrNotFound
 		}
-		return "", fmt.Errorf("failed to exec query: %w", err)
+		return nil, fmt.Errorf("failed to exec query: %w", err)
 	}
 
-	return address, nil
+	return &r, nil
 }
 
-func (p pg) MarkRequestConfirmed(ctx context.Context, owner string) error {
-	res, err := p.db.ExecContext(ctx, `
-		UPDATE request SET confirmed_at = current_timestamp WHERE owner = $1
-	`, owner)
-
-	if err != nil {
+func (p pg) SetRequest(ctx context.Context, r *storage.Request) error {
+	if _, err := sqlx.NamedExecContext(ctx, p.db, `
+		INSERT INTO request VALUES(:owner, :address, :code, :created_at, :confirmed_at) ON CONFLICT(address) DO
+			UPDATE SET code=EXCLUDED.code, created_at=EXCLUDED.created_at, confirmed_at=EXCLUDED.confirmed_at
+	`, r); err != nil {
 		return fmt.Errorf("failed to exec query: %w", err)
-	}
-
-	if c, _ := res.RowsAffected(); c == 0 {
-		return storage.ErrNotFound
 	}
 
 	return nil

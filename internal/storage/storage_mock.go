@@ -33,45 +33,31 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
-// CreateRequest mocks base method
-func (m *MockStorage) CreateRequest(ctx context.Context, owner, address, code string) error {
+// GetRequest mocks base method
+func (m *MockStorage) GetRequest(ctx context.Context, owner, address string) (*Request, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateRequest", ctx, owner, address, code)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateRequest indicates an expected call of CreateRequest
-func (mr *MockStorageMockRecorder) CreateRequest(ctx, owner, address, code interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRequest", reflect.TypeOf((*MockStorage)(nil).CreateRequest), ctx, owner, address, code)
-}
-
-// GetNotConfirmedAccountAddress mocks base method
-func (m *MockStorage) GetNotConfirmedAccountAddress(ctx context.Context, owner, code string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNotConfirmedAccountAddress", ctx, owner, code)
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "GetRequest", ctx, owner, address)
+	ret0, _ := ret[0].(*Request)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetNotConfirmedAccountAddress indicates an expected call of GetNotConfirmedAccountAddress
-func (mr *MockStorageMockRecorder) GetNotConfirmedAccountAddress(ctx, owner, code interface{}) *gomock.Call {
+// GetRequest indicates an expected call of GetRequest
+func (mr *MockStorageMockRecorder) GetRequest(ctx, owner, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotConfirmedAccountAddress", reflect.TypeOf((*MockStorage)(nil).GetNotConfirmedAccountAddress), ctx, owner, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequest", reflect.TypeOf((*MockStorage)(nil).GetRequest), ctx, owner, address)
 }
 
-// MarkRequestConfirmed mocks base method
-func (m *MockStorage) MarkRequestConfirmed(ctx context.Context, owner string) error {
+// SetRequest mocks base method
+func (m *MockStorage) SetRequest(ctx context.Context, r *Request) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkRequestConfirmed", ctx, owner)
+	ret := m.ctrl.Call(m, "SetRequest", ctx, r)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// MarkRequestConfirmed indicates an expected call of MarkRequestConfirmed
-func (mr *MockStorageMockRecorder) MarkRequestConfirmed(ctx, owner interface{}) *gomock.Call {
+// SetRequest indicates an expected call of SetRequest
+func (mr *MockStorageMockRecorder) SetRequest(ctx, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkRequestConfirmed", reflect.TypeOf((*MockStorage)(nil).MarkRequestConfirmed), ctx, owner)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRequest", reflect.TypeOf((*MockStorage)(nil).SetRequest), ctx, r)
 }
