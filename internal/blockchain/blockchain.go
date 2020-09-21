@@ -60,13 +60,24 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 		return fmt.Errorf("failed to prepare builder: %w", err)
 	}
 
-	txBytes, err := txBldr.BuildAndSign(b.ctx.GetFromName(), keys.DefaultKeyPass, []sdk.Msg{msg})
+	msgs := []sdk.Msg{msg}
+
+	if txBldr, err = utils.EnrichWithGas(txBldr, b.ctx, msgs); err != nil {
+		return errors.New("failed to calculate gas") // nolint: goerr113
+	}
+
+	txBytes, err := txBldr.BuildAndSign(b.ctx.GetFromName(), keys.DefaultKeyPass, msgs)
 	if err != nil {
 		return fmt.Errorf("failed to build and sign tx: %w", err)
 	}
 
-	if _, err = b.ctx.BroadcastTx(txBytes); err != nil {
+	resp, err := b.ctx.BroadcastTx(txBytes)
+	if err != nil {
 		return fmt.Errorf("failed to broadcast tx: %w", err)
+	}
+
+	if resp.Height == 0 {
+		return fmt.Errorf("failed to broadcast tx: %s", resp.String()) // nolint: goerr113
 	}
 
 	return nil

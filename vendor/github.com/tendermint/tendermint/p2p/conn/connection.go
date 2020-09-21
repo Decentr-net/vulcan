@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 
 	amino "github.com/tendermint/go-amino"
-
 	flow "github.com/tendermint/tendermint/libs/flowrate"
 	"github.com/tendermint/tendermint/libs/log"
 	tmmath "github.com/tendermint/tendermint/libs/math"

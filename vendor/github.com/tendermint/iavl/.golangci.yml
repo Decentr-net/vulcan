@@ -38,7 +38,6 @@ linters:
     # - whitespace
     # - wsl
     # - gocognit
-    - nolintlint
   disable:
 
 issues:

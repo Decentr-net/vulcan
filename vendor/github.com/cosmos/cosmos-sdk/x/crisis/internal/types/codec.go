@@ -9,7 +9,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgVerifyInvariant{}, "cosmos-sdk/MsgVerifyInvariant", nil)
 }
 
-// ModuleCdc is a generic sealed codec to be used throughout module
+// generic sealed codec to be used throughout module
 var ModuleCdc *codec.Codec
 
 func init() {

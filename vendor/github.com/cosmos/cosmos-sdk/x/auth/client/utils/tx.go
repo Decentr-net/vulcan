@@ -120,26 +120,26 @@ func EnrichWithGas(txBldr authtypes.TxBuilder, cliCtx context.CLIContext, msgs [
 }
 
 // CalculateGas simulates the execution of a transaction and returns
-// the simulation response obtained by the query and the adjusted gas amount.
+// both the estimate obtained by the query and the adjusted amount.
 func CalculateGas(
 	queryFunc func(string, []byte) ([]byte, int64, error), cdc *codec.Codec,
 	txBytes []byte, adjustment float64,
-) (sdk.SimulationResponse, uint64, error) {
+) (estimate, adjusted uint64, err error) {
 
 	// run a simulation (via /app/simulate query) to
 	// estimate gas and update TxBuilder accordingly
 	rawRes, _, err := queryFunc("/app/simulate", txBytes)
 	if err != nil {
-		return sdk.SimulationResponse{}, 0, err
+		return estimate, adjusted, err
 	}
 
-	simRes, err := parseQueryResponse(cdc, rawRes)
+	estimate, err = parseQueryResponse(cdc, rawRes)
 	if err != nil {
-		return sdk.SimulationResponse{}, 0, err
+		return
 	}
 
-	adjusted := adjustGasEstimate(simRes.GasUsed, adjustment)
-	return simRes, adjusted, nil
+	adjusted = adjustGasEstimate(estimate, adjustment)
+	return estimate, adjusted, nil
 }
 
 // PrintUnsignedStdTx builds an unsigned StdTx and prints it to os.Stdout.
@@ -261,28 +261,29 @@ func GetTxEncoder(cdc *codec.Codec) (encoder sdk.TxEncoder) {
 	return encoder
 }
 
-// simulateMsgs simulates the transaction and returns the simulation response and
-// the adjusted gas value.
-func simulateMsgs(txBldr authtypes.TxBuilder, cliCtx context.CLIContext, msgs []sdk.Msg) (sdk.SimulationResponse, uint64, error) {
+// nolint
+// SimulateMsgs simulates the transaction and returns the gas estimate and the adjusted value.
+func simulateMsgs(txBldr authtypes.TxBuilder, cliCtx context.CLIContext, msgs []sdk.Msg) (estimated, adjusted uint64, err error) {
 	txBytes, err := txBldr.BuildTxForSim(msgs)
 	if err != nil {
-		return sdk.SimulationResponse{}, 0, err
+		return
 	}
 
-	return CalculateGas(cliCtx.QueryWithData, cliCtx.Codec, txBytes, txBldr.GasAdjustment())
+	estimated, adjusted, err = CalculateGas(cliCtx.QueryWithData, cliCtx.Codec, txBytes, txBldr.GasAdjustment())
+	return
 }
 
 func adjustGasEstimate(estimate uint64, adjustment float64) uint64 {
 	return uint64(adjustment * float64(estimate))
 }
 
-func parseQueryResponse(cdc *codec.Codec, rawRes []byte) (sdk.SimulationResponse, error) {
-	var simRes sdk.SimulationResponse
-	if err := cdc.UnmarshalBinaryBare(rawRes, &simRes); err != nil {
-		return sdk.SimulationResponse{}, err
+func parseQueryResponse(cdc *codec.Codec, rawRes []byte) (uint64, error) {
+	var gasUsed uint64
+	if err := cdc.UnmarshalBinaryLengthPrefixed(rawRes, &gasUsed); err != nil {
+		return 0, err
 	}
 
-	return simRes, nil
+	return gasUsed, nil
 }
 
 // PrepareTxBuilder populates a TxBuilder in preparation for the build of a Tx.

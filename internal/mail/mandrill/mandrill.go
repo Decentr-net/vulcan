@@ -3,12 +3,14 @@ package mandrill
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Decentr-net/vulcan/internal/mail"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/keighl/mandrill"
 )
+
+const mandrillErrorStatus = "error"
 
 type sender struct {
 	config Config
@@ -52,8 +54,10 @@ func (s *sender) Send(_ context.Context, email, owner, code string) error {
 		return err
 	}
 
-	for _, resp := range responses {
-		spew.Dump(resp)
+	for _, v := range responses {
+		if v.Status == mandrillErrorStatus {
+			return fmt.Errorf("failed to send email(%s) to %s: %s", v.Id, v.Email, v.RejectionReason) // nolint: goerr113
+		}
 	}
 
 	return nil

@@ -24,6 +24,9 @@ const throttlingInterval = time.Minute
 // ErrAlreadyExists is returned when request is already created for requested email or address.
 var ErrAlreadyExists = fmt.Errorf("email or address is busy")
 
+// ErrAlreadyConfirmed is returned when request is already confirmed.
+var ErrAlreadyConfirmed = fmt.Errorf("already confirmed")
+
 // ErrNotFound is returned when request not found for owner/code pair.
 var ErrNotFound = fmt.Errorf("not found")
 
@@ -99,7 +102,7 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 	}
 
 	if req.ConfirmedAt.Valid {
-		return ErrAlreadyExists
+		return ErrAlreadyConfirmed
 	}
 
 	if req.Code != code {
