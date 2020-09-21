@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/crypto/bcrypt"
+	"github.com/tendermint/tendermint/crypto"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
 
@@ -591,7 +592,7 @@ func newRealPrompt(dir string, buf io.Reader) func(string) (string, error) {
 				continue
 			}
 
-			saltBytes := tmcrypto.CRandBytes(16)
+			saltBytes := crypto.CRandBytes(16)
 			passwordHash, err := bcrypt.GenerateFromPassword(saltBytes, []byte(pass), 2)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)

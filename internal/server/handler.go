@@ -57,9 +57,10 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.s.Register(r.Context(), req.Email.String(), req.Address); err != nil {
-		if errors.Is(err, service.ErrAlreadyExists) {
+		switch {
+		case errors.Is(err, service.ErrAlreadyExists):
 			writeError(w, http.StatusConflict, "email is busy")
-		} else {
+		default:
 			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to register request")
 		}
 		return
@@ -99,6 +100,10 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	//      description: no one register request was found
 	//      schema:
 	//        "$ref": "#/definitions/Error"
+	//   '409':
+	//      description: request is already confirmed
+	//      schema:
+	//        "$ref": "#/definitions/Error"
 	//   '500':
 	//      description: internal server error
 	//      schema:
@@ -107,9 +112,12 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	owner, code := chi.URLParam(r, "owner"), chi.URLParam(r, "code")
 
 	if err := s.s.Confirm(r.Context(), owner, code); err != nil {
-		if errors.Is(err, service.ErrNotFound) {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
 			writeError(w, http.StatusNotFound, "not found")
-		} else {
+		case errors.Is(err, service.ErrAlreadyConfirmed):
+			writeError(w, http.StatusConflict, "already confirmed")
+		default:
 			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to confirm registration")
 		}
 		return

@@ -10,6 +10,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgMultiSend{}, "cosmos-sdk/MsgMultiSend", nil)
 }
 
+// module codec
 var ModuleCdc *codec.Codec
 
 func init() {

@@ -163,7 +163,7 @@ func (app *BaseApp) EndBlock(req abci.RequestEndBlock) (res abci.ResponseEndBloc
 func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
-		return sdkerrors.ResponseCheckTx(err, 0, 0, app.trace)
+		return sdkerrors.ResponseCheckTx(err, 0, 0)
 	}
 
 	var mode runTxMode
@@ -181,7 +181,7 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 
 	gInfo, result, err := app.runTx(mode, req.Tx, tx)
 	if err != nil {
-		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+		return sdkerrors.ResponseCheckTx(err, gInfo.GasWanted, gInfo.GasUsed)
 	}
 
 	return abci.ResponseCheckTx{
@@ -201,12 +201,12 @@ func (app *BaseApp) CheckTx(req abci.RequestCheckTx) abci.ResponseCheckTx {
 func (app *BaseApp) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
 	tx, err := app.txDecoder(req.Tx)
 	if err != nil {
-		return sdkerrors.ResponseDeliverTx(err, 0, 0, app.trace)
+		return sdkerrors.ResponseDeliverTx(err, 0, 0)
 	}
 
 	gInfo, result, err := app.runTx(runTxModeDeliver, req.Tx, tx)
 	if err != nil {
-		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed, app.trace)
+		return sdkerrors.ResponseDeliverTx(err, gInfo.GasWanted, gInfo.GasUsed)
 	}
 
 	return abci.ResponseDeliverTx{
@@ -326,20 +326,12 @@ func handleQueryApp(app *BaseApp, path []string, req abci.RequestQuery) abci.Res
 				return sdkerrors.QueryResult(sdkerrors.Wrap(err, "failed to decode tx"))
 			}
 
-			gInfo, res, err := app.Simulate(txBytes, tx)
-			if err != nil {
-				return sdkerrors.QueryResult(sdkerrors.Wrap(err, "failed to simulate tx"))
-			}
-
-			simRes := sdk.SimulationResponse{
-				GasInfo: gInfo,
-				Result:  res,
-			}
+			gInfo, _, _ := app.Simulate(txBytes, tx)
 
 			return abci.ResponseQuery{
 				Codespace: sdkerrors.RootCodespace,
 				Height:    req.Height,
-				Value:     codec.Cdc.MustMarshalBinaryBare(simRes),
+				Value:     codec.Cdc.MustMarshalBinaryLengthPrefixed(gInfo.GasUsed),
 			}
 
 		case "version":

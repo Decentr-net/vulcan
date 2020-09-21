@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -9,21 +9,22 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
 
 	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/go-chi/chi"
+	"github.com/golang-migrate/migrate/v4"
+	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
 	mc "github.com/keighl/mandrill"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/cli"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/decentr/app"
@@ -41,13 +42,24 @@ var opts = struct {
 	Host string `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
 	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
 
-	Postgres string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
+	Postgres                   string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
+	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
+	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
+	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"scripts/migrations/postgres" description:"postgres migrations directory"`
 
 	MandrillAPIKey            string `long:"mandrill.api_key" env:"MANDRILL_API_KEY" description:"mandrillapp.com api key"`
 	MandrillEmailSubject      string `long:"mandrill.email_subject" env:"MANDRILL_API_KEY_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
 	MandrillEmailTemplateName string `long:"mandrill.email_template_id" env:"MANDRILL_API_KEY_EMAIL_TEMPLATE_ID" description:"sendpulse's template to be sent"`
 	MandrillFromName          string `long:"mandrill.from_name" env:"MANDRILL_API_KEY_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
 	MandrillFromEmail         string `long:"mandrill.from_email" env:"MANDRILL_API_KEY_FROM_NAME" default:"noreply@decentrdev.com" description:"email for emails sender"`
+
+	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"zeus.testnet.decentr.xyz:26656" description:"decentr node address"`
+	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes"`
+	BlockchainTxMemo             string `long:"blockchain.tx_memo" env:"BLOCKCHAIN_TX_MEMO" description:"decentr tx's memo'"`
+	BlockchainChainID            string `long:"blockchain.chain_id" env:"BLOCKCHAIN_CHAIN_ID" default:"testnet" description:"decentr chain id"`
+	BlockchainClientHome         string `long:"blockchain.client_home" env:"BLOCKCHAIN_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
+	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
+	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
@@ -79,13 +91,7 @@ func main() {
 
 	r := chi.NewMux()
 
-	db, err := sql.Open("postgres", opts.Postgres)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to create postgres connection")
-	}
-	if err := db.PingContext(context.Background()); err != nil {
-		logrus.WithError(err).Fatal("failed to ping postgres")
-	}
+	db := mustGetDB()
 
 	mandrillClient := mc.ClientWithKey(opts.MandrillAPIKey)
 
@@ -134,26 +140,82 @@ func main() {
 	}
 }
 
-func mustGetBlockchain() blockchain.Blockchain {
-	cdc := app.MakeCodec()
+func mustGetDB() *sql.DB {
+	db, err := sql.Open("postgres", opts.Postgres)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create postgres connection")
+	}
+	db.SetMaxOpenConns(opts.PostgresMaxOpenConnections)
+	db.SetMaxIdleConns(opts.PostgresMaxIdleConnections)
 
+	if err := db.PingContext(context.Background()); err != nil {
+		logrus.WithError(err).Fatal("failed to ping postgres")
+	}
+
+	driver, err := migratep.WithInstance(db, &migratep.Config{})
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create database migrate driver")
+	}
+
+	migrator, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", opts.PostgresMigrations), "postgres", driver)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create migrator")
+	}
+
+	switch v, d, err := migrator.Version(); err {
+	case nil:
+		logrus.Infof("database version %d with dirty state %t", v, d)
+	case migrate.ErrNilVersion:
+		logrus.Info("database version: nil")
+	default:
+		logrus.WithError(err).Fatal("failed to get version")
+	}
+
+	switch err := migrator.Up(); err {
+	case nil:
+		logrus.Info("database was migrated")
+	case migrate.ErrNoChange:
+		logrus.Info("database is up-to-date")
+	default:
+		logrus.WithError(err).Fatal("failed to migrate db")
+	}
+
+	return db
+}
+
+func mustGetBlockchain() blockchain.Blockchain {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
 	config.Seal()
 
-	cfgFile := path.Join(viper.GetString(cli.HomeFlag), "config", "config.toml")
-	if _, err := os.Stat(cfgFile); err == nil {
-		viper.SetConfigFile(cfgFile)
+	cdc := app.MakeCodec()
 
-		if err := viper.ReadInConfig(); err != nil {
-			logrus.WithError(err).Fatal("failed to read config")
-		}
+	kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
+		opts.BlockchainKeyringBackend,
+		opts.BlockchainClientHome,
+		bytes.NewBufferString(opts.BlockchainKeyringPromptInput),
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create keyring")
 	}
 
-	in := bufio.NewReader(os.Stdin)
-	cliCtx := clicontext.NewCLIContextWithInputAndFrom(in, viper.GetString(cliflags.FlagFrom)).
-		WithCodec(cdc).WithBroadcastMode(cliflags.BroadcastSync)
-	txBldr := auth.NewTxBuilderFromCLI(in).WithTxEncoder(utils.GetTxEncoder(cdc))
+	acc, err := kb.Get(opts.BlockchainFrom)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to get blockchain account info")
+	}
+
+	cliCtx := clicontext.NewCLIContext().
+		WithCodec(cdc).
+		WithBroadcastMode(cliflags.BroadcastBlock).
+		WithNodeURI(opts.BlockchainNode).
+		WithFrom(acc.GetName()).
+		WithFromName(acc.GetName()).
+		WithFromAddress(acc.GetAddress()).
+		WithChainID(opts.BlockchainChainID)
+	cliCtx.Keybase = kb
+
+	txBldr := auth.NewTxBuilder(utils.GetTxEncoder(cdc), 0, 0, 0, 1.0, false,
+		opts.BlockchainChainID, opts.BlockchainTxMemo, nil, nil).WithKeybase(kb)
 
 	return blockchain.NewBlockchain(cliCtx, txBldr)
 }

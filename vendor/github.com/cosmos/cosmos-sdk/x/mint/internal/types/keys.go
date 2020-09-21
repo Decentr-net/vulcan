@@ -1,14 +1,14 @@
 package types
 
-// MinterKey is used for the keeper store
+// the one key to use for the keeper store
 var MinterKey = []byte{0x00}
 
 // nolint
 const (
-	// ModuleName
+	// module name
 	ModuleName = "mint"
 
-	// DefaultParamspace params keeper
+	// default paramspace for params keeper
 	DefaultParamspace = ModuleName
 
 	// StoreKey is the default store key for mint
