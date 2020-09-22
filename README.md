@@ -1,7 +1,9 @@
 # Vulcan
 ![img](https://img.shields.io/docker/cloud/build/decentr/vulcan.svg)
 
-Vulcan provides Decentr off-chain functionality. The Vulcan uses decentrcli home for sending messages to blockchain.
+Vulcan provides Decentr off-chain functionality. The Vulcan uses decentrcli home for sending messages to blockchain.  
+You should provide decentrcli home directory to this service. The Vulcan will use it for transactions signing. 
+
 
 ## Run
 ### Docker
@@ -10,18 +12,24 @@ Vulcan provides Decentr off-chain functionality. The Vulcan uses decentrcli home
 make image
 docker run -it --rm -e "HTTP_HOST=0.0.0.0" -e "HTTP_PORT=7070" -e "LOG_LEVEL=debug" -p "7080:7070" vulcan-local
 ```
-#### Docker Compose
-```
-make image
-docker-compose -f scripts/docker-compose.yml up -d
-```
 ### From source
 `will be fixed later`
 ```
 go run cmd/vulcan/main.go \
     --http.host=0.0.0.0 \
     --http.port=8080 \
-    --log.level=debug
+    --log.level=debug \
+    --postgres="host=localhost port=5432 user=postgres password=root sslmode=disable" \
+    --posttres.migrations="scripts/migrations/postgres" \
+    --mandrill.api_key="MANDRILL_SUCCESS" \
+    --mandrill.email_subject="Email confirmation" \
+    --mandrill.email_template_name="confirmation" \
+    --mandrill.from_name="decentr noreply" \
+    --mandrill.from_email="noreply@decentr.xyz" \
+    --blockchain.node="zeus.testnet.decentr.xyz:26656" \
+    --blockchain.from="zeus" \
+    --blockchain.tx_memo="you're beautiful" \
+    --blockchain.initial_stake=1
 ```
 
 ## Parameters
@@ -47,7 +55,6 @@ go run cmd/vulcan/main.go \
 | blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | decentrcli keyring prompt input
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
 | blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1 | stakes count to be sent
-
 
 ## Development
 ### Makefile

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/lib/pq"
@@ -18,6 +19,8 @@ import (
 
 const codeSize = 16
 const throttlingInterval = time.Minute
+
+var plustPartRegexp = regexp.MustCompile(`\+.+\@`) // nolint
 
 //go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
 
@@ -62,7 +65,7 @@ func New(storage storage.Storage, sender mail.Sender, b blockchain.Blockchain, i
 
 func (s *service) Register(ctx context.Context, email, address string) error {
 	request := storage.Request{
-		Owner:     getEmailHash(email),
+		Owner:     getEmailHash(truncatePlusPart(email)),
 		Address:   address,
 		Code:      randomCode(),
 		CreatedAt: time.Now(),
@@ -123,6 +126,10 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 	}
 
 	return nil
+}
+
+func truncatePlusPart(email string) string {
+	return plustPartRegexp.ReplaceAllString(email, "@")
 }
 
 func getEmailHash(email string) string {

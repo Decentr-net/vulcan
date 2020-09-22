@@ -207,3 +207,8 @@ func Test_randomCode(t *testing.T) {
 	assert.Len(t, c, codeSize*2)
 	assert.NotEqual(t, c, randomCode())
 }
+
+func Test_truncatePlusPart(t *testing.T) {
+	assert.Equal(t, "email@email.com", truncatePlusPart("email+acc1@email.com"))
+	assert.Equal(t, "email@email.com", truncatePlusPart("email@email.com"))
+}
