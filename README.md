@@ -19,7 +19,7 @@ go run cmd/vulcan/main.go \
     --http.port=8080 \
     --log.level=debug \
     --postgres="host=localhost port=5432 user=postgres password=root sslmode=disable" \
-    --posttres.migrations="scripts/migrations/postgres" \
+    --postgres.migrations="scripts/migrations/postgres" \
     --mandrill.api_key="MANDRILL_SUCCESS" \
     --mandrill.email_subject="Email confirmation" \
     --mandrill.email_template_name="confirmation" \
@@ -39,7 +39,7 @@ go run cmd/vulcan/main.go \
 | postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | postgres dsn
 | postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0  | postgres maximal open connections count, 0 means unlimited
 | postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5  | postgres maximal idle connections count
-| postgres.migrations    | POSTGRES_MIGRATIONS    | scripts/migrations/postgres | postgres migrations directory
+| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | postgres migrations directory
 | mandrill.api_key    | MANDRILL_API_KEY   |   |  mandrillapp.com api key
 | mandrill.email_subject    | MANDRILL_EMAIL_SUBJECT    | decentr.xyz - Verification  | subject for emails
 | mandrill.email_template_name    | MANDRILL_EMAIL_TEMPLATE_NAME    |   | mandrill's template to be sent
