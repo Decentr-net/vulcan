@@ -13,7 +13,6 @@ make image
 docker run -it --rm -e "HTTP_HOST=0.0.0.0" -e "HTTP_PORT=7070" -e "LOG_LEVEL=debug" -p "7080:7070" vulcan-local
 ```
 ### From source
-`will be fixed later`
 ```
 go run cmd/vulcan/main.go \
     --http.host=0.0.0.0 \
