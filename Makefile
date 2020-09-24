@@ -21,7 +21,7 @@ default: build
 .PHONY: build
 build:
 	@echo BUILDING $(OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w" -o $(OUT) $(MAIN_PKG)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w -X github.com/cosmos/cosmos-sdk/version.Name=decentr" -o $(OUT) $(MAIN_PKG)
 	@echo DONE
 
 .PHONY: linux
@@ -30,7 +30,7 @@ linux: export GOARCH := amd64
 linux: LINUX_OUT := $(OUT)-$(GOOS)-$(GOARCH)
 linux:
 	@echo BUILDING $(LINUX_OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w" -o $(LINUX_OUT) $(MAIN_PKG)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "-s -w -X github.com/cosmos/cosmos-sdk/version.Name=decentr" -o $(LINUX_OUT) $(MAIN_PKG)
 	@echo DONE
 
 .PHONY: image
