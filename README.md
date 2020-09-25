@@ -54,6 +54,7 @@ go run cmd/vulcan/main.go \
 | blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | decentrcli keyring prompt input
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
 | blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1 | stakes count to be sent
+| confirmation.redirection_url | CONFIRMATION_REDIRECTION_URL | https://decentr.xyz | user will be sent to this url after successful confirmation
 
 ## Development
 ### Makefile

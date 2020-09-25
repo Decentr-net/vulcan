@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -63,7 +64,8 @@ var opts = struct {
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
-	InitialStakes int64 `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1" description:"stakes count to be sent"`
+	InitialStakes              int64  `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1" description:"stakes count to be sent"`
+	ConfirmationRedirectionURL string `long:"confirmation.redirection_url" env:"CONFIRMATION_REDIRECTION_URL" default:"https://decentr.xyz" description:"user will be sent to this url after successful confirmation"`
 }{}
 
 var errTerminated = errors.New("terminated")
@@ -74,6 +76,10 @@ func main() {
 	parser.LongDescription = "Vulcan"
 
 	_, err := parser.Parse()
+
+	if _, err := url.Parse(opts.ConfirmationRedirectionURL); err != nil {
+		logrus.WithError(err).Fatal("failed to parse confirmation.redirection_url")
+	}
 
 	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
@@ -101,7 +107,7 @@ func main() {
 		FromEmail:    opts.MandrillFromEmail,
 	})
 
-	server.SetupRouter(service.New(postgres.New(db), mailSender, mustGetBlockchain(), opts.InitialStakes), r)
+	server.SetupRouter(service.New(postgres.New(db), mailSender, mustGetBlockchain(), opts.InitialStakes), r, opts.ConfirmationRedirectionURL)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
 		health.SubjectPinger("mandrill", func(_ context.Context) error {

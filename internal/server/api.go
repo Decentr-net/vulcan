@@ -14,11 +14,13 @@ var (
 )
 
 // Error ...
+// swagger:model
 type Error struct {
 	Error string `json:"error"`
 }
 
 // EmptyResponse ...
+// swagger:model
 type EmptyResponse struct{}
 
 // RegisterRequest ...

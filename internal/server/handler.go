@@ -29,19 +29,19 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	//     '$ref': '#/definitions/RegisterRequest'
 	// responses:
 	//   '200':
-	//     description: confirmation link was sent
+	//     description: confirmation link was sent.
 	//     schema:
 	//       "$ref": "#/definitions/EmptyResponse"
 	//   '400':
-	//      description: bad request
+	//      description: bad request.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 	//   '409':
-	//      description: wallet has already created for this email
+	//      description: wallet has already created for this email.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 	//   '500':
-	//      description: internal server error
+	//      description: internal server error.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 
@@ -70,7 +70,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 }
 
 // confirm confirms registration and creates wallet.
-func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
+func (s *server) confirm(redirectionURL string) func(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /confirm/{owner}/{code} Vulcan Confirm
 	//
 	// Confirms registration and sends stakes.
@@ -92,36 +92,38 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	//   required: true
 	//   type: string
 	// responses:
-	//   '200':
-	//     description: stakes were sent
-	//     schema:
-	//       "$ref": "#/definitions/ConfirmResponse"
+	//   '301':
+	//     description: stakes were sent. user will be redirected.
 	//   '404':
-	//      description: no one register request was found
+	//      description: no one register request was found.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 	//   '409':
-	//      description: request is already confirmed
+	//      description: request is already confirmed.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 	//   '500':
-	//      description: internal server error
+	//      description: internal server error.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 
-	owner, code := chi.URLParam(r, "owner"), chi.URLParam(r, "code")
+	return func(w http.ResponseWriter, r *http.Request) {
+		owner, code := chi.URLParam(r, "owner"), chi.URLParam(r, "code")
 
-	if err := s.s.Confirm(r.Context(), owner, code); err != nil {
-		switch {
-		case errors.Is(err, service.ErrNotFound):
-			writeError(w, http.StatusNotFound, "not found")
-		case errors.Is(err, service.ErrAlreadyConfirmed):
-			writeError(w, http.StatusConflict, "already confirmed")
-		default:
-			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to confirm registration")
+		if err := s.s.Confirm(r.Context(), owner, code); err != nil {
+			switch {
+			case errors.Is(err, service.ErrNotFound):
+				writeError(w, http.StatusNotFound, "not found")
+			case errors.Is(err, service.ErrAlreadyConfirmed):
+				writeError(w, http.StatusConflict, "already confirmed")
+			default:
+				writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to confirm registration")
+			}
+			return
 		}
-		return
-	}
 
-	writeOK(w, http.StatusOK, EmptyResponse{})
+		w.Header().Set("Location", redirectionURL)
+		w.WriteHeader(http.StatusMovedPermanently)
+		writeOK(w, http.StatusOK, EmptyResponse{})
+	}
 }

@@ -46,20 +46,23 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "stakes were sent",
-            "schema": {
-              "$ref": "#/definitions/ConfirmResponse"
-            }
+          "301": {
+            "description": "stakes were sent. user will be redirected."
           },
           "404": {
-            "description": "no one register request was found",
+            "description": "no one register request was found.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "request is already confirmed.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
           },
           "500": {
-            "description": "internal server error",
+            "description": "internal server error.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -92,25 +95,25 @@
         ],
         "responses": {
           "200": {
-            "description": "confirmation link was sent",
+            "description": "confirmation link was sent.",
             "schema": {
               "$ref": "#/definitions/EmptyResponse"
             }
           },
           "400": {
-            "description": "bad request",
+            "description": "bad request.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
           },
           "409": {
-            "description": "wallet has already created for this email",
+            "description": "wallet has already created for this email.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
           },
           "500": {
-            "description": "internal server error",
+            "description": "internal server error.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -120,6 +123,22 @@
     }
   },
   "definitions": {
+    "EmptyResponse": {
+      "type": "object",
+      "title": "EmptyResponse ...",
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "Error": {
+      "type": "object",
+      "title": "Error ...",
+      "properties": {
+        "error": {
+          "type": "string",
+          "x-go-name": "Error"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
     "RegisterRequest": {
       "type": "object",
       "title": "RegisterRequest ...",
