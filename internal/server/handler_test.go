@@ -119,8 +119,7 @@ func Test_Confirm(t *testing.T) {
 		{
 			name:       "success",
 			serviceErr: nil,
-			rcode:      http.StatusOK,
-			rdata:      `{}`,
+			rcode:      http.StatusMovedPermanently,
 			rlog:       "",
 		},
 		{
@@ -165,13 +164,19 @@ func Test_Confirm(t *testing.T) {
 			})
 
 			s := server{s: srv}
-			router.Get("/v1/confirm/{owner}/{code}", s.confirm)
+			router.Get("/v1/confirm/{owner}/{code}", s.confirm("https://decentr.xyz"))
 
 			router.ServeHTTP(w, r)
 
 			assert.True(t, strings.Contains(b.String(), tc.rlog))
 			assert.Equal(t, tc.rcode, w.Code)
-			assert.JSONEq(t, tc.rdata, w.Body.String())
+			if tc.rdata != "" {
+				assert.JSONEq(t, tc.rdata, w.Body.String())
+			}
+
+			if tc.rcode == http.StatusMovedPermanently {
+				assert.Equal(t, "https://decentr.xyz", w.Header().Get("Location"))
+			}
 		})
 	}
 }
