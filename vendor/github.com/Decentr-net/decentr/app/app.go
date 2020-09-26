@@ -6,9 +6,6 @@ import (
 	"os"
 
 	"github.com/Decentr-net/cerberus/pkg/api"
-	"github.com/Decentr-net/decentr/x/pdv"
-	"github.com/Decentr-net/decentr/x/profile"
-	"github.com/Decentr-net/decentr/x/token"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -28,13 +25,17 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
+
+	"github.com/Decentr-net/decentr/x/pdv"
+	"github.com/Decentr-net/decentr/x/profile"
+	"github.com/Decentr-net/decentr/x/token"
 )
 
 const appName = "decentr"
 
 const (
 	// DefaultBondDenom is the default bond denomination
-	DefaultBondDenom = "dec"
+	DefaultBondDenom = "udec"
 
 	// PrefixAccount is the prefix for account keys
 	PrefixAccount = "acc"
@@ -273,7 +274,7 @@ func NewDecentrApp(
 		pdv.NewAppModule(cerberus, app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -308,13 +309,7 @@ func NewDecentrApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(
-		auth.NewAnteHandler(
-			app.accountKeeper,
-			app.supplyKeeper,
-			auth.DefaultSigVerificationGasConsumer,
-		),
-	)
+	app.SetAnteHandler(NewAnteHandler(app.accountKeeper, app.supplyKeeper))
 
 	// initialize stores
 	app.MountKVStores(keys)
@@ -395,6 +390,10 @@ func GetMaccPerms() map[string][]string {
 // "stake" with "dec".
 type stakingAppModuleDecorator struct {
 	staking.AppModule
+}
+
+func NewStakingAppModuleDecorator(keeper staking.Keeper, accountKeeper auth.AccountKeeper, supplyKeeper supply.Keeper) *stakingAppModuleDecorator {
+	return &stakingAppModuleDecorator{staking.NewAppModule(keeper, accountKeeper, supplyKeeper)}
 }
 
 func (a stakingAppModuleDecorator) DefaultGenesis() json.RawMessage {

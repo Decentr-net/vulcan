@@ -24,11 +24,11 @@ go run cmd/vulcan/main.go \
     --mandrill.email_subject="Email confirmation" \
     --mandrill.email_template_name="confirmation" \
     --mandrill.from_name="decentr noreply" \
-    --mandrill.from_email="noreply@decentr.xyz" \
+    --mandrill.from_email="noreply@decentrdev.com" \
     --blockchain.node="zeus.testnet.decentr.xyz:26656" \
     --blockchain.from="zeus" \
     --blockchain.tx_memo="you're beautiful" \
-    --blockchain.initial_stake=1
+    --blockchain.initial_stake=1000000
 ```
 
 ## Parameters
@@ -53,8 +53,8 @@ go run cmd/vulcan/main.go \
 | blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | decentrcli keyring backend
 | blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | decentrcli keyring prompt input
 | log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
-| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1 | stakes count to be sent
-| confirmation.redirection_url | CONFIRMATION_REDIRECTION_URL | https://decentr.xyz | user will be sent to this url after successful confirmation
+| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1000000 | stakes count to be sent, 1DEC = 1000000 uDEC
+| confirmation.redirection_url | CONFIRMATION_REDIRECTION_URL | https://decentr.net | user will be sent to this url after successful confirmation
 
 ## Development
 ### Makefile
