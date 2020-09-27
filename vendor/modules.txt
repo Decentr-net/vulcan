@@ -5,7 +5,7 @@ github.com/ChainSafe/go-schnorrkel
 # github.com/Decentr-net/cerberus v1.0.4
 github.com/Decentr-net/cerberus/pkg/api
 github.com/Decentr-net/cerberus/pkg/schema
-# github.com/Decentr-net/decentr v1.0.2
+# github.com/Decentr-net/decentr v1.0.3
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/x/pdv

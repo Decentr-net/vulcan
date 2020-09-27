@@ -19,7 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/go-chi/chi"
-	"github.com/golang-migrate/migrate/v4"
+	migrate "github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
@@ -64,8 +64,8 @@ var opts = struct {
 
 	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 
-	InitialStakes              int64  `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1" description:"stakes count to be sent"`
-	ConfirmationRedirectionURL string `long:"confirmation.redirection_url" env:"CONFIRMATION_REDIRECTION_URL" default:"https://decentr.xyz" description:"user will be sent to this url after successful confirmation"`
+	InitialStakes              int64  `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
+	ConfirmationRedirectionURL string `long:"confirmation.redirection_url" env:"CONFIRMATION_REDIRECTION_URL" default:"https://decentr.net" description:"user will be sent to this url after successful confirmation"`
 }{}
 
 var errTerminated = errors.New("terminated")

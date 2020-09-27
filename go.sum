@@ -46,6 +46,8 @@ github.com/Decentr-net/cerberus v1.0.4 h1:fWwS4Cu1hNXwImik3QpxLIIYhu6KjOA+ys2Ysi
 github.com/Decentr-net/cerberus v1.0.4/go.mod h1:+MDhWp2TZs7+fdr5jYWFw+bAo/ciTmyTpArTEtbUHZ0=
 github.com/Decentr-net/decentr v1.0.2 h1:T6yfHtUxd50f+gSO4GBvkOHFXvkGjzmd8fjsErMorNI=
 github.com/Decentr-net/decentr v1.0.2/go.mod h1:HGHj//UT5bjSlAaM81oJ+K5XwvMqaVbXGwlxKUmYlqM=
+github.com/Decentr-net/decentr v1.0.3 h1:wVoacP/czWExV4vrtVGhiK0083M1n92Dazhtla4hKAU=
+github.com/Decentr-net/decentr v1.0.3/go.mod h1:HGHj//UT5bjSlAaM81oJ+K5XwvMqaVbXGwlxKUmYlqM=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Microsoft/go-winio v0.4.11 h1:zoIOcVf0xPN1tnMVbTtEdI+P8OofVk3NObnwOQ6nK2Q=
 github.com/Microsoft/go-winio v0.4.11/go.mod h1:VhR8bwka0BXejwEJY73c50VrPtXAaKcyvVC4A4RozmA=
