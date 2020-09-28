@@ -49,10 +49,10 @@ var opts = struct {
 	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"migrations/postgres" description:"postgres migrations directory"`
 
 	MandrillAPIKey            string `long:"mandrill.api_key" env:"MANDRILL_API_KEY" description:"mandrillapp.com api key"`
-	MandrillEmailSubject      string `long:"mandrill.email_subject" env:"MANDRILL_API_KEY_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
-	MandrillEmailTemplateName string `long:"mandrill.email_template_id" env:"MANDRILL_API_KEY_EMAIL_TEMPLATE_ID" description:"sendpulse's template to be sent"`
-	MandrillFromName          string `long:"mandrill.from_name" env:"MANDRILL_API_KEY_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
-	MandrillFromEmail         string `long:"mandrill.from_email" env:"MANDRILL_API_KEY_FROM_NAME" default:"noreply@decentrdev.com" description:"email for emails sender"`
+	MandrillEmailSubject      string `long:"mandrill.email_subject" env:"MANDRILL_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
+	MandrillEmailTemplateName string `long:"mandrill.email_template_name" env:"MANDRILL_EMAIL_TEMPLATE_NAME" description:"mandrill's template to be sent"`
+	MandrillFromName          string `long:"mandrill.from_name" env:"MANDRILL_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
+	MandrillFromEmail         string `long:"mandrill.from_email" env:"MANDRILL_FROM_EMAIL" default:"noreply@decentrdev.com" description:"email for emails sender"`
 
 	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"zeus.testnet.decentr.xyz:26656" description:"decentr node address"`
 	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes"`
