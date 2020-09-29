@@ -37,7 +37,7 @@ type server struct {
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, confirmationRedirectionURL string) {
+func SetupRouter(s service.Service, r chi.Router) {
 	r.Use(
 		swaggerMiddleware,
 		loggerMiddleware,
@@ -52,7 +52,7 @@ func SetupRouter(s service.Service, r chi.Router, confirmationRedirectionURL str
 	}
 
 	r.Post("/v1/register", srv.register)
-	r.Get("/v1/confirm/{owner}/{code}", srv.confirm(confirmationRedirectionURL))
+	r.Post("/v1/confirm", srv.confirm)
 }
 
 func getLogger(ctx context.Context) logrus.FieldLogger {

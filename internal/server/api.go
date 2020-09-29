@@ -31,6 +31,13 @@ type RegisterRequest struct {
 	Address string       `json:"address"`
 }
 
+// ConfirmRequest ...
+// swagger:model
+type ConfirmRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
 func (r RegisterRequest) validate() error {
 	if !strfmt.IsEmail(r.Email.String()) {
 		return fmt.Errorf("%w: invalid email", errInvalidRequest)

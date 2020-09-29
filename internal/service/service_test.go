@@ -18,7 +18,7 @@ import (
 
 var (
 	errTest     = fmt.Errorf("test")
-	testOwner   = "be0e9f2c97c4df30483a97ab305a4046"
+	testOwner   = "9790d13a4778f68308977117dd470bb4"
 	testAddress = "decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"
 	testEmail   = "decentr@decentr.xyz"
 	testCode    = "1234"
@@ -106,7 +106,7 @@ func TestService_Register(t *testing.T) {
 				})
 
 				if tc.setErr == nil {
-					sender.EXPECT().SendVerificationEmail(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
+					sender.EXPECT().SendVerificationEmail(ctx, testEmail, gomock.Any()).DoAndReturn(func(_ context.Context, _, c string) error {
 						assert.Equal(t, code, c)
 						return tc.senderErr
 					})
@@ -195,7 +195,7 @@ func TestService_Confirm(t *testing.T) {
 				}
 			}
 
-			err := s.Confirm(ctx, testOwner, testCode)
+			err := s.Confirm(ctx, testEmail, testCode)
 
 			assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
 		})
@@ -209,7 +209,7 @@ func Test_getEmailHash(t *testing.T) {
 func Test_randomCode(t *testing.T) {
 	c := randomCode()
 
-	assert.Len(t, c, codeSize*2)
+	assert.Len(t, c, codeBytesSize*2)
 	assert.NotEqual(t, c, randomCode())
 }
 

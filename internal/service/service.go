@@ -17,7 +17,7 @@ import (
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
-const codeSize = 16
+const codeBytesSize = 3
 const throttlingInterval = time.Minute
 
 var plustPartRegexp = regexp.MustCompile(`\+.+\@`) // nolint
@@ -35,8 +35,6 @@ var ErrNotFound = fmt.Errorf("not found")
 
 // ErrTooManyAttempts is returned when throttling interval didn't pass.
 var ErrTooManyAttempts = fmt.Errorf("too many attempts")
-
-const salt = "decentr-vulcan"
 
 // Service ...
 type Service interface {
@@ -89,15 +87,15 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if err := s.sender.SendVerificationEmail(ctx, email, request.Owner, request.Code); err != nil {
+	if err := s.sender.SendVerificationEmail(ctx, email, request.Code); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	return nil
 }
 
-func (s *service) Confirm(ctx context.Context, owner, code string) error {
-	req, err := s.storage.GetRequest(ctx, owner, "")
+func (s *service) Confirm(ctx context.Context, email, code string) error {
+	req, err := s.storage.GetRequest(ctx, getEmailHash(truncatePlusPart(email)), "")
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
@@ -114,7 +112,7 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 	}
 
 	if err := s.bc.SendStakes(req.Address, s.initialStakes); err != nil {
-		return fmt.Errorf("failed to send stakes to %s: %w", owner, err)
+		return fmt.Errorf("failed to send stakes to %s: %w", req.Address, err)
 	}
 
 	s.sender.SendWelcomeEmailAsync(ctx, req.Email)
@@ -136,12 +134,12 @@ func truncatePlusPart(email string) string {
 }
 
 func getEmailHash(email string) string {
-	b := md5.Sum([]byte(salt + email)) // nolint:gosec
+	b := md5.Sum([]byte(email)) // nolint:gosec
 	return hex.EncodeToString(b[:])
 }
 
 func randomCode() string {
-	b := make([]byte, codeSize)
+	b := make([]byte, codeBytesSize)
 	_, _ = rand.Read(b)
 
 	return hex.EncodeToString(b)
