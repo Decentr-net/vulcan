@@ -24,13 +24,13 @@ func createSender(apiKey string) mail.Sender {
 func TestSender_SendVerificationEmailSend(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		sender := createSender("SANDBOX_SUCCESS")
-		err := sender.SendVerificationEmail(context.Background(), "test@decentrdev.com", "owner", "this is a code")
+		err := sender.SendVerificationEmail(context.Background(), "test@decentrdev.com", "this is a code")
 		assert.NoError(t, err)
 	})
 
 	t.Run("error", func(t *testing.T) {
 		sender := createSender("SANDBOX_ERROR")
-		err := sender.SendVerificationEmail(context.Background(), "test@decentrdev.com", "owner", "this is a code")
+		err := sender.SendVerificationEmail(context.Background(), "test@decentrdev.com", "this is a code")
 		assert.Error(t, err)
 	})
 }

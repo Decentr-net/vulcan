@@ -16,7 +16,7 @@
   },
   "basePath": "/v1",
   "paths": {
-    "/confirm/{owner}/{code}": {
+    "/confirm": {
       "get": {
         "consumes": [
           "application/json"
@@ -31,23 +31,17 @@
         "operationId": "Confirm",
         "parameters": [
           {
-            "type": "string",
-            "description": "email hash",
-            "name": "owner",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "description": "confirmation code",
             "name": "code",
-            "in": "path",
-            "required": true
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ConfirmRequest"
+            }
           }
         ],
         "responses": {
-          "301": {
-            "description": "stakes were sent. user will be redirected."
+          "200": {
+            "description": "stakes were sent"
           },
           "404": {
             "description": "no one register request was found.",
@@ -123,6 +117,24 @@
     }
   },
   "definitions": {
+    "ConfirmRequest": {
+      "type": "object",
+      "title": "ConfirmRequest ...",
+      "required": [
+        "owner"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "x-go-name": "Code"
+        },
+        "owner": {
+          "type": "string",
+          "x-go-name": "Owner"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
     "EmptyResponse": {
       "type": "object",
       "title": "EmptyResponse ...",

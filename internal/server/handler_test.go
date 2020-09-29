@@ -119,7 +119,8 @@ func Test_Confirm(t *testing.T) {
 		{
 			name:       "success",
 			serviceErr: nil,
-			rcode:      http.StatusMovedPermanently,
+			rcode:      http.StatusOK,
+			rdata:      "{}",
 			rlog:       "",
 		},
 		{
@@ -143,7 +144,7 @@ func Test_Confirm(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			b, w, r := newTestParameters(t, http.MethodGet, "v1/confirm/1234/5678", nil)
+			b, w, r := newTestParameters(t, http.MethodPost, "v1/confirm", []byte(`{"email":"e@mail.com", "code":"5678"}`))
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -151,7 +152,7 @@ func Test_Confirm(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
-				srv.EXPECT().Confirm(gomock.Not(gomock.Nil()), "1234", "5678").Return(tc.serviceErr)
+				srv.EXPECT().Confirm(gomock.Not(gomock.Nil()), "e@mail.com", "5678").Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()
@@ -164,19 +165,13 @@ func Test_Confirm(t *testing.T) {
 			})
 
 			s := server{s: srv}
-			router.Get("/v1/confirm/{owner}/{code}", s.confirm("https://decentr.xyz"))
+			router.Post("/v1/confirm", s.confirm)
 
 			router.ServeHTTP(w, r)
 
 			assert.True(t, strings.Contains(b.String(), tc.rlog))
 			assert.Equal(t, tc.rcode, w.Code)
-			if tc.rdata != "" {
-				assert.JSONEq(t, tc.rdata, w.Body.String())
-			}
-
-			if tc.rcode == http.StatusMovedPermanently {
-				assert.Equal(t, "https://decentr.xyz", w.Header().Get("Location"))
-			}
+			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})
 	}
 }

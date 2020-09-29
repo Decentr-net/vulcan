@@ -41,7 +41,7 @@ func New(client *mandrill.Client, config *Config) mail.Sender {
 }
 
 // SendVerificationEmail sends an email to account owner.
-func (s *sender) SendVerificationEmail(_ context.Context, email, owner, code string) error {
+func (s *sender) SendVerificationEmail(_ context.Context, email, code string) error {
 	message := mandrill.Message{
 		Subject:   s.config.VerificationSubject,
 		FromEmail: s.config.FromEmail,
@@ -51,8 +51,7 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, owner, code str
 	message.AddRecipient(email, "", "to")
 
 	responses, err := s.client.MessagesSendTemplate(&message, s.config.VerificationTemplateName, map[string]interface{}{
-		"owner": owner,
-		"code":  code,
+		"code": code,
 	})
 
 	if err != nil {
