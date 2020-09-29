@@ -125,6 +125,7 @@ func TestPg_CreateRequest(t *testing.T) {
 
 	r := &storage.Request{
 		Owner:       "owner",
+		Email:       "e@mail.com",
 		Address:     "address",
 		Code:        "code",
 		CreatedAt:   time.Now().UTC().Truncate(time.Second),
@@ -156,6 +157,7 @@ func TestPg_GetRequest(t *testing.T) {
 
 	r := &storage.Request{
 		Owner:       "owner",
+		Email:       "e@mail.com",
 		Address:     "address",
 		Code:        "code",
 		CreatedAt:   time.Now().UTC().Truncate(time.Second),
@@ -179,6 +181,7 @@ func TestPg_GetRequest(t *testing.T) {
 
 func equalRequest(t *testing.T, expected, actual *storage.Request) {
 	assert.Equal(t, expected.Owner, actual.Owner)
+	assert.Equal(t, expected.Email, actual.Email)
 	assert.Equal(t, expected.Address, actual.Address)
 	assert.Equal(t, expected.Code, actual.Code)
 	assert.Equal(t, expected.CreatedAt.Unix(), actual.CreatedAt.Unix())

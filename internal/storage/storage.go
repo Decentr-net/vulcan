@@ -16,6 +16,7 @@ var ErrNotFound = fmt.Errorf("not found")
 // Request ...
 type Request struct {
 	Owner       string      `db:"owner"`
+	Email       string      `db:"email"`
 	Address     string      `db:"address"`
 	Code        string      `db:"code"`
 	CreatedAt   time.Time   `db:"created_at"`

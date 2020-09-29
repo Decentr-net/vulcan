@@ -9,5 +9,6 @@ import (
 
 // Sender is interface for sending the emails.
 type Sender interface {
-	Send(ctx context.Context, email, owner, code string) error
+	SendVerificationEmail(ctx context.Context, email, owner, code string) error
+	SendWelcomeEmailAsync(ctx context.Context, email string)
 }
