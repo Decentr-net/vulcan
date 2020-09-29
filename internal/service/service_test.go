@@ -51,7 +51,7 @@ func TestService_Register(t *testing.T) {
 		},
 		{
 			name: "not confirmed request already exists",
-			req:  &storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+			req:  &storage.Request{Owner: testOwner, Email: testEmail, Address: testAddress, Code: testCode},
 		},
 		{
 			name:   "getFailed",
@@ -93,6 +93,7 @@ func TestService_Register(t *testing.T) {
 					assert.False(t, r.CreatedAt.IsZero())
 
 					assert.Equal(t, testOwner, r.Owner)
+					assert.Equal(t, testEmail, r.Email)
 					assert.Equal(t, testAddress, r.Address)
 
 					if tc.getErr == storage.ErrNotFound {
@@ -105,7 +106,7 @@ func TestService_Register(t *testing.T) {
 				})
 
 				if tc.setErr == nil {
-					sender.EXPECT().Send(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
+					sender.EXPECT().SendVerificationEmail(ctx, testEmail, testOwner, gomock.Any()).DoAndReturn(func(_ context.Context, _, _, c string) error {
 						assert.Equal(t, code, c)
 						return tc.senderErr
 					})
@@ -168,11 +169,12 @@ func TestService_Confirm(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			st := storage.NewMockStorage(ctrl)
+			sn := mail.NewMockSender(ctrl)
 			bc := blockchain.NewMockBlockchain(ctrl)
 
 			ctx := context.Background()
 
-			s := New(st, nil, bc, testInitialStakes)
+			s := New(st, sn, bc, testInitialStakes)
 
 			st.EXPECT().GetRequest(ctx, testOwner, "").Return(&tc.req, tc.getErr)
 
@@ -180,6 +182,8 @@ func TestService_Confirm(t *testing.T) {
 				bc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.sendErr)
 
 				if tc.sendErr == nil {
+					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)
+
 					st.EXPECT().SetRequest(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, r *storage.Request) error {
 						assert.Equal(t, tc.req.Owner, r.Owner)
 						assert.Equal(t, tc.req.Address, r.Address)
@@ -192,6 +196,7 @@ func TestService_Confirm(t *testing.T) {
 			}
 
 			err := s.Confirm(ctx, testOwner, testCode)
+
 			assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
 		})
 	}

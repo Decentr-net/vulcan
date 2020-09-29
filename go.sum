@@ -44,8 +44,6 @@ github.com/ChainSafe/go-schnorrkel v0.0.0-20200102211924-4bcbc698314f/go.mod h1:
 github.com/ClickHouse/clickhouse-go v1.3.12/go.mod h1:EaI/sW7Azgz9UATzd5ZdZHRUhHgv5+JMS9NSr2smCJI=
 github.com/Decentr-net/cerberus v1.0.4 h1:fWwS4Cu1hNXwImik3QpxLIIYhu6KjOA+ys2Ysi1tNgk=
 github.com/Decentr-net/cerberus v1.0.4/go.mod h1:+MDhWp2TZs7+fdr5jYWFw+bAo/ciTmyTpArTEtbUHZ0=
-github.com/Decentr-net/decentr v1.0.2 h1:T6yfHtUxd50f+gSO4GBvkOHFXvkGjzmd8fjsErMorNI=
-github.com/Decentr-net/decentr v1.0.2/go.mod h1:HGHj//UT5bjSlAaM81oJ+K5XwvMqaVbXGwlxKUmYlqM=
 github.com/Decentr-net/decentr v1.0.3 h1:wVoacP/czWExV4vrtVGhiK0083M1n92Dazhtla4hKAU=
 github.com/Decentr-net/decentr v1.0.3/go.mod h1:HGHj//UT5bjSlAaM81oJ+K5XwvMqaVbXGwlxKUmYlqM=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=

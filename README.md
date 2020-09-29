@@ -21,8 +21,10 @@ go run cmd/vulcan/main.go \
     --postgres="host=localhost port=5432 user=postgres password=root sslmode=disable" \
     --postgres.migrations="scripts/migrations/postgres" \
     --mandrill.api_key="MANDRILL_SUCCESS" \
-    --mandrill.email_subject="Email confirmation" \
-    --mandrill.email_template_name="confirmation" \
+    --mandrill.email_verification_subject="Email confirmation" \
+    --mandrill.email_verification_template_name="confirmation" \
+    --mandrill.email_welcome_subject="Welcome" \
+    --mandrill.email_welcome_template_name="welcome" \
     --mandrill.from_name="decentr noreply" \
     --mandrill.from_email="noreply@decentrdev.com" \
     --blockchain.node="zeus.testnet.decentr.xyz:26656" \
@@ -32,29 +34,31 @@ go run cmd/vulcan/main.go \
 ```
 
 ## Parameters
-| CLI param         | Environment var          | Default | Description
-|---------------|------------------|---------------|---------------------------------
-| http.host         | HTTP_HOST         | 0.0.0.0  | host to bind server
-| http.port    | HTTP_PORT    | 8080  | port to listen
-| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | postgres dsn
-| postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0  | postgres maximal open connections count, 0 means unlimited
-| postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5  | postgres maximal idle connections count
-| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | postgres migrations directory
-| mandrill.api_key    | MANDRILL_API_KEY   |   |  mandrillapp.com api key
-| mandrill.email_subject    | MANDRILL_EMAIL_SUBJECT    | decentr.xyz - Verification  | subject for emails
-| mandrill.email_template_name    | MANDRILL_EMAIL_TEMPLATE_NAME    |   | mandrill's template to be sent
-| mandrill.from_name    | MANDRILL_FROM_NAME    | decentr.xyz  | name for emails sender
-| mandrill.from_email    | MANDRILL_FROM_NAME    | noreply@decentrdev.com  | email for emails sender
-| blockchain.node   | BLOCKCHAIN_NODE    | zeus.testnet.decentr.xyz:26656  | decentr node address
-| blockchain.from   | BLOCKCHAIN_FROM    |  | decentr account name to send stakes
-| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    |  | decentr tx's memo
-| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | decentr chain id
-| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | decentrcli home directory
-| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | decentrcli keyring backend
-| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | decentrcli keyring prompt input
-| log.level   | LOG_LEVEL   | info  | level of logger (debug,info,warn,error)
-| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1000000 | stakes count to be sent, 1DEC = 1000000 uDEC
-| confirmation.redirection_url | CONFIRMATION_REDIRECTION_URL | https://decentr.net | user will be sent to this url after successful confirmation
+| CLI param         | Environment var          | Default | Required | Description
+|---------------|------------------|---------------|-------|---------------------------------
+| http.host         | HTTP_HOST         | 0.0.0.0  | true | host to bind server
+| http.port    | HTTP_PORT    | 8080  | true | port to listen
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | true | postgres dsn
+| postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | true | postgres maximal open connections count, 0 means unlimited
+| postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | true | postgres maximal idle connections count
+| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | true | postgres migrations directory
+| mandrill.api_key    | MANDRILL_API_KEY   |  | true |  mandrillapp.com api key
+| mandrill.verification_email_subject    | MANDRILL_VERIFICATION_EMAIL_SUBJECT    | decentr.xyz - Verification | false | subject for verification emails
+| mandrill.verification_email_template_name    | MANDRILL_VERIFICATION_EMAIL_TEMPLATE_NAME    |  | true | mandrill's verification template to be sent
+| mandrill.welcome_email_subject    | MANDRILL_WELCOME_EMAIL_SUBJECT    | decentr.xyz - Verification | false | subject for welcome emails
+| mandrill.welcome_email_template_name    | MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME    |  | true | mandrill's welcome template to be sent
+| mandrill.from_name    | MANDRILL_FROM_NAME    | decentr.xyz | false | name for emails sender
+| mandrill.from_email    | MANDRILL_FROM_NAME    | noreply@decentrdev.com | true | email for emails sender
+| blockchain.node   | BLOCKCHAIN_NODE    | zeus.testnet.decentr.xyz:26656 | true | decentr node address
+| blockchain.from   | BLOCKCHAIN_FROM    | | true | decentr account name to send stakes
+| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | false | decentr tx's memo
+| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | true| decentr chain id
+| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
+| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
+| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
+| log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
+| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
+| confirmation.redirection_url | CONFIRMATION_REDIRECTION_URL | https://decentr.net | true | user will be sent to this url after successful confirmation
 
 ## Development
 ### Makefile

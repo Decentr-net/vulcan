@@ -66,6 +66,7 @@ func New(storage storage.Storage, sender mail.Sender, b blockchain.Blockchain, i
 func (s *service) Register(ctx context.Context, email, address string) error {
 	request := storage.Request{
 		Owner:     getEmailHash(truncatePlusPart(email)),
+		Email:     email,
 		Address:   address,
 		Code:      randomCode(),
 		CreatedAt: time.Now(),
@@ -88,7 +89,7 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if err := s.sender.Send(ctx, email, request.Owner, request.Code); err != nil {
+	if err := s.sender.SendVerificationEmail(ctx, email, request.Owner, request.Code); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -115,6 +116,8 @@ func (s *service) Confirm(ctx context.Context, owner, code string) error {
 	if err := s.bc.SendStakes(req.Address, s.initialStakes); err != nil {
 		return fmt.Errorf("failed to send stakes to %s: %w", owner, err)
 	}
+
+	s.sender.SendWelcomeEmailAsync(ctx, req.Email)
 
 	req.ConfirmedAt = pq.NullTime{
 		Time:  time.Now(),

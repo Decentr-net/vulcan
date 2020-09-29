@@ -37,7 +37,7 @@ func (p pg) GetRequest(ctx context.Context, owner, address string) (*storage.Req
 
 func (p pg) SetRequest(ctx context.Context, r *storage.Request) error {
 	if _, err := sqlx.NamedExecContext(ctx, p.db, `
-		INSERT INTO request VALUES(:owner, :address, :code, :created_at, :confirmed_at) ON CONFLICT(address) DO
+		INSERT INTO request VALUES(:owner, :email, :address, :code, :created_at, :confirmed_at) ON CONFLICT(address) DO
 			UPDATE SET code=EXCLUDED.code, created_at=EXCLUDED.created_at, confirmed_at=EXCLUDED.confirmed_at
 	`, r); err != nil {
 		return fmt.Errorf("failed to exec query: %w", err)

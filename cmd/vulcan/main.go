@@ -48,14 +48,16 @@ var opts = struct {
 	PostgresMaxIdleConnections int    `long:"postgres.max_idle_connections" env:"POSTGRES_MAX_IDLE_CONNECTIONS" default:"5" description:"postgres maximal idle connections count"`
 	PostgresMigrations         string `long:"postgres.migrations" env:"POSTGRES_MIGRATIONS" default:"migrations/postgres" description:"postgres migrations directory"`
 
-	MandrillAPIKey            string `long:"mandrill.api_key" env:"MANDRILL_API_KEY" description:"mandrillapp.com api key"`
-	MandrillEmailSubject      string `long:"mandrill.email_subject" env:"MANDRILL_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for emails"`
-	MandrillEmailTemplateName string `long:"mandrill.email_template_name" env:"MANDRILL_EMAIL_TEMPLATE_NAME" description:"mandrill's template to be sent"`
-	MandrillFromName          string `long:"mandrill.from_name" env:"MANDRILL_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
-	MandrillFromEmail         string `long:"mandrill.from_email" env:"MANDRILL_FROM_EMAIL" default:"noreply@decentrdev.com" description:"email for emails sender"`
+	MandrillAPIKey                        string `long:"mandrill.api_key" env:"MANDRILL_API_KEY" description:"mandrillapp.com api key" required:"true"`
+	MandrillVerificationEmailSubject      string `long:"mandrill.verification_email_subject" env:"MANDRILL_VERIFICATION_EMAIL_SUBJECT" default:"decentr.xyz - Verification" description:"subject for verification emails"`
+	MandrillVerificationEmailTemplateName string `long:"mandrill.verification_email_template_name" env:"MANDRILL_VERIFICATION_EMAIL_TEMPLATE_NAME" description:"mandrill's verification template to be sent" required:"true"`
+	MandrillWelcomeEmailSubject           string `long:"mandrill.welcome_email_subject" env:"MANDRILL_WELCOME_EMAIL_SUBJECT" default:"decentr.xyz - Verified" description:"subject for welcome emails"`
+	MandrillWelcomeEmailTemplateName      string `long:"mandrill.welcome_email_template_name" env:"MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME" description:"mandrill's welcome template to be sent" required:"true"`
+	MandrillFromName                      string `long:"mandrill.from_name" env:"MANDRILL_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
+	MandrillFromEmail                     string `long:"mandrill.from_email" env:"MANDRILL_FROM_EMAIL" default:"noreply@decentrdev.com" description:"email for emails sender"`
 
 	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"zeus.testnet.decentr.xyz:26656" description:"decentr node address"`
-	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes"`
+	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes" required:"true"`
 	BlockchainTxMemo             string `long:"blockchain.tx_memo" env:"BLOCKCHAIN_TX_MEMO" description:"decentr tx's memo'"`
 	BlockchainChainID            string `long:"blockchain.chain_id" env:"BLOCKCHAIN_CHAIN_ID" default:"testnet" description:"decentr chain id"`
 	BlockchainClientHome         string `long:"blockchain.client_home" env:"BLOCKCHAIN_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
@@ -101,10 +103,12 @@ func main() {
 
 	mandrillClient := mc.ClientWithKey(opts.MandrillAPIKey)
 
-	mailSender := mandrill.New(mandrillClient, mandrill.Config{
-		Subject:      opts.MandrillEmailSubject,
-		TemplateName: opts.MandrillEmailTemplateName,
-		FromEmail:    opts.MandrillFromEmail,
+	mailSender := mandrill.New(mandrillClient, &mandrill.Config{
+		VerificationSubject:      opts.MandrillVerificationEmailSubject,
+		VerificationTemplateName: opts.MandrillVerificationEmailTemplateName,
+		WelcomeSubject:           opts.MandrillWelcomeEmailSubject,
+		WelcomeTemplateName:      opts.MandrillWelcomeEmailTemplateName,
+		FromEmail:                opts.MandrillFromEmail,
 	})
 
 	server.SetupRouter(service.New(postgres.New(db), mailSender, mustGetBlockchain(), opts.InitialStakes), r, opts.ConfirmationRedirectionURL)
