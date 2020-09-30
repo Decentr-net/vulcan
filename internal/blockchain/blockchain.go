@@ -2,10 +2,11 @@
 package blockchain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
+	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -13,6 +14,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	"github.com/Decentr-net/decentr/app"
+
+	"github.com/Decentr-net/vulcan/internal/health"
 )
 
 //go:generate mockgen -destination=./blockchain_mock.go -package=blockchain -source=blockchain.go
@@ -22,15 +25,17 @@ var ErrInvalidAddress = errors.New("invalid address")
 
 // Blockchain is interface for interacting with the blockchain.
 type Blockchain interface {
+	health.Pinger
+
 	SendStakes(address string, amount int64) error
 }
 
 type blockchain struct {
-	ctx       context.CLIContext
+	ctx       clicontext.CLIContext
 	txBuilder auth.TxBuilder
 }
 
-func NewBlockchain(ctx context.CLIContext, b auth.TxBuilder) Blockchain { // nolint
+func NewBlockchain(ctx clicontext.CLIContext, b auth.TxBuilder) Blockchain { // nolint
 	return &blockchain{
 		ctx:       ctx,
 		txBuilder: b,
@@ -78,6 +83,18 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 
 	if resp.Height == 0 {
 		return fmt.Errorf("failed to broadcast tx: %s", resp.String()) // nolint: goerr113
+	}
+
+	return nil
+}
+
+func (b *blockchain) Ping(_ context.Context) error {
+	c, err := b.ctx.GetNode()
+	if err != nil {
+		return fmt.Errorf("failed to get rpc client: %w", err)
+	}
+	if _, err := c.Status(); err != nil {
+		return fmt.Errorf("failed to check node status: %w", err)
 	}
 
 	return nil

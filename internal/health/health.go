@@ -11,9 +11,19 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/Decentr-net/vulcan/internal/server"
 )
+
+// nolint:gochecknoglobals
+var (
+	version = "dev"
+	commit  = "undefined"
+)
+
+// VersionResponse ...
+type VersionResponse struct {
+	Version string `json:"version"`
+	Commit  string `json:"commit"`
+}
 
 // Pinger pings external service.
 type Pinger interface {
@@ -61,9 +71,20 @@ func SetupRouter(r chi.Router, p ...Pinger) {
 		}
 
 		if err := gr.Wait(); err != nil {
-			data, _ := json.Marshal(server.Error{Error: err.Error()})
+			data, _ := json.Marshal(struct {
+				VersionResponse
+				Error string `json:"error"`
+			}{
+				Error:           err.Error(),
+				VersionResponse: VersionResponse{Version: version, Commit: commit},
+			})
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write(data) // nolint
+
+			return
 		}
+
+		data, _ := json.Marshal(VersionResponse{Version: version, Commit: commit})
+		w.Write(data) // nolint
 	})
 }
