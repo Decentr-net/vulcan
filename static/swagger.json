@@ -17,7 +17,7 @@
   "basePath": "/v1",
   "paths": {
     "/confirm": {
-      "get": {
+      "post": {
         "consumes": [
           "application/json"
         ],
@@ -120,17 +120,14 @@
     "ConfirmRequest": {
       "type": "object",
       "title": "ConfirmRequest ...",
-      "required": [
-        "owner"
-      ],
       "properties": {
         "code": {
           "type": "string",
           "x-go-name": "Code"
         },
-        "owner": {
+        "email": {
           "type": "string",
-          "x-go-name": "Owner"
+          "x-go-name": "Email"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"

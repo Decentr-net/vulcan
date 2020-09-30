@@ -69,7 +69,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 
 // confirm confirms registration and creates wallet.
 func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /confirm Vulcan Confirm
+	// swagger:operation POST /confirm Vulcan Confirm
 	//
 	// Confirms registration and sends stakes.
 	//
