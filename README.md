@@ -49,7 +49,7 @@ go run cmd/vulcan/main.go \
 | mandrill.welcome_email_template_name    | MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME    |  | true | mandrill's welcome template to be sent
 | mandrill.from_name    | MANDRILL_FROM_NAME    | decentr.xyz | false | name for emails sender
 | mandrill.from_email    | MANDRILL_FROM_NAME    | noreply@decentrdev.com | true | email for emails sender
-| blockchain.node   | BLOCKCHAIN_NODE    | zeus.testnet.decentr.xyz:26656 | true | decentr node address
+| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.testnet.decentr.xyz:26657 | true | decentr node address
 | blockchain.from   | BLOCKCHAIN_FROM    | | true | decentr account name to send stakes
 | blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | false | decentr tx's memo
 | blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | true| decentr chain id
