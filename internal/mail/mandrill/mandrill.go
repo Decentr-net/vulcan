@@ -13,7 +13,7 @@ import (
 	"github.com/keighl/mandrill"
 )
 
-const mandrillErrorStatus = "error"
+const mandrillSentStatus = "sent"
 
 type sender struct {
 	config *Config
@@ -59,8 +59,8 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, code string) er
 	}
 
 	for _, v := range responses {
-		if v.Status == mandrillErrorStatus {
-			return fmt.Errorf("failed to send verification email(%s) to %s: %s", v.Id, v.Email, v.RejectionReason) // nolint: goerr113
+		if v.Status != mandrillSentStatus {
+			return fmt.Errorf("failed to send verification email(%s) to %s: %s - %s", v.Id, v.Email, v.Status, v.RejectionReason) // nolint: goerr113
 		}
 	}
 
@@ -86,10 +86,12 @@ func (s *sender) SendWelcomeEmailAsync(_ context.Context, email string) {
 		}
 
 		for _, v := range responses {
-			if v.Status == mandrillErrorStatus {
+			if v.Status != mandrillSentStatus {
 				log.WithError(errors.New(v.RejectionReason)).WithFields(map[string]interface{}{ // nolint: goerr113
-					"email": email,
-					"id":    v.Id,
+					"email":            email,
+					"id":               v.Id,
+					"status":           v.Status,
+					"rejection_reason": v.RejectionReason,
 				}).Errorf("failed to send welcome email")
 				return
 			}

@@ -39,7 +39,7 @@ import (
 
 // nolint:lll,gochecknoglobals
 var opts = struct {
-	Host string `long:"http.host" env:"HTTP_HOST" default:"localhost" description:"IP to listen on"`
+	Host string `long:"http.host" env:"HTTP_HOST" default:"0.0.0.0" description:"IP to listen on"`
 	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
 
 	Postgres                   string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
@@ -82,7 +82,7 @@ func main() {
 			parser.WriteHelp(os.Stdout)
 			os.Exit(0)
 		}
-		logrus.WithError(err).Warn("error occurred while parsing flags")
+		logrus.WithError(err).Fatal("error occurred while parsing flags")
 	}
 
 	lvl, _ := logrus.ParseLevel(opts.LogLevel) // err will always be nil
@@ -105,13 +105,16 @@ func main() {
 		FromEmail:                opts.MandrillFromEmail,
 	})
 
-	server.SetupRouter(service.New(postgres.New(db), mailSender, mustGetBlockchain(), opts.InitialStakes), r)
+	bchain := mustGetBlockchain()
+
+	server.SetupRouter(service.New(postgres.New(db), mailSender, bchain, opts.InitialStakes), r)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
 		health.SubjectPinger("mandrill", func(_ context.Context) error {
 			_, err := mandrillClient.Ping()
 			return err
 		}),
+		health.SubjectPinger("blockchain", bchain.Ping),
 	)
 
 	srv := http.Server{
