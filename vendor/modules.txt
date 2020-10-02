@@ -2,10 +2,10 @@
 github.com/99designs/keyring
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200102211924-4bcbc698314f
 github.com/ChainSafe/go-schnorrkel
-# github.com/Decentr-net/cerberus v1.0.4
+# github.com/Decentr-net/cerberus v0.0.1
 github.com/Decentr-net/cerberus/pkg/api
 github.com/Decentr-net/cerberus/pkg/schema
-# github.com/Decentr-net/decentr v1.0.3
+# github.com/Decentr-net/decentr v0.0.1
 ## explicit
 github.com/Decentr-net/decentr/app
 github.com/Decentr-net/decentr/x/pdv
