@@ -46,13 +46,14 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, code string) er
 		Subject:   s.config.VerificationSubject,
 		FromEmail: s.config.FromEmail,
 		FromName:  s.config.FromName,
+		GlobalMergeVars: mandrill.ConvertMapToVariables(map[string]interface{}{
+			"CODE": code,
+		}),
 	}
 
 	message.AddRecipient(email, "", "to")
 
-	responses, err := s.client.MessagesSendTemplate(&message, s.config.VerificationTemplateName, map[string]interface{}{
-		"code": code,
-	})
+	responses, err := s.client.MessagesSendTemplate(&message, s.config.VerificationTemplateName, nil)
 
 	if err != nil {
 		return err
