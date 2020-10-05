@@ -25,7 +25,7 @@ var plustPartRegexp = regexp.MustCompile(`\+.+\@`) // nolint
 //go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
 
 // ErrAlreadyExists is returned when request is already created for requested email or address.
-var ErrAlreadyExists = fmt.Errorf("email or address is busy")
+var ErrAlreadyExists = fmt.Errorf("email or address is already taken")
 
 // ErrAlreadyConfirmed is returned when request is already confirmed.
 var ErrAlreadyConfirmed = fmt.Errorf("already confirmed")
@@ -84,6 +84,9 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 	}
 
 	if err := s.storage.SetRequest(ctx, &request); err != nil {
+		if errors.Is(err, storage.ErrAddressIsTaken) {
+			return ErrAlreadyExists
+		}
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 

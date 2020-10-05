@@ -106,6 +106,12 @@
               "$ref": "#/definitions/Error"
             }
           },
+          "429": {
+            "description": "minute didn't pass after last try to send email",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
           "500": {
             "description": "internal server error.",
             "schema": {

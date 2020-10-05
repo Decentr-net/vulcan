@@ -59,6 +59,12 @@ func TestService_Register(t *testing.T) {
 			err:    errTest,
 		},
 		{
+			name:   "errAddressIsBusy",
+			getErr: storage.ErrNotFound,
+			setErr: storage.ErrAddressIsTaken,
+			err:    ErrAlreadyExists,
+		},
+		{
 			name:   "setFailed",
 			getErr: storage.ErrNotFound,
 			setErr: errTest,

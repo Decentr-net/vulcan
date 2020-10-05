@@ -120,7 +120,7 @@ func cleanup(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPg_CreateRequest(t *testing.T) {
+func TestPg_SetRequest(t *testing.T) {
 	defer cleanup(t)
 
 	r := &storage.Request{
@@ -148,8 +148,9 @@ func TestPg_CreateRequest(t *testing.T) {
 	equalRequest(t, r, res)
 
 	// invalid by db design but not covered by query
-	r.Address = "new"
-	require.Error(t, s.SetRequest(ctx, r))
+	r.Email = "new"
+	err = s.SetRequest(ctx, r)
+	require.True(t, errors.Is(err, storage.ErrAddressIsTaken))
 }
 
 func TestPg_GetRequest(t *testing.T) {

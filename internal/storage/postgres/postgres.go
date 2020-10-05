@@ -8,9 +8,12 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
+
+const uniqueViolationErrorCode = "23505"
 
 type pg struct {
 	db *sqlx.DB
@@ -37,9 +40,12 @@ func (p pg) GetRequest(ctx context.Context, owner, address string) (*storage.Req
 
 func (p pg) SetRequest(ctx context.Context, r *storage.Request) error {
 	if _, err := sqlx.NamedExecContext(ctx, p.db, `
-		INSERT INTO request VALUES(:owner, :email, :address, :code, :created_at, :confirmed_at) ON CONFLICT(address) DO
+		INSERT INTO request VALUES(:owner, :email, :address, :code, :created_at, :confirmed_at) ON CONFLICT(email) DO
 			UPDATE SET code=EXCLUDED.code, created_at=EXCLUDED.created_at, confirmed_at=EXCLUDED.confirmed_at
 	`, r); err != nil {
+		if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationErrorCode {
+			return storage.ErrAddressIsTaken
+		}
 		return fmt.Errorf("failed to exec query: %w", err)
 	}
 
