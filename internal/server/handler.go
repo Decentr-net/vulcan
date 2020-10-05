@@ -34,6 +34,10 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	//      description: bad request.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
+	//   '429':
+	//      description: minute didn't pass after last try to send email
+	//      schema:
+	//        "$ref": "#/definitions/Error"
 	//   '409':
 	//      description: wallet has already created for this email.
 	//      schema:
@@ -56,8 +60,10 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.s.Register(r.Context(), req.Email.String(), req.Address); err != nil {
 		switch {
+		case errors.Is(err, service.ErrTooManyAttempts):
+			writeError(w, http.StatusTooManyRequests, "too many attempts")
 		case errors.Is(err, service.ErrAlreadyExists):
-			writeError(w, http.StatusConflict, "email is busy")
+			writeError(w, http.StatusConflict, "email or address is already taken")
 		default:
 			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to register request")
 		}

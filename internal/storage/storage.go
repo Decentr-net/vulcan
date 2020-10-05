@@ -13,6 +13,9 @@ import (
 // ErrNotFound ...
 var ErrNotFound = fmt.Errorf("not found")
 
+// ErrAddressIsTaken ...
+var ErrAddressIsTaken = fmt.Errorf("address is taken")
+
 // Request ...
 type Request struct {
 	Owner       string      `db:"owner"`
