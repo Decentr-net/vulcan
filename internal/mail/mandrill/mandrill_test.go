@@ -13,7 +13,7 @@ import (
 func createSender(apiKey string) mail.Sender {
 	return New(mc.ClientWithKey(apiKey), &Config{
 		VerificationSubject:      "Welcome to Decentr",
-		VerificationTemplateName: "welcome",
+		VerificationTemplateName: "confirmation",
 		WelcomeSubject:           "Welcome to Decentr",
 		WelcomeTemplateName:      "welcome",
 		FromName:                 "Decentr",
