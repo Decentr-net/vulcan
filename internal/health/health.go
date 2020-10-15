@@ -19,6 +19,11 @@ var (
 	commit  = "undefined"
 )
 
+// GetVersion returns service's version and commit.
+func GetVersion() string {
+	return fmt.Sprintf("%s-%s", version, commit)
+}
+
 // VersionResponse ...
 type VersionResponse struct {
 	Version string `json:"version"`
