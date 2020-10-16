@@ -6,8 +6,10 @@ replace github.com/docker/docker => github.com/docker/engine v0.0.0-201907171610
 
 require (
 	github.com/Decentr-net/decentr v0.0.1
+	github.com/Decentr-net/logrus v0.7.1
 	github.com/cosmos/cosmos-sdk v0.38.2
 	github.com/davecgh/go-spew v1.1.1
+	github.com/getsentry/sentry-go v0.7.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/golang-migrate/migrate/v4 v4.12.2

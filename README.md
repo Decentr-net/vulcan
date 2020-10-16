@@ -57,6 +57,7 @@ go run cmd/vulcan/main.go \
 | blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
 | blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
+| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
 | blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
 
 ## Development

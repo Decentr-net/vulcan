@@ -18,7 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/go-chi/chi"
-	migrate "github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
@@ -28,6 +28,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/health"
@@ -63,7 +64,8 @@ var opts = struct {
 	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
 	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
 
-	LogLevel string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
+	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
+	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
 
 	InitialStakes int64 `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
 }{}
@@ -90,6 +92,23 @@ func main() {
 
 	logrus.Info("service started")
 	logrus.Infof("%+v", opts)
+
+	if opts.SentryDSN != "" {
+		hook, err := sentry.NewHook(sentry.Options{
+			Dsn:              opts.SentryDSN,
+			AttachStacktrace: true,
+			Release:          health.GetVersion(),
+		}, logrus.PanicLevel, logrus.FatalLevel, logrus.ErrorLevel)
+
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to init sentry")
+		}
+
+		logrus.AddHook(hook)
+	} else {
+		logrus.Info("empty sentry dsn")
+		logrus.Warn("skip sentry initialization")
+	}
 
 	r := chi.NewMux()
 
