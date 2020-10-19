@@ -28,8 +28,12 @@ type Request struct {
 
 // Storage provides methods for interacting with database.
 type Storage interface {
-	// GetRequest returns request by owner or address.
-	GetRequest(ctx context.Context, owner, address string) (*Request, error)
-	// SetRequest sets request.
-	SetRequest(ctx context.Context, r *Request) error
+	// GetRequestByOwner returns request by owner.
+	GetRequestByOwner(ctx context.Context, owner string) (*Request, error)
+	// GetRequestByAddress returns request by address.
+	GetRequestByAddress(ctx context.Context, address string) (*Request, error)
+	// SetConfirmed sets request confirmed.
+	SetConfirmed(ctx context.Context, owner string) error
+	// UpsertRequest inserts request into storage.
+	UpsertRequest(ctx context.Context, owner, email, address, code string) error
 }

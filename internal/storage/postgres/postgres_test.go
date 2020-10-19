@@ -11,12 +11,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 
 	m "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,71 +118,78 @@ func cleanup(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPg_SetRequest(t *testing.T) {
+func TestPg_InsertRequest(t *testing.T) {
 	defer cleanup(t)
 
-	r := &storage.Request{
-		Owner:       "owner",
-		Email:       "e@mail.com",
-		Address:     "address",
-		Code:        "code",
-		CreatedAt:   time.Now().UTC().Truncate(time.Second),
-		ConfirmedAt: pq.NullTime{},
-	}
-
-	require.NoError(t, s.SetRequest(ctx, r))
-	_, err := s.GetRequest(ctx, "owner", "")
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+	r, err := s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
 
-	r.ConfirmedAt = pq.NullTime{
-		Time:  time.Now().UTC().Truncate(time.Second),
-		Valid: true,
-	}
+	assert.Equal(t, "owner", r.Owner)
+	assert.Equal(t, "e@mail.com", r.Email)
+	assert.Equal(t, "address", r.Address)
+	assert.Equal(t, "code", r.Code)
+	assert.False(t, r.CreatedAt.IsZero())
+	assert.False(t, r.ConfirmedAt.Valid)
 
-	require.NoError(t, s.SetRequest(ctx, r))
+	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "own", "em", "address", "code")))
+	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "owner", "em", "address2", "code")))
 
-	res, err := s.GetRequest(ctx, "", "address")
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "new", "code2"))
+	r, err = s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
-	equalRequest(t, r, res)
 
-	// invalid by db design but not covered by query
-	r.Email = "new"
-	err = s.SetRequest(ctx, r)
-	require.True(t, errors.Is(err, storage.ErrAddressIsTaken))
+	assert.Equal(t, "new", r.Address)
+	assert.Equal(t, "code2", r.Code)
 }
 
-func TestPg_GetRequest(t *testing.T) {
+func TestPg_SetConfirmed(t *testing.T) {
 	defer cleanup(t)
 
-	r := &storage.Request{
-		Owner:       "owner",
-		Email:       "e@mail.com",
-		Address:     "address",
-		Code:        "code",
-		CreatedAt:   time.Now().UTC().Truncate(time.Second),
-		ConfirmedAt: pq.NullTime{},
-	}
-
-	require.NoError(t, s.SetRequest(ctx, r))
-
-	res, err := s.GetRequest(ctx, "owner", "")
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+	require.NoError(t, s.SetConfirmed(ctx, "owner"))
+	r, err := s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
-	equalRequest(t, r, res)
 
-	res, err = s.GetRequest(ctx, "", "address")
+	assert.True(t, r.ConfirmedAt.Valid)
+
+	assert.True(t, errors.Is(storage.ErrNotFound, s.SetConfirmed(ctx, "owner2")))
+}
+
+func TestPg_GetRequestByAddress(t *testing.T) {
+	defer cleanup(t)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
-	equalRequest(t, r, res)
 
-	_, err = s.GetRequest(ctx, "fsd", "rew")
-	require.Error(t, err)
+	assert.Equal(t, "owner", r.Owner)
+	assert.Equal(t, "e@mail.com", r.Email)
+	assert.Equal(t, "address", r.Address)
+	assert.Equal(t, "code", r.Code)
+	assert.False(t, r.CreatedAt.IsZero())
+	assert.False(t, r.ConfirmedAt.Valid)
+
+	_, err = s.GetRequestByOwner(ctx, "not_exists")
 	assert.True(t, errors.Is(err, storage.ErrNotFound))
 }
 
-func equalRequest(t *testing.T, expected, actual *storage.Request) {
-	assert.Equal(t, expected.Owner, actual.Owner)
-	assert.Equal(t, expected.Email, actual.Email)
-	assert.Equal(t, expected.Address, actual.Address)
-	assert.Equal(t, expected.Code, actual.Code)
-	assert.Equal(t, expected.CreatedAt.Unix(), actual.CreatedAt.Unix())
-	assert.Equal(t, expected.ConfirmedAt.Time.Unix(), actual.ConfirmedAt.Time.Unix())
+func TestPg_GetRequestByOwner(t *testing.T) {
+	defer cleanup(t)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+
+	r, err := s.GetRequestByAddress(ctx, "address")
+	require.NoError(t, err)
+
+	assert.Equal(t, "owner", r.Owner)
+	assert.Equal(t, "e@mail.com", r.Email)
+	assert.Equal(t, "address", r.Address)
+	assert.Equal(t, "code", r.Code)
+	assert.False(t, r.CreatedAt.IsZero())
+	assert.False(t, r.ConfirmedAt.Valid)
+
+	_, err = s.GetRequestByAddress(ctx, "not_exists")
+	assert.True(t, errors.Is(err, storage.ErrNotFound))
 }

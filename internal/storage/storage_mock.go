@@ -6,8 +6,9 @@ package storage
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockStorage is a mock of Storage interface
@@ -33,31 +34,60 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
-// GetRequest mocks base method
-func (m *MockStorage) GetRequest(ctx context.Context, owner, address string) (*Request, error) {
+// GetRequestByOwner mocks base method
+func (m *MockStorage) GetRequestByOwner(ctx context.Context, owner string) (*Request, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRequest", ctx, owner, address)
+	ret := m.ctrl.Call(m, "GetRequestByOwner", ctx, owner)
 	ret0, _ := ret[0].(*Request)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRequest indicates an expected call of GetRequest
-func (mr *MockStorageMockRecorder) GetRequest(ctx, owner, address interface{}) *gomock.Call {
+// GetRequestByOwner indicates an expected call of GetRequestByOwner
+func (mr *MockStorageMockRecorder) GetRequestByOwner(ctx, owner interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequest", reflect.TypeOf((*MockStorage)(nil).GetRequest), ctx, owner, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequestByOwner", reflect.TypeOf((*MockStorage)(nil).GetRequestByOwner), ctx, owner)
 }
 
-// SetRequest mocks base method
-func (m *MockStorage) SetRequest(ctx context.Context, r *Request) error {
+// GetRequestByAddress mocks base method
+func (m *MockStorage) GetRequestByAddress(ctx context.Context, address string) (*Request, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetRequest", ctx, r)
+	ret := m.ctrl.Call(m, "GetRequestByAddress", ctx, address)
+	ret0, _ := ret[0].(*Request)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRequestByAddress indicates an expected call of GetRequestByAddress
+func (mr *MockStorageMockRecorder) GetRequestByAddress(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequestByAddress", reflect.TypeOf((*MockStorage)(nil).GetRequestByAddress), ctx, address)
+}
+
+// SetConfirmed mocks base method
+func (m *MockStorage) SetConfirmed(ctx context.Context, owner string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetConfirmed", ctx, owner)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetRequest indicates an expected call of SetRequest
-func (mr *MockStorageMockRecorder) SetRequest(ctx, r interface{}) *gomock.Call {
+// SetConfirmed indicates an expected call of SetConfirmed
+func (mr *MockStorageMockRecorder) SetConfirmed(ctx, owner interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRequest", reflect.TypeOf((*MockStorage)(nil).SetRequest), ctx, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConfirmed", reflect.TypeOf((*MockStorage)(nil).SetConfirmed), ctx, owner)
+}
+
+// UpsertRequest mocks base method
+func (m *MockStorage) UpsertRequest(ctx context.Context, owner, email, address, code string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertRequest", ctx, owner, email, address, code)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertRequest indicates an expected call of UpsertRequest
+func (mr *MockStorageMockRecorder) InsertRequest(ctx, owner, email, address, code interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRequest", reflect.TypeOf((*MockStorage)(nil).UpsertRequest), ctx, owner, email, address, code)
 }
