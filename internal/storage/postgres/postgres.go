@@ -26,9 +26,9 @@ func New(db *sql.DB) storage.Storage {
 	}
 }
 
-func (p pg) GetRequest(ctx context.Context, owner, address string) (*storage.Request, error) {
+func (p pg) GetRequestByOwner(ctx context.Context, owner string) (*storage.Request, error) {
 	var r storage.Request
-	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM request WHERE owner=$1 OR address=$2`, owner, address); err != nil {
+	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM request WHERE owner=$1`, owner); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrNotFound
 		}
@@ -38,11 +38,39 @@ func (p pg) GetRequest(ctx context.Context, owner, address string) (*storage.Req
 	return &r, nil
 }
 
-func (p pg) SetRequest(ctx context.Context, r *storage.Request) error {
-	if _, err := sqlx.NamedExecContext(ctx, p.db, `
-		INSERT INTO request VALUES(:owner, :email, :address, :code, :created_at, :confirmed_at) ON CONFLICT(email) DO
-			UPDATE SET code=EXCLUDED.code, created_at=EXCLUDED.created_at, confirmed_at=EXCLUDED.confirmed_at
-	`, r); err != nil {
+func (p pg) GetRequestByAddress(ctx context.Context, address string) (*storage.Request, error) {
+	var r storage.Request
+	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM request WHERE address=$1`, address); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, storage.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to exec query: %w", err)
+	}
+
+	return &r, nil
+}
+
+func (p pg) SetConfirmed(ctx context.Context, owner string) error {
+	res, err := p.db.ExecContext(ctx, `
+		UPDATE request SET confirmed_at=CURRENT_TIMESTAMP WHERE owner=$1
+	`, owner)
+
+	if err != nil {
+		return fmt.Errorf("failed to exec query: %w", err)
+	}
+
+	if c, _ := res.RowsAffected(); c == 0 {
+		return storage.ErrNotFound
+	}
+
+	return nil
+}
+
+func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code string) error {
+	if _, err := p.db.ExecContext(ctx, `
+		INSERT INTO request VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT(email) DO
+			UPDATE SET address=EXCLUDED.address, code=EXCLUDED.code, created_at=EXCLUDED.created_at
+	`, owner, email, address, code); err != nil {
 		if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationErrorCode {
 			return storage.ErrAddressIsTaken
 		}

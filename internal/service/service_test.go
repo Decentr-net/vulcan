@@ -28,53 +28,64 @@ var (
 
 func TestService_Register(t *testing.T) {
 	tt := []struct {
-		name      string
-		req       *storage.Request
-		getErr    error
-		setErr    error
-		senderErr error
-		err       error
+		name            string
+		req             *storage.Request
+		getByAddressErr error
+		getByOwnerErr   error
+		setErr          error
+		senderErr       error
+		err             error
 	}{
 		{
-			name:   "success",
-			getErr: storage.ErrNotFound,
+			name:            "success",
+			getByAddressErr: storage.ErrNotFound,
+			getByOwnerErr:   storage.ErrNotFound,
 		},
 		{
 			name: "already registered",
-			req:  &storage.Request{ConfirmedAt: pq.NullTime{Valid: true}},
+			req:  &storage.Request{Owner: testOwner, ConfirmedAt: pq.NullTime{Valid: true}},
 			err:  ErrAlreadyExists,
 		},
 		{
 			name: "too many attempts",
-			req:  &storage.Request{CreatedAt: time.Now()},
+			req:  &storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, CreatedAt: time.Now()},
 			err:  ErrTooManyAttempts,
 		},
 		{
 			name: "not confirmed request already exists",
-			req:  &storage.Request{Owner: testOwner, Email: testEmail, Address: testAddress, Code: testCode},
+			req:  &storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, Address: testAddress, Code: testCode},
 		},
 		{
-			name:   "getFailed",
-			getErr: errTest,
-			err:    errTest,
+			name:            "getFailed",
+			getByAddressErr: errTest,
+			err:             errTest,
 		},
 		{
-			name:   "errAddressIsBusy",
-			getErr: storage.ErrNotFound,
-			setErr: storage.ErrAddressIsTaken,
-			err:    ErrAlreadyExists,
+			name:            "getFailed",
+			getByAddressErr: storage.ErrNotFound,
+			getByOwnerErr:   errTest,
+			err:             errTest,
 		},
 		{
-			name:   "setFailed",
-			getErr: storage.ErrNotFound,
-			setErr: errTest,
-			err:    errTest,
+			name:            "errAddressIsBusy",
+			getByAddressErr: storage.ErrNotFound,
+			getByOwnerErr:   storage.ErrNotFound,
+			setErr:          storage.ErrAddressIsTaken,
+			err:             ErrAlreadyExists,
 		},
 		{
-			name:      "senderFailed",
-			getErr:    storage.ErrNotFound,
-			senderErr: errTest,
-			err:       errTest,
+			name:            "setFailed",
+			getByAddressErr: storage.ErrNotFound,
+			getByOwnerErr:   storage.ErrNotFound,
+			setErr:          errTest,
+			err:             errTest,
+		},
+		{
+			name:            "senderFailed",
+			getByAddressErr: storage.ErrNotFound,
+			getByOwnerErr:   storage.ErrNotFound,
+			senderErr:       errTest,
+			err:             errTest,
 		},
 	}
 
@@ -93,23 +104,18 @@ func TestService_Register(t *testing.T) {
 			s := New(st, sender, nil, testInitialStakes)
 
 			var code string
-			st.EXPECT().GetRequest(ctx, testOwner, testAddress).Return(tc.req, tc.getErr)
-			if tc.getErr == nil || tc.getErr == storage.ErrNotFound {
-				st.EXPECT().SetRequest(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, r *storage.Request) error {
-					assert.False(t, r.CreatedAt.IsZero())
+			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(tc.req, tc.getByAddressErr)
+			if tc.getByAddressErr == storage.ErrNotFound {
+				st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(tc.req, tc.getByOwnerErr)
+			}
 
-					assert.Equal(t, testOwner, r.Owner)
-					assert.Equal(t, testEmail, r.Email)
-					assert.Equal(t, testAddress, r.Address)
-
-					if tc.getErr == storage.ErrNotFound {
-						code = r.Code
-					} else {
-						code = tc.req.Code
-					}
-
-					return tc.setErr
-				})
+			if (tc.getByAddressErr == nil || tc.getByAddressErr == storage.ErrNotFound) &&
+				(tc.getByOwnerErr == nil || tc.getByOwnerErr == storage.ErrNotFound) {
+				st.EXPECT().InsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0))).DoAndReturn(
+					func(_ context.Context, _, _, _, c string) error {
+						code = c
+						return tc.setErr
+					})
 
 				if tc.setErr == nil {
 					sender.EXPECT().SendVerificationEmail(ctx, testEmail, gomock.Any()).DoAndReturn(func(_ context.Context, _, c string) error {
@@ -182,7 +188,7 @@ func TestService_Confirm(t *testing.T) {
 
 			s := New(st, sn, bc, testInitialStakes)
 
-			st.EXPECT().GetRequest(ctx, testOwner, "").Return(&tc.req, tc.getErr)
+			st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(&tc.req, tc.getErr)
 
 			if tc.getErr == nil {
 				bc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.sendErr)
@@ -190,14 +196,7 @@ func TestService_Confirm(t *testing.T) {
 				if tc.sendErr == nil {
 					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)
 
-					st.EXPECT().SetRequest(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, r *storage.Request) error {
-						assert.Equal(t, tc.req.Owner, r.Owner)
-						assert.Equal(t, tc.req.Address, r.Address)
-						assert.True(t, r.ConfirmedAt.Valid)
-						assert.False(t, r.ConfirmedAt.Time.IsZero())
-
-						return tc.setErr
-					})
+					st.EXPECT().SetConfirmed(ctx, tc.req.Owner).Return(tc.setErr)
 				}
 			}
 

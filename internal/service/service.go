@@ -62,43 +62,61 @@ func New(storage storage.Storage, sender mail.Sender, b blockchain.Blockchain, i
 }
 
 func (s *service) Register(ctx context.Context, email, address string) error {
-	request := storage.Request{
-		Owner:     getEmailHash(truncatePlusPart(email)),
-		Email:     email,
-		Address:   address,
-		Code:      randomCode(),
-		CreatedAt: time.Now(),
+	var (
+		owner = getEmailHash(truncatePlusPart(email))
+		code  = randomCode()
+	)
+
+	if err := s.checkRegistrationConflicts(ctx, email, address); err != nil {
+		return err
 	}
 
-	if r, err := s.storage.GetRequest(ctx, request.Owner, address); err == nil {
-		if r.CreatedAt.Add(throttlingInterval).After(time.Now()) {
-			return ErrTooManyAttempts
-		}
-		if r.ConfirmedAt.Valid {
-			return ErrAlreadyExists
-		}
-
-		request.Code = r.Code
-	} else if !errors.Is(err, storage.ErrNotFound) {
-		return fmt.Errorf("failed to check conflicts: %w", err)
-	}
-
-	if err := s.storage.SetRequest(ctx, &request); err != nil {
+	if err := s.storage.UpsertRequest(ctx, owner, email, address, code); err != nil {
 		if errors.Is(err, storage.ErrAddressIsTaken) {
 			return ErrAlreadyExists
 		}
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if err := s.sender.SendVerificationEmail(ctx, email, request.Code); err != nil {
+	if err := s.sender.SendVerificationEmail(ctx, email, code); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	return nil
 }
 
+func (s *service) checkRegistrationConflicts(ctx context.Context, email, address string) error {
+	r, err := s.storage.GetRequestByAddress(ctx, address)
+	if err != nil {
+		if !errors.Is(err, storage.ErrNotFound) {
+			return fmt.Errorf("failed to check conflicts: %w", err)
+		}
+
+		if r, err = s.storage.GetRequestByOwner(ctx, getEmailHash(email)); err != nil && !errors.Is(err, storage.ErrNotFound) {
+			return fmt.Errorf("failed to check conflicts: %w", err)
+		}
+	}
+
+	if errors.Is(err, storage.ErrNotFound) {
+		return nil
+	}
+
+	if r.Email != email {
+		return fmt.Errorf("%w: address is already taken", ErrAlreadyExists)
+	}
+
+	if r.CreatedAt.Add(throttlingInterval).After(time.Now()) {
+		return ErrTooManyAttempts
+	}
+	if r.ConfirmedAt.Valid {
+		return ErrAlreadyExists
+	}
+
+	return nil
+}
+
 func (s *service) Confirm(ctx context.Context, email, code string) error {
-	req, err := s.storage.GetRequest(ctx, getEmailHash(truncatePlusPart(email)), "")
+	req, err := s.storage.GetRequestByOwner(ctx, getEmailHash(truncatePlusPart(email)))
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return ErrNotFound
@@ -125,7 +143,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		Valid: true,
 	}
 
-	if err := s.storage.SetRequest(ctx, req); err != nil {
+	if err := s.storage.SetConfirmed(ctx, req.Owner); err != nil {
 		return fmt.Errorf("failed to update request: %w", err)
 	}
 
