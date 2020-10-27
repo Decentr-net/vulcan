@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -155,7 +156,7 @@ func truncatePlusPart(email string) string {
 }
 
 func getEmailHash(email string) string {
-	b := md5.Sum([]byte(email)) // nolint:gosec
+	b := md5.Sum([]byte(strings.ToLower(email))) // nolint:gosec
 	return hex.EncodeToString(b[:])
 }
 
