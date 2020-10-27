@@ -209,6 +209,7 @@ func TestService_Confirm(t *testing.T) {
 
 func Test_getEmailHash(t *testing.T) {
 	assert.Equal(t, testOwner, getEmailHash(testEmail))
+	assert.Equal(t, getEmailHash("email@email.email"), getEmailHash("Email@email.email"))
 }
 
 func Test_randomCode(t *testing.T) {
