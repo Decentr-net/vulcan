@@ -14,6 +14,7 @@ import (
 )
 
 const mandrillSentStatus = "sent"
+const mandrillQueuedStatus = "queued"
 
 type sender struct {
 	config *Config
@@ -87,7 +88,7 @@ func (s *sender) SendWelcomeEmailAsync(_ context.Context, email string) {
 		}
 
 		for _, v := range responses {
-			if v.Status != mandrillSentStatus {
+			if v.Status != mandrillSentStatus && v.Status != mandrillQueuedStatus {
 				log.WithError(errors.New(v.RejectionReason)).WithFields(map[string]interface{}{ // nolint: goerr113
 					"email":            email,
 					"id":               v.Id,
