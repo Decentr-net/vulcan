@@ -61,7 +61,7 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, code string) er
 	}
 
 	for _, v := range responses {
-		if v.Status != mandrillSentStatus {
+		if v.Status != mandrillSentStatus && v.Status != mandrillQueuedStatus {
 			return fmt.Errorf("failed to send verification email(%s) to %s: %s - %s", v.Id, v.Email, v.Status, v.RejectionReason) // nolint: goerr113
 		}
 	}
