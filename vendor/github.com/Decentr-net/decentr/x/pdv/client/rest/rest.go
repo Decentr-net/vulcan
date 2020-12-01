@@ -25,7 +25,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/owner", storeName), queryOwnerHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{address}/show", storeName), queryShowHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/{owner}/list", storeName), queryListHandler(cliCtx)).Methods(http.MethodGet)
-	r.HandleFunc(fmt.Sprintf("/%s/{owner}/stats", storeName), queryStatsHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s", storeName), createPDVHandler(cliCtx)).Methods(http.MethodPost)
 
 	r.HandleFunc(fmt.Sprintf("/%s/cerberus-addr", storeName), cerberusAddrHandler(cliCtx)).Methods(http.MethodGet)
@@ -38,36 +37,24 @@ type createPDVReq struct {
 
 func queryOwnerHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["address"]
+		paramAddress := mux.Vars(r)["address"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/owner/%s", types.QuerierRoute, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/owner/%s", types.QuerierRoute, paramAddress), nil)
 		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(types.ErrNotFound) {
-					rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
-					return
-				}
-			}
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), string(res))
 	}
 }
 
 func queryShowHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["address"]
+		paramAddress := mux.Vars(r)["address"]
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/show/%s", types.QuerierRoute, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/show/%s", types.QuerierRoute, paramAddress), nil)
 		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(types.ErrNotFound) {
-					rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
-					return
-				}
-			}
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -78,30 +65,10 @@ func queryShowHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 func queryListHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["owner"]
+		paramOwner := mux.Vars(r)["owner"]
 		q := r.URL.Query()
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", types.QuerierRoute, paramType, q.Get("from"), q.Get("limit")), nil)
-		if err != nil {
-			if err, ok := err.(*sdkerrors.Error); ok {
-				if err.Is(sdkerrors.ErrInvalidRequest) {
-					rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-					return
-				}
-			}
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
-	}
-}
-
-func queryStatsHandler(cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		paramType := mux.Vars(r)["owner"]
-
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stats/%s", types.QuerierRoute, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/list/%s/%s/%s", types.QuerierRoute, paramOwner, q.Get("from"), q.Get("limit")), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -158,7 +125,7 @@ func createPDVHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgCreatePDV(time.Now().UTC(), req.Address, types.PDVTypeCookie, owner)
+		msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), req.Address, types.PDVTypeCookie, owner)
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx.WithHeight(height), req.BaseReq, []sdk.Msg{msg})
 	}

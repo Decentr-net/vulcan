@@ -12,11 +12,7 @@ type Token struct {
 }
 
 type GenesisState struct {
-	TokenRecords []Token `json:"token_records"`
-}
-
-func NewGenesisState(records []Token) GenesisState {
-	return GenesisState{TokenRecords: records}
+	TokenRecords []Token `json:"tokens"`
 }
 
 func ValidateGenesis(data GenesisState) error {
@@ -36,13 +32,15 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, record := range data.TokenRecords {
-		keeper.AddTokens(ctx, record.Owner, record.Balance)
+		keeper.AddTokens(ctx, record.Owner, 0, record.Balance)
 	}
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var records []Token
 	iterator := k.GetBalanceIterator(ctx)
+	defer iterator.Close()
+
 	for ; iterator.Valid(); iterator.Next() {
 		owner := iterator.Key()
 		balance := k.GetBalance(ctx, owner)

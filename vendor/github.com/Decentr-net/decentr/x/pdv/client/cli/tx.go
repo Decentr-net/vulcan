@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bufio"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -63,9 +62,9 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to read pdv file: %w", err)
 			}
-			digest := sha256.Sum256(append(pdv, []byte("/v1/pdv")...))
+			msg := append(pdv, []byte("/v1/pdv")...)
 
-			signature, pk, err := kb.Sign(cliCtx.GetFromName(), keys.DefaultKeyPass, digest[:])
+			signature, pk, err := kb.Sign(cliCtx.GetFromName(), keys.DefaultKeyPass, msg)
 			if err != nil {
 				return fmt.Errorf("failed to sign: %w", err)
 			}
@@ -74,7 +73,7 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 				PublicKey string `json:"pubic_key"`
 				Signature string `json:"signature"`
 			}{
-				PublicKey: hex.EncodeToString(pk.Bytes()),
+				PublicKey: hex.EncodeToString(pk.Bytes()[5:]), // cut amino codec prefix
 				Signature: hex.EncodeToString(signature),
 			})
 		},
@@ -110,7 +109,7 @@ func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("pdv does not exist")
 			}
 
-			msg := types.NewMsgCreatePDV(time.Now().UTC(), args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
+			msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

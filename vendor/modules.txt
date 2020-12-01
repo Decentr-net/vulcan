@@ -2,12 +2,17 @@
 github.com/99designs/keyring
 # github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 github.com/ChainSafe/go-schnorrkel
-# github.com/Decentr-net/cerberus v0.0.1
+# github.com/Decentr-net/cerberus v0.2.0
 github.com/Decentr-net/cerberus/pkg/api
 github.com/Decentr-net/cerberus/pkg/schema
-# github.com/Decentr-net/decentr v0.1.0
+# github.com/Decentr-net/decentr v0.3.0
 ## explicit
 github.com/Decentr-net/decentr/app
+github.com/Decentr-net/decentr/x/community
+github.com/Decentr-net/decentr/x/community/client/cli
+github.com/Decentr-net/decentr/x/community/client/rest
+github.com/Decentr-net/decentr/x/community/keeper
+github.com/Decentr-net/decentr/x/community/types
 github.com/Decentr-net/decentr/x/pdv
 github.com/Decentr-net/decentr/x/pdv/client/cli
 github.com/Decentr-net/decentr/x/pdv/client/rest
@@ -23,6 +28,7 @@ github.com/Decentr-net/decentr/x/token/client/cli
 github.com/Decentr-net/decentr/x/token/client/rest
 github.com/Decentr-net/decentr/x/token/keeper
 github.com/Decentr-net/decentr/x/token/types
+github.com/Decentr-net/decentr/x/utils
 # github.com/Decentr-net/logrus v0.7.1
 ## explicit
 github.com/Decentr-net/logrus/sentry
@@ -240,7 +246,6 @@ github.com/dvsekhvalnov/jose2go/padding
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/getsentry/sentry-go v0.7.0
-## explicit
 github.com/getsentry/sentry-go
 # github.com/go-chi/chi v4.1.2+incompatible
 ## explicit
@@ -265,6 +270,8 @@ github.com/go-openapi/strfmt
 github.com/go-stack/stack
 # github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2
 github.com/godbus/dbus
+# github.com/gofrs/uuid v3.3.0+incompatible
+github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/jsonpb

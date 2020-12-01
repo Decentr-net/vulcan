@@ -26,6 +26,7 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/Decentr-net/decentr/x/community"
 	"github.com/Decentr-net/decentr/x/pdv"
 	"github.com/Decentr-net/decentr/x/profile"
 	"github.com/Decentr-net/decentr/x/token"
@@ -88,6 +89,7 @@ var (
 		pdv.AppModule{},
 		profile.AppModule{},
 		token.AppModule{},
+		community.AppModule{},
 	)
 
 	// module account permissions
@@ -129,16 +131,17 @@ type decentrApp struct {
 	subspaces map[string]params.Subspace
 
 	// keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	pdvKeeper      pdv.Keeper
-	profilesKeeper profile.Keeper
-	tokensKeeper   token.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	stakingKeeper   staking.Keeper
+	slashingKeeper  slashing.Keeper
+	distrKeeper     distr.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	pdvKeeper       pdv.Keeper
+	profilesKeeper  profile.Keeper
+	tokensKeeper    token.Keeper
+	communityKeeper community.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -152,7 +155,7 @@ var _ simapp.App = (*decentrApp)(nil)
 
 func NewDecentrApp(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool,
-	invCheckPeriod uint, cerberus api.Cerberus, stats pdv.Stats, baseAppOptions ...func(*bam.BaseApp),
+	invCheckPeriod uint, cerberus api.Cerberus, pdvIndex pdv.Index, tokenStats token.Stats, communityIdx community.Index, baseAppOptions ...func(*bam.BaseApp),
 ) *decentrApp {
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -164,7 +167,7 @@ func NewDecentrApp(
 
 	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, distr.StoreKey, slashing.StoreKey, params.StoreKey,
-		pdv.StoreKey, profile.StoreKey, token.StoreKey)
+		pdv.StoreKey, profile.StoreKey, token.StoreKey, community.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -248,18 +251,26 @@ func NewDecentrApp(
 	app.tokensKeeper = token.NewKeeper(
 		app.cdc,
 		keys[token.StoreKey],
+		tokenStats,
 	)
 
 	app.pdvKeeper = pdv.NewKeeper(
 		app.cdc,
 		keys[pdv.StoreKey],
 		app.tokensKeeper,
-		stats,
+		pdvIndex,
 	)
 
 	app.profilesKeeper = profile.NewKeeper(
 		app.cdc,
 		keys[profile.StoreKey],
+	)
+
+	app.communityKeeper = community.NewKeeper(
+		app.cdc,
+		keys[community.StoreKey],
+		communityIdx,
+		app.tokensKeeper,
 	)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -274,6 +285,7 @@ func NewDecentrApp(
 		pdv.NewAppModule(cerberus, app.pdvKeeper),
 		token.NewAppModule(app.tokensKeeper),
 		profile.NewAppModule(app.profilesKeeper),
+		community.NewAppModule(app.communityKeeper),
 		NewStakingAppModuleDecorator(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 	)

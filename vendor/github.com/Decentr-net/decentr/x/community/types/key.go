@@ -1,12 +1,8 @@
 package types
 
 const (
-	Denominator int64 = 1 * 10e6
-)
-
-const (
 	// ModuleName is the name of the module
-	ModuleName = "token"
+	ModuleName = "community"
 
 	// StoreKey to be used when creating the KVStore
 	StoreKey = ModuleName
@@ -16,4 +12,10 @@ const (
 
 	// QuerierRoute to be used for querierer msgs
 	QuerierRoute = ModuleName
+)
+
+// Key prefixes
+var (
+	PostPrefix = []byte{0x00} // prefix for keys that store posts
+	LikePrefix = []byte{0x01} // prefix for keys that store likes
 )

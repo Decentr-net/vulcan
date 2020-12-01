@@ -7,11 +7,7 @@ import (
 )
 
 type GenesisState struct {
-	ProfileRecords []Profile `json:"profile_records"`
-}
-
-func NewGenesisState(records []Profile) GenesisState {
-	return GenesisState{ProfileRecords: records}
+	ProfileRecords []Profile `json:"profiles"`
 }
 
 func ValidateGenesis(data GenesisState) error {
@@ -38,6 +34,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var records []Profile
 	iterator := k.GetProfileIterator(ctx)
+	defer iterator.Close()
+
 	for ; iterator.Valid(); iterator.Next() {
 		name := iterator.Key()
 		profile := k.GetProfile(ctx, name)

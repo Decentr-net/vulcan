@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"github.com/Decentr-net/decentr/x/token/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -12,34 +11,31 @@ var totalSupplyKey = []byte("totalSupply")
 type Keeper struct {
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
+	stats    Stats
 }
 
 // NewKeeper creates new instances of the token Keeper
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, stats Stats) Keeper {
 	return Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
+		stats:    stats,
 	}
 }
 
 // AddTokens adds token to the given owner
-func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, amount sdk.Int) {
+func (k Keeper) AddTokens(ctx sdk.Context, owner sdk.AccAddress, timestamp uint64, amount sdk.Int) {
 	balance := k.GetBalance(ctx, owner)
-
-	total := k.GetTotalSupply(ctx)
-	maxSupply := sdk.NewIntFromUint64(uint64(types.MaxSupply))
-	if maxSupply.LT(total.Add(amount)) {
-		// Max supply is reached, stop the emission
-		amount = maxSupply.Sub(total)
-	}
-
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(owner, k.cdc.MustMarshalBinaryBare(balance))
-	k.IncreaseTotalSupply(ctx, amount)
+	k.addTotalSupply(ctx, amount)
+	if err := k.stats.AddToken(owner, timestamp, amount); err != nil {
+		ctx.Logger().Error("failed to add tokens to stats", "err", err.Error())
+	}
 }
 
-// IncreaseTotalSupply increase total supply with the given amount of tokens
-func (k Keeper) IncreaseTotalSupply(ctx sdk.Context, amount sdk.Int) {
+// addTotalSupply increase or decrease total supply with the given amount of tokens
+func (k Keeper) addTotalSupply(ctx sdk.Context, amount sdk.Int) {
 	balance := k.GetTotalSupply(ctx)
 	balance = balance.Add(amount)
 	ctx.KVStore(k.storeKey).Set(totalSupplyKey, k.cdc.MustMarshalBinaryBare(balance))
