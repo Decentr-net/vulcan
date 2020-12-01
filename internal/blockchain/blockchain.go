@@ -9,6 +9,7 @@ import (
 	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -82,6 +83,9 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 	}
 
 	if resp.Height == 0 {
+		if sdkerrors.ErrTxInMempoolCache.ABCICode() == resp.Code {
+			return nil
+		}
 		return fmt.Errorf("failed to broadcast tx: %s", resp.String()) // nolint: goerr113
 	}
 
