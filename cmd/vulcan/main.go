@@ -232,7 +232,7 @@ func mustGetBlockchain() blockchain.Blockchain {
 
 	cliCtx := clicontext.NewCLIContext().
 		WithCodec(cdc).
-		WithBroadcastMode(cliflags.BroadcastBlock).
+		WithBroadcastMode(cliflags.BroadcastSync).
 		WithNodeURI(opts.BlockchainNode).
 		WithFrom(acc.GetName()).
 		WithFromName(acc.GetName()).
