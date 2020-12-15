@@ -82,7 +82,7 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 		return fmt.Errorf("failed to broadcast tx: %w", err)
 	}
 
-	if resp.Height == 0 {
+	if resp.Code != 0 {
 		if sdkerrors.ErrTxInMempoolCache.ABCICode() == resp.Code {
 			return nil
 		}
