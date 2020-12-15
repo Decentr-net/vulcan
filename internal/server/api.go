@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	addressRegExp     = regexp.MustCompile(`decentr[\d\w]{39}`) // nolint
+	emailRegExp       = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // nolint
+	addressRegExp     = regexp.MustCompile(`decentr[\d\w]{39}`)                                                                                                                       // nolint
 	errInvalidRequest = errors.New("invalid request")
 )
 
@@ -39,7 +40,7 @@ type ConfirmRequest struct {
 }
 
 func (r RegisterRequest) validate() error {
-	if !strfmt.IsEmail(r.Email.String()) {
+	if !isEmailValid(r.Email.String()) {
 		return fmt.Errorf("%w: invalid email", errInvalidRequest)
 	}
 
@@ -48,4 +49,15 @@ func (r RegisterRequest) validate() error {
 	}
 
 	return nil
+}
+
+func isEmailValid(e string) bool {
+	if len(e) < 3 || len(e) > 254 {
+		return false
+	}
+	if !emailRegExp.MatchString(e) {
+		return false
+	}
+
+	return true
 }
