@@ -111,17 +111,17 @@ func TestService_Register(t *testing.T) {
 
 			if (tc.getByAddressErr == nil || tc.getByAddressErr == storage.ErrNotFound) &&
 				(tc.getByOwnerErr == nil || tc.getByOwnerErr == storage.ErrNotFound) {
-				st.EXPECT().InsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0))).DoAndReturn(
-					func(_ context.Context, _, _, _, c string) error {
-						code = c
-						return tc.setErr
-					})
+				sender.EXPECT().SendVerificationEmail(ctx, testEmail, gomock.Any()).DoAndReturn(func(_ context.Context, _, c string) error {
+					code = c
+					return tc.senderErr
+				})
 
-				if tc.setErr == nil {
-					sender.EXPECT().SendVerificationEmail(ctx, testEmail, gomock.Any()).DoAndReturn(func(_ context.Context, _, c string) error {
-						assert.Equal(t, code, c)
-						return tc.senderErr
-					})
+				if tc.senderErr == nil {
+					st.EXPECT().InsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0))).DoAndReturn(
+						func(_ context.Context, _, _, _, c string) error {
+							assert.Equal(t, code, c)
+							return tc.setErr
+						})
 				}
 			}
 

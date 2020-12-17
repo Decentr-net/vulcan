@@ -72,15 +72,15 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 		return err
 	}
 
+	if err := s.sender.SendVerificationEmail(ctx, email, code); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
 	if err := s.storage.UpsertRequest(ctx, owner, email, address, code); err != nil {
 		if errors.Is(err, storage.ErrAddressIsTaken) {
 			return ErrAlreadyExists
 		}
 		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	if err := s.sender.SendVerificationEmail(ctx, email, code); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	return nil
