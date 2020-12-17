@@ -31,7 +31,7 @@ func Test_Register(t *testing.T) {
 	}{
 		{
 			name:       "success",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
 			serviceErr: nil,
 			rcode:      http.StatusOK,
 			rdata:      `{}`,
@@ -39,7 +39,7 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			name:       "invalid email",
-			body:       []byte(`{"email":"decentrdecentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
+			body:       []byte(`{"email":"decentrdecentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
 			serviceErr: errSkip,
 			rcode:      http.StatusBadRequest,
 			rdata:      `{"error": "invalid request: invalid email"}`,
@@ -50,12 +50,12 @@ func Test_Register(t *testing.T) {
 			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqg"}`),
 			serviceErr: errSkip,
 			rcode:      http.StatusBadRequest,
-			rdata:      `{"error": "invalid request: invalid address"}`,
+			rdata:      `{"error": "invalid request: invalid address: decoding bech32 failed: checksum failed. Expected 6k4ypl, got rqkuqg."}`,
 			rlog:       "",
 		},
 		{
 			name:       "already registered",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
 			serviceErr: service.ErrAlreadyExists,
 			rcode:      http.StatusConflict,
 			rdata:      `{"error": "email or address is already taken"}`,
@@ -63,7 +63,7 @@ func Test_Register(t *testing.T) {
 		},
 		{
 			name:       "internal error",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga"}`),
+			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
 			serviceErr: errTest,
 			rcode:      http.StatusInternalServerError,
 			rdata:      `{"error": "internal error"}`,
@@ -84,7 +84,7 @@ func Test_Register(t *testing.T) {
 			srv := service.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
-				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqga").Return(tc.serviceErr)
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m").Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()

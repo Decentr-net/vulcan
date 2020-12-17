@@ -21,6 +21,12 @@ import (
 
 //go:generate mockgen -destination=./blockchain_mock.go -package=blockchain -source=blockchain.go
 
+func init() {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
+	config.Seal()
+}
+
 // ErrInvalidAddress is returned when address is invalid. It is unexpected situation.
 var ErrInvalidAddress = errors.New("invalid address")
 

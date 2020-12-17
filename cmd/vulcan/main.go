@@ -210,10 +210,6 @@ func mustGetDB() *sql.DB {
 }
 
 func mustGetBlockchain() blockchain.Blockchain {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	config.Seal()
-
 	cdc := app.MakeCodec()
 
 	kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
