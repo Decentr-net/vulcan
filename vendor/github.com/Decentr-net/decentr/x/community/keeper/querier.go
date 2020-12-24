@@ -3,6 +3,8 @@ package keeper
 import (
 	"strconv"
 
+	"github.com/spf13/viper"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/gofrs/uuid"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -15,9 +17,12 @@ import (
 )
 
 const (
-	QueryPopular = "popular"
-	QueryPosts   = "posts"
-	QueryUser    = "user"
+	QueryPopular       = "popular"
+	QueryPosts         = "posts"
+	QueryPost          = "post"
+	QueryUser          = "user"
+	QueryLikedPosts    = "liked-posts"
+	QueryModeratorAddr = "moderator-addr"
 )
 
 const defaultLimit = 20
@@ -41,10 +46,16 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		switch path[0] {
 		case QueryPopular:
 			return getPopularPosts(ctx, path[1:], req, keeper)
+		case QueryPost:
+			return getPost(ctx, path[1:], req, keeper)
 		case QueryPosts:
 			return getRecentPosts(ctx, path[1:], req, keeper)
 		case QueryUser:
 			return queryUserPosts(ctx, path[1:], req, keeper)
+		case QueryLikedPosts:
+			return queryUserLikedPosts(ctx, path[1:], req, keeper)
+		case QueryModeratorAddr:
+			return queryModeratorAddr()
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown community query endpoint")
 		}
@@ -62,6 +73,54 @@ func queryUserPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	p := keeper.ListUserPosts(ctx, owner, from, limit)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
+}
+
+// nolint: unparam
+// queryPopular returns map with post and its like weight.
+func queryUserLikedPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, keeper.GetUserLikedPosts(ctx, owner))
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
+}
+
+func getPost(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+	}
+
+	id, err := uuid.FromString(path[1])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
+	}
+
+	p := keeper.GetPostByKey(ctx, getPostKeeperKey(owner, id))
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, Post{
+		UUID:          p.UUID.String(),
+		Owner:         p.Owner,
+		Title:         p.Title,
+		PreviewImage:  p.PreviewImage,
+		Category:      p.Category,
+		Text:          p.Text,
+		LikesCount:    p.LikesCount,
+		DislikesCount: p.DislikesCount,
+		CreatedAt:     p.CreatedAt,
+		PDV:           utils.TokenToFloat64(p.PDV),
+	})
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
 	}
@@ -87,16 +146,12 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 		}
 		category = types.Category(v)
-		if category < types.UndefinedCategory || category > types.FitnessAndExerciseCategory {
+		if category < types.UndefinedCategory || category > types.CryptoAndBlockchainCategory {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown category")
 		}
 	}
 
-	p, err := keeper.index.GetRecentPosts(keeper.getPostResolver(ctx), category, from, limit)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
-	}
-
+	p := keeper.GetRecentPosts(ctx, category, from, limit)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
@@ -137,11 +192,7 @@ func getPopularPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid interval")
 	}
 
-	p, err := keeper.index.GetPopularPosts(keeper.getPostResolver(ctx), interval, category, from, limit)
-	if err != nil {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrPanic, err.Error())
-	}
-
+	p := keeper.GetPopularPosts(ctx, interval, category, from, limit)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, postsToQuerierPosts(p))
 	if err != nil {
 		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
@@ -151,10 +202,14 @@ func getPopularPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 func postsToQuerierPosts(pp []types.Post) []Post {
-	out := make([]Post, len(pp))
+	out := make([]Post, 0, len(pp))
 
-	for i, v := range pp {
-		out[i] = Post{
+	for _, v := range pp {
+		if v.UUID == uuid.Nil {
+			continue
+		}
+
+		out = append(out, Post{
 			UUID:          v.UUID.String(),
 			Owner:         v.Owner,
 			Title:         v.Title,
@@ -165,7 +220,7 @@ func postsToQuerierPosts(pp []types.Post) []Post {
 			DislikesCount: v.DislikesCount,
 			CreatedAt:     v.CreatedAt,
 			PDV:           utils.TokenToFloat64(v.PDV),
-		}
+		})
 	}
 
 	return out
@@ -201,4 +256,8 @@ func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UU
 	}
 
 	return
+}
+
+func queryModeratorAddr() ([]byte, error) {
+	return []byte(viper.GetString(types.FlagModeratorAddr)), nil
 }

@@ -2,6 +2,7 @@ package types
 
 import (
 	"net/url"
+	"unicode/utf8"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -10,7 +11,7 @@ import (
 
 const (
 	maxTitleLength = 150
-	maxPostLength  = 5000
+	maxPostLength  = 64 * 1000
 	minPostLength  = 15
 	maxURLLength   = 4 * 1024
 )
@@ -27,8 +28,9 @@ type MsgCreatePost struct {
 
 // MsgDeletePost defines a DeletePost message
 type MsgDeletePost struct {
-	UUID  string         `json:"uuid"`
-	Owner sdk.AccAddress `json:"owner"`
+	PostUUID  string         `json:"postUUID"`
+	PostOwner sdk.AccAddress `json:"postOwner"`
+	Owner     sdk.AccAddress `json:"owner"`
 }
 
 // MsgSetLike defines a SetLike message
@@ -67,7 +69,7 @@ func (msg MsgCreatePost) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "title should be shorter then %d and not empty", maxTitleLength)
 	}
 
-	if msg.Category == UndefinedCategory || msg.Category > FitnessAndExerciseCategory {
+	if msg.Category == UndefinedCategory || msg.Category > CryptoAndBlockchainCategory {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 	}
 
@@ -75,8 +77,8 @@ func (msg MsgCreatePost) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "previewImage is invalid")
 	}
 
-	if len(msg.Text) < minPostLength || len(msg.Text) > maxPostLength {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "post's length should be between %d and %d", minPostLength, maxPostLength)
+	if utf8.RuneCountInString(msg.Text) < minPostLength || len(msg.Text) > maxPostLength {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "post's length should be between %d symbols and %d bytes", minPostLength, maxPostLength)
 	}
 
 	return nil
@@ -93,10 +95,11 @@ func (msg MsgCreatePost) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgDeletePost is a constructor function for MsgDeletePost
-func NewMsgDeletePost(id uuid.UUID, owner sdk.AccAddress) MsgDeletePost {
+func NewMsgDeletePost(owner sdk.AccAddress, postUUID uuid.UUID, postOwner sdk.AccAddress) MsgDeletePost {
 	return MsgDeletePost{
-		Owner: owner,
-		UUID:  id.String(),
+		Owner:     owner,
+		PostUUID:  postUUID.String(),
+		PostOwner: postOwner,
 	}
 }
 
@@ -112,7 +115,11 @@ func (msg MsgDeletePost) ValidateBasic() error {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
 	}
 
-	if _, err := uuid.FromString(msg.UUID); err != nil {
+	if msg.PostOwner.Empty() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.PostOwner.String())
+	}
+
+	if _, err := uuid.FromString(msg.PostUUID); err != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid uuid")
 	}
 

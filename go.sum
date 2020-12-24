@@ -48,6 +48,8 @@ github.com/Decentr-net/cerberus v0.2.0 h1:0Y3zTZEyl8ckeAnnNvP9auFx1q8T2EILKf5NOG
 github.com/Decentr-net/cerberus v0.2.0/go.mod h1:7xbxoj3tfgTNF2lDmkJXmIr1u7pGQj5VvI/c/95Nntc=
 github.com/Decentr-net/decentr v0.3.1 h1:erVz/0cBt536pXNV/zQsriPRawYudRLGRfnkwhfWshI=
 github.com/Decentr-net/decentr v0.3.1/go.mod h1:FDYIH2qx3Gx8sVLQEqAwXSq3i3JN7G0O6DxVqTcC/Xw=
+github.com/Decentr-net/decentr v0.5.4 h1:5p8yxxayZk27oAs7ZX0RMC6P8XouKUUbjPiUQskkaHY=
+github.com/Decentr-net/decentr v0.5.4/go.mod h1:6RFfiKOBxuD+/ouo2SnGJg/ZmCs/q31qjIa3YE3KOYA=
 github.com/Decentr-net/logrus v0.7.1/go.mod h1:EPFtMuGaa2CVrSbTXaCywqwqIAezkhWo7xqEfudEDp4=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7/go.mod h1:6E6s8o2AE4KhCrqr6GRJjdC/gNfTdxkIXvuGZZda2VM=

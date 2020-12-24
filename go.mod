@@ -5,7 +5,7 @@ go 1.14
 replace github.com/docker/docker => github.com/docker/engine v0.0.0-20190717161051-705d9623b7c1 // fix logrus for testcontainers
 
 require (
-	github.com/Decentr-net/decentr v0.3.1
+	github.com/Decentr-net/decentr v0.5.4
 	github.com/Decentr-net/logrus v0.7.1
 	github.com/cosmos/cosmos-sdk v0.39.2
 	github.com/davecgh/go-spew v1.1.1

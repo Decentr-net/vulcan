@@ -21,6 +21,8 @@ var intervals = map[string]keeper.Interval{
 
 // RegisterRoutes registers community-related REST handlers to a router
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/post/{postOwner}/{postUUID}", storeName), getPostHandler(cliCtx)).Methods(http.MethodGet)
+
 	r.HandleFunc(fmt.Sprintf("/%s/posts", storeName), createPostHandler(cliCtx)).Methods(http.MethodPost)
 	r.HandleFunc(fmt.Sprintf("/%s/posts/{postOwner}/{postUUID}/like", storeName), likePostHandler(cliCtx)).Methods(http.MethodPost)
 	r.HandleFunc(fmt.Sprintf("/%s/posts/{postOwner}/{postUUID}/delete", storeName), deletePostHandler(cliCtx)).Methods(http.MethodPost)
@@ -28,6 +30,31 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/posts", storeName), queryListPostsHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/posts/popular/{interval}", storeName), queryListPopularPostsHandler(cliCtx)).Methods(http.MethodGet)
 	r.HandleFunc(fmt.Sprintf("/%s/posts/{owner}", storeName), queryListUserPostsHandler(cliCtx)).Methods(http.MethodGet)
+
+	r.HandleFunc(fmt.Sprintf("/%s/likedPosts/{owner}", storeName), queryListUserLikedPostsHandler(cliCtx)).Methods(http.MethodGet)
+
+	r.HandleFunc(fmt.Sprintf("/%s/moderator-addr", storeName), moderatorAddrHandler(cliCtx)).Methods(http.MethodGet)
+}
+
+func getPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		paramOwner := mux.Vars(r)["postOwner"]
+		paramUUID := mux.Vars(r)["postUUID"]
+
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/post/%s/%s", types.QuerierRoute, paramOwner, paramUUID), nil)
+		if err != nil {
+			if err, ok := err.(*sdkerrors.Error); ok {
+				if err.Is(sdkerrors.ErrInvalidRequest) {
+					rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+					return
+				}
+			}
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+	}
 }
 
 func queryListUserPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -103,5 +130,41 @@ func queryListPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+	}
+}
+
+func queryListUserLikedPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		paramOwner := mux.Vars(r)["owner"]
+
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/liked-posts/%s", types.QuerierRoute, paramOwner), nil)
+		if err != nil {
+			if err, ok := err.(*sdkerrors.Error); ok {
+				if err.Is(sdkerrors.ErrInvalidRequest) {
+					rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+					return
+				}
+			}
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+	}
+}
+
+func moderatorAddrHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderator-addr", types.QuerierRoute), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), struct {
+			Address string `json:"address"`
+		}{
+			Address: string(res),
+		})
 	}
 }
