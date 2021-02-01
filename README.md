@@ -1,5 +1,5 @@
 # Vulcan
-![img](https://img.shields.io/docker/cloud/build/decentr/vulcan.svg)
+![img](https://img.shields.io/docker/cloud/build/decentr/vulcan.svg) ![img](https://img.shields.io/github/go-mod/go-version/Decentr-net/vulcan) ![img](https://img.shields.io/github/v/tag/Decentr-net/vulcan?label=version)
 
 Vulcan provides Decentr off-chain functionality. The Vulcan uses decentrcli home for sending messages to blockchain.  
 You should provide decentrcli home directory to this service. The Vulcan will use it for transactions signing. 

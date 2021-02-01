@@ -1,6 +1,6 @@
 module github.com/Decentr-net/vulcan
 
-go 1.14
+go 1.15
 
 replace github.com/docker/docker => github.com/docker/engine v0.0.0-20190717161051-705d9623b7c1 // fix logrus for testcontainers
 
