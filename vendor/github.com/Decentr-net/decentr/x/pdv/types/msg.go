@@ -1,55 +1,69 @@
 package types
 
 import (
-	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgCreatePDV defines a CreatePDV message
-type MsgCreatePDV struct {
-	Timestamp uint64         `json:"timestamp"`
-	Address   string         `json:"address"`
-	Owner     sdk.AccAddress `json:"owner"`
-	DataType  PDVType        `json:"type"`
+type Reward struct {
+	Receiver sdk.AccAddress `json:"receiver"`
+	ID       uint64         `json:"id"`
+	Reward   uint64         `json:"reward"`
 }
 
-// NewMsgCreatePDV is a constructor function for MsgCreatePDV
-func NewMsgCreatePDV(timestamp uint64, value string, dataType PDVType, owner sdk.AccAddress) MsgCreatePDV {
-	return MsgCreatePDV{
-		Timestamp: timestamp,
-		Address:   value,
-		Owner:     owner,
-		DataType:  dataType,
+// MsgDistributeRewards defines a CreatePDV message
+type MsgDistributeRewards struct {
+	Owner   sdk.AccAddress `json:"owner"`
+	Rewards []Reward       `json:"rewards"`
+}
+
+// NewMsgDistributeRewards is a constructor function for MsgDistributeRewards
+func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistributeRewards {
+	return MsgDistributeRewards{
+		Owner:   owner,
+		Rewards: rewards,
 	}
 }
 
 // Route should return the name of the module
-func (msg MsgCreatePDV) Route() string { return RouterKey }
+func (msg MsgDistributeRewards) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgCreatePDV) Type() string { return "create_pdv" }
+func (msg MsgDistributeRewards) Type() string { return "distribute_rewards" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgCreatePDV) ValidateBasic() error {
+func (msg MsgDistributeRewards) ValidateBasic() error {
 	if msg.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, msg.Owner.String())
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
 	}
-	if !cerberusapi.IsAddressValid(msg.Address) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+
+	if len(msg.Rewards) > 1000 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Number of reward can't be greater than 1000")
 	}
-	if msg.Timestamp == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Timestamp can not be 0")
+
+	for _, reward := range msg.Rewards {
+		if reward.Receiver.Empty() {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Receiver is empty")
+		}
+
+		if reward.Reward == 0 {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Reward can't be zero")
+		}
+
+		if reward.ID == 0 {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "ID can't be zero")
+		}
 	}
+
 	return nil
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgCreatePDV) GetSignBytes() []byte {
+func (msg MsgDistributeRewards) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgCreatePDV) GetSigners() []sdk.AccAddress {
+func (msg MsgDistributeRewards) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }

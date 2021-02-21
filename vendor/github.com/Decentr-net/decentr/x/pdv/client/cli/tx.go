@@ -4,26 +4,17 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
-	"strings"
-	"time"
-
-	cerberusapi "github.com/Decentr-net/cerberus/pkg/api"
+	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	"github.com/cosmos/cosmos-sdk/codec"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
-
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
-
-	"github.com/Decentr-net/decentr/x/pdv/types"
+	"github.com/spf13/viper"
+	"io/ioutil"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -37,7 +28,6 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	pdvTxCmd.AddCommand(flags.PostCommands(
-		GetCmdCreatePDV(cdc),
 		GetCmdSignPDV(cdc),
 	)...)
 
@@ -76,45 +66,6 @@ func GetCmdSignPDV(cdc *codec.Codec) *cobra.Command {
 				PublicKey: hex.EncodeToString(pk.Bytes()[5:]), // cut amino codec prefix
 				Signature: hex.EncodeToString(signature),
 			})
-		},
-	}
-}
-
-// GetCmdCreatePDV is the CLI command for sending a CreatePDV transaction
-func GetCmdCreatePDV(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "create [pdv]",
-		Short: "create PDV",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			if hex.EncodeToString(cliCtx.GetFromAddress()) != strings.Split(args[0], "-")[0] { // Checks if the the msg sender is the same as the current owner
-				return fmt.Errorf("invalid owner")
-			}
-
-			caddr, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/cerberus-addr", types.QuerierRoute), nil)
-			if err != nil {
-				return fmt.Errorf("failed to get cerberus addr: %w", err)
-			}
-
-			exists, err := cerberusapi.NewClient(string(caddr), secp256k1.PrivKeySecp256k1{}).DoesPDVExist(cmd.Context(), args[0])
-			if err != nil {
-				return fmt.Errorf("failed to check pdv existence: %w", err)
-			}
-
-			if !exists {
-				return fmt.Errorf("pdv does not exist")
-			}
-
-			msg := types.NewMsgCreatePDV(uint64(time.Now().Unix()), args[0], types.PDVTypeCookie, cliCtx.GetFromAddress())
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 }

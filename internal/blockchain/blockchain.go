@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -41,6 +42,7 @@ type Blockchain interface {
 type blockchain struct {
 	ctx       clicontext.CLIContext
 	txBuilder auth.TxBuilder
+	mu        sync.Mutex
 }
 
 func NewBlockchain(ctx clicontext.CLIContext, b auth.TxBuilder) Blockchain { // nolint
@@ -68,6 +70,9 @@ func (b *blockchain) SendStakes(address string, amount int64) error {
 }
 
 func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
 	txBldr, err := utils.PrepareTxBuilder(b.txBuilder, b.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to prepare builder: %w", err)
@@ -93,8 +98,15 @@ func (b *blockchain) BroadcastMsg(msg sdk.Msg) error {
 		if sdkerrors.ErrTxInMempoolCache.ABCICode() == resp.Code {
 			return nil
 		}
+
+		if sdkerrors.ErrUnauthorized.ABCICode() == resp.Code || sdkerrors.ErrInvalidSequence.ABCICode() == resp.Code {
+			b.txBuilder = b.txBuilder.WithSequence(0) // reset sequence
+		}
+
 		return fmt.Errorf("failed to broadcast tx: %s", resp.String()) // nolint: goerr113
 	}
+
+	b.txBuilder = b.txBuilder.WithSequence(txBldr.Sequence() + 1)
 
 	return nil
 }

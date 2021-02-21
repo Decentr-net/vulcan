@@ -2,7 +2,10 @@ package community
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gofrs/uuid"
@@ -11,12 +14,25 @@ import (
 )
 
 type GenesisState struct {
-	PostRecords  []Post `json:"posts"`
-	LikesRecords []Like `json:"likes"`
+	Posts      []Post              `json:"posts"`
+	Likes      []Like              `json:"likes"`
+	Moderators []string            `json:"moderators"`
+	Followers  map[string][]string `json:"followers"`
+}
+
+// GetGenesisStateFromAppState returns community GenesisState given raw application
+// genesis state.
+func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawMessage) GenesisState {
+	var genesisState GenesisState
+	if appState[ModuleName] != nil {
+		cdc.MustUnmarshalJSON(appState[ModuleName], &genesisState)
+	}
+
+	return genesisState
 }
 
 func ValidateGenesis(data GenesisState) error {
-	for _, record := range data.PostRecords {
+	for _, record := range data.Posts {
 		if record.Owner == nil {
 			return fmt.Errorf("invalid PostRecord: UUID: %s. Error: Missing Owner", record.UUID)
 		}
@@ -37,7 +53,7 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
-	for _, record := range data.LikesRecords {
+	for _, record := range data.Likes {
 		if record.Owner == nil {
 			return fmt.Errorf("invalid LikeRecord: %+v. Error: Missing owner", record)
 		}
@@ -52,24 +68,52 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
+	if len(data.Moderators) == 0 {
+		return fmt.Errorf("at least one moderator should be specified")
+	}
+
+	for who, whom := range data.Followers {
+		if _, err := sdk.AccAddressFromBech32(who); err != nil {
+			return err
+		}
+		for _, acc := range whom {
+			if _, err := sdk.AccAddressFromBech32(acc); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		PostRecords:  []Post{},
-		LikesRecords: []Like{},
+		Posts:      []Post{},
+		Likes:      []Like{},
+		Moderators: types.DefaultModerators,
+		Followers:  make(map[string][]string),
 	}
 }
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
-	for _, record := range data.PostRecords {
-		keeper.CreatePost(ctx, record)
+	for _, post := range data.Posts {
+		post.PDV = sdk.ZeroInt()
+		keeper.CreatePost(ctx, post)
 	}
 
-	for _, record := range data.LikesRecords {
-		keeper.SetLike(ctx, record)
+	for _, like := range data.Likes {
+		keeper.SetLike(ctx, like)
 	}
+
+	for who, whom := range data.Followers {
+		whoAddr, _ := sdk.AccAddressFromBech32(who)
+		for _, acc := range whom {
+			whomAddr, _ := sdk.AccAddressFromBech32(acc)
+			keeper.Follow(ctx, whoAddr, whomAddr)
+		}
+	}
+
+	keeper.SetModerators(ctx, data.Moderators)
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
@@ -79,6 +123,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 
 	for ; iterator.Valid(); iterator.Next() {
 		post := k.GetPostByKey(ctx, iterator.Key())
+		post.PDV = sdk.ZeroInt()
 		posts = append(posts, post)
 	}
 
@@ -86,8 +131,26 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	iterator = k.GetLikesIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		like := k.GetLikeByKey(ctx, iterator.Key())
+
+		// temporary solution to avoid invalid likes in exported genesis
+		key := append(like.PostOwner.Bytes(), like.PostUUID.Bytes()...)
+		if p := k.GetPostByKey(ctx, key); p.UUID == uuid.Nil {
+			continue
+		}
+
 		likes = append(likes, like)
 	}
 
-	return GenesisState{PostRecords: posts, LikesRecords: likes}
+	var followers = make(map[string][]string)
+	k.IterateFollowers(ctx, func(who, whom sdk.Address) (stop bool) {
+		followers[who.String()] = append(followers[who.String()], whom.String())
+		return false
+	})
+
+	return GenesisState{
+		Posts:      posts,
+		Likes:      likes,
+		Followers:  followers,
+		Moderators: k.GetModerators(ctx),
+	}
 }

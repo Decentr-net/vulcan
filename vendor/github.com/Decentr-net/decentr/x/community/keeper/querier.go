@@ -3,8 +3,6 @@ package keeper
 import (
 	"strconv"
 
-	"github.com/spf13/viper"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/gofrs/uuid"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -17,12 +15,13 @@ import (
 )
 
 const (
-	QueryPopular       = "popular"
-	QueryPosts         = "posts"
-	QueryPost          = "post"
-	QueryUser          = "user"
-	QueryLikedPosts    = "liked-posts"
-	QueryModeratorAddr = "moderator-addr"
+	QueryPopular    = "popular"
+	QueryPosts      = "posts"
+	QueryPost       = "post"
+	QueryUser       = "user"
+	QueryLikedPosts = "liked-posts"
+	QueryModerators = "moderators"
+	QueryFollowees  = "followees"
 )
 
 const defaultLimit = 20
@@ -54,8 +53,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryUserPosts(ctx, path[1:], req, keeper)
 		case QueryLikedPosts:
 			return queryUserLikedPosts(ctx, path[1:], req, keeper)
-		case QueryModeratorAddr:
-			return queryModeratorAddr()
+		case QueryModerators:
+			return queryModerators(ctx, keeper)
+		case QueryFollowees:
+			return queryFollowees(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "unknown community query endpoint")
 		}
@@ -146,7 +147,7 @@ func getRecentPosts(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid category")
 		}
 		category = types.Category(v)
-		if category < types.UndefinedCategory || category > types.CryptoAndBlockchainCategory {
+		if category < types.UndefinedCategory || category > types.SportsCategory {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "unknown category")
 		}
 	}
@@ -258,6 +259,31 @@ func extractCommonGetParameters(path []string) (owner sdk.AccAddress, id uuid.UU
 	return
 }
 
-func queryModeratorAddr() ([]byte, error) {
-	return []byte(viper.GetString(types.FlagModeratorAddr)), nil
+func queryModerators(ctx sdk.Context, keeper Keeper) ([]byte, error) {
+	moderators := keeper.GetModerators(ctx)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, moderators)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+	return res, nil
+}
+
+func queryFollowees(ctx sdk.Context, path []string, _ abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	owner, err := sdk.AccAddressFromBech32(path[0])
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid address")
+	}
+
+	followees := keeper.GetFollowees(ctx, owner)
+	out := make([]string, len(followees))
+	for idx, followee := range followees {
+		out[idx] = followee.String()
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, out)
+	if err != nil {
+		return nil, sdkerrors.Wrap(sdkerrors.ErrJSONMarshal, err.Error())
+	}
+
+	return res, nil
 }

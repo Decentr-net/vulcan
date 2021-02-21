@@ -33,7 +33,11 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 
 	r.HandleFunc(fmt.Sprintf("/%s/likedPosts/{owner}", storeName), queryListUserLikedPostsHandler(cliCtx)).Methods(http.MethodGet)
 
-	r.HandleFunc(fmt.Sprintf("/%s/moderator-addr", storeName), moderatorAddrHandler(cliCtx)).Methods(http.MethodGet)
+	r.HandleFunc(fmt.Sprintf("/%s/moderators", storeName), moderatorsHandler(cliCtx)).Methods(http.MethodGet)
+
+	r.HandleFunc(fmt.Sprintf("/%s/followers/follow/{whom}", storeName), createFollowHandler(cliCtx)).Methods(http.MethodPost)
+	r.HandleFunc(fmt.Sprintf("/%s/followers/unfollow/{whom}", storeName), createUnfollowHandler(cliCtx)).Methods(http.MethodPost)
+	r.HandleFunc(fmt.Sprintf("/%s/followers/{owner}/followees", storeName), queryFolloweesHandler(cliCtx)).Methods(http.MethodGet)
 }
 
 func getPostHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -63,6 +67,26 @@ func queryListUserPostsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		q := r.URL.Query()
 
 		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/user/%s/%s/%s", types.QuerierRoute, paramOwner, q.Get("from"), q.Get("limit")), nil)
+		if err != nil {
+			if err, ok := err.(*sdkerrors.Error); ok {
+				if err.Is(sdkerrors.ErrInvalidRequest) {
+					rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+					return
+				}
+			}
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
+	}
+}
+
+func queryFolloweesHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		paramOwner := mux.Vars(r)["owner"]
+
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/followees/%s", types.QuerierRoute, paramOwner), nil)
 		if err != nil {
 			if err, ok := err.(*sdkerrors.Error); ok {
 				if err.Is(sdkerrors.ErrInvalidRequest) {
@@ -153,18 +177,14 @@ func queryListUserLikedPostsHandler(cliCtx context.CLIContext) http.HandlerFunc 
 	}
 }
 
-func moderatorAddrHandler(cliCtx context.CLIContext) http.HandlerFunc {
+func moderatorsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderator-addr", types.QuerierRoute), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/moderators", types.QuerierRoute), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		rest.PostProcessResponse(w, cliCtx.WithHeight(height), struct {
-			Address string `json:"address"`
-		}{
-			Address: string(res),
-		})
+		rest.PostProcessResponse(w, cliCtx.WithHeight(height), res)
 	}
 }

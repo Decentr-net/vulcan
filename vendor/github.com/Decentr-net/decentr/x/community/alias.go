@@ -10,7 +10,7 @@ const (
 	RouterKey         = types.RouterKey
 	StoreKey          = types.StoreKey
 	QuerierRoute      = types.QuerierRoute
-	FlagModeratorAddr = types.FlagModeratorAddr
+	DefaultParamspace = types.DefaultParamspace
 )
 
 var (
@@ -26,5 +26,7 @@ type (
 	Like          = types.Like
 	MsgCreatePost = types.MsgCreatePost
 	MsgDeletePost = types.MsgDeletePost
+	MsgFollow     = types.MsgFollow
+	MsgUnfollow   = types.MsgUnfollow
 	MsgSetLike    = types.MsgSetLike
 )
