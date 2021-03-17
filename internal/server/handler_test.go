@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,10 +8,12 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/Decentr-net/go-api/test"
+
 	"github.com/Decentr-net/vulcan/internal/service"
+	servicemock "github.com/Decentr-net/vulcan/internal/service/mock"
 )
 
 var (
@@ -76,32 +77,25 @@ func Test_Register(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			b, w, r := newTestParameters(t, http.MethodPost, "v1/register", tc.body)
+			l, w, r := test.NewAPITestParameters(http.MethodPost, "v1/register", tc.body)
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			srv := service.NewMockService(ctrl)
+			srv := servicemock.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
 				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m").Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()
-			router.Use(func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					log := logrus.New()
-					log.SetOutput(b)
-					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
-				})
-			})
 
 			s := server{s: srv}
 			router.Post("/v1/register", s.register)
 
 			router.ServeHTTP(w, r)
 
-			assert.True(t, strings.Contains(b.String(), tc.rlog))
+			assert.True(t, strings.Contains(l.String(), tc.rlog))
 			assert.Equal(t, tc.rcode, w.Code)
 			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})
@@ -144,32 +138,25 @@ func Test_Confirm(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			b, w, r := newTestParameters(t, http.MethodPost, "v1/confirm", []byte(`{"email":"e@mail.com", "code":"5678"}`))
+			l, w, r := test.NewAPITestParameters(http.MethodPost, "v1/confirm", []byte(`{"email":"e@mail.com", "code":"5678"}`))
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			srv := service.NewMockService(ctrl)
+			srv := servicemock.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
 				srv.EXPECT().Confirm(gomock.Not(gomock.Nil()), "e@mail.com", "5678").Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()
-			router.Use(func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					log := logrus.New()
-					log.SetOutput(b)
-					next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), logCtxKey{}, log)))
-				})
-			})
 
 			s := server{s: srv}
 			router.Post("/v1/confirm", s.confirm)
 
 			router.ServeHTTP(w, r)
 
-			assert.True(t, strings.Contains(b.String(), tc.rlog))
+			assert.True(t, strings.Contains(l.String(), tc.rlog))
 			assert.Equal(t, tc.rcode, w.Code)
 			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})

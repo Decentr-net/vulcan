@@ -11,9 +11,10 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/Decentr-net/vulcan/internal/blockchain"
-	"github.com/Decentr-net/vulcan/internal/mail"
+	blockchainmock "github.com/Decentr-net/vulcan/internal/blockchain/mock"
+	mailmock "github.com/Decentr-net/vulcan/internal/mail/mock"
 	"github.com/Decentr-net/vulcan/internal/storage"
+	storagemock "github.com/Decentr-net/vulcan/internal/storage/mock"
 )
 
 var (
@@ -96,8 +97,8 @@ func TestService_Register(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 
-			st := storage.NewMockStorage(ctrl)
-			sender := mail.NewMockSender(ctrl)
+			st := storagemock.NewMockStorage(ctrl)
+			sender := mailmock.NewMockSender(ctrl)
 
 			ctx := context.Background()
 
@@ -117,7 +118,7 @@ func TestService_Register(t *testing.T) {
 				})
 
 				if tc.senderErr == nil {
-					st.EXPECT().InsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0))).DoAndReturn(
+					st.EXPECT().UpsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0))).DoAndReturn(
 						func(_ context.Context, _, _, _, c string) error {
 							assert.Equal(t, code, c)
 							return tc.setErr
@@ -180,9 +181,9 @@ func TestService_Confirm(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 
-			st := storage.NewMockStorage(ctrl)
-			sn := mail.NewMockSender(ctrl)
-			bc := blockchain.NewMockBlockchain(ctrl)
+			st := storagemock.NewMockStorage(ctrl)
+			sn := mailmock.NewMockSender(ctrl)
+			bc := blockchainmock.NewMockBlockchain(ctrl)
 
 			ctx := context.Background()
 

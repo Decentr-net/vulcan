@@ -1,3 +1,4 @@
+// Package service contains business logic of application.
 package service
 
 import (
@@ -23,7 +24,7 @@ const throttlingInterval = time.Minute
 
 var plustPartRegexp = regexp.MustCompile(`\+.+\@`) // nolint
 
-//go:generate mockgen -destination=./service_mock.go -package=service -source=service.go
+//go:generate mockgen -destination=./mock/service.go -package=mock -source=service.go
 
 // ErrAlreadyExists is returned when request is already created for requested email or address.
 var ErrAlreadyExists = fmt.Errorf("email or address is already taken")
