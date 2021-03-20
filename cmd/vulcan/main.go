@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -10,13 +9,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	clicontext "github.com/cosmos/cosmos-sdk/client/context"
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/go-chi/chi"
 	"github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -28,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/go-broadcaster"
 	"github.com/Decentr-net/logrus/sentry"
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
@@ -40,8 +37,9 @@ import (
 
 // nolint:lll,gochecknoglobals
 var opts = struct {
-	Host string `long:"http.host" env:"HTTP_HOST" default:"0.0.0.0" description:"IP to listen on"`
-	Port int    `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+	Host           string        `long:"http.host" env:"HTTP_HOST" default:"0.0.0.0" description:"IP to listen on"`
+	Port           int           `long:"http.port" env:"HTTP_PORT" default:"8080" description:"port to listen on for insecure connections, defaults to a random value"`
+	RequestTimeout time.Duration `long:"http.request-timeout" env:"HTTP_REQUEST_TIMEOUT" default:"45s" description:"request processing timeout"`
 
 	Postgres                   string `long:"postgres" env:"POSTGRES" default:"host=localhost port=5432 user=postgres password=root sslmode=disable" description:"postgres dsn"`
 	PostgresMaxOpenConnections int    `long:"postgres.max_open_connections" env:"POSTGRES_MAX_OPEN_CONNECTIONS" default:"0" description:"postgres maximal open connections count, 0 means unlimited"`
@@ -124,16 +122,20 @@ func main() {
 		FromEmail:                opts.MandrillFromEmail,
 	})
 
-	bchain := mustGetBlockchain()
+	b := mustGetBroadcaster()
 
-	server.SetupRouter(service.New(postgres.New(db), mailSender, bchain, opts.InitialStakes), r)
+	server.SetupRouter(
+		service.New(postgres.New(db), mailSender, blockchain.New(b, opts.BlockchainTxMemo), opts.InitialStakes),
+		r,
+		opts.RequestTimeout,
+	)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
 		health.SubjectPinger("mandrill", func(_ context.Context) error {
 			_, err := mandrillClient.Ping()
 			return err
 		}),
-		health.SubjectPinger("blockchain", bchain.Ping),
+		health.SubjectPinger("blockchain", b.PingContext),
 	)
 
 	srv := http.Server{
@@ -209,35 +211,21 @@ func mustGetDB() *sql.DB {
 	return db
 }
 
-func mustGetBlockchain() blockchain.Blockchain {
-	cdc := app.MakeCodec()
+func mustGetBroadcaster() *broadcaster.Broadcaster {
+	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
+		CLIHome:            opts.BlockchainClientHome,
+		KeyringBackend:     opts.BlockchainKeyringBackend,
+		KeyringPromptInput: opts.BlockchainKeyringPromptInput,
+		NodeURI:            opts.BlockchainNode,
+		BroadcastMode:      cliflags.BroadcastSync,
+		From:               opts.BlockchainFrom,
+		ChainID:            opts.BlockchainChainID,
+		GenesisKeyPass:     keys.DefaultKeyPass,
+	})
 
-	kb, err := keys.NewKeyring(sdk.KeyringServiceName(),
-		opts.BlockchainKeyringBackend,
-		opts.BlockchainClientHome,
-		bytes.NewBufferString(opts.BlockchainKeyringPromptInput),
-	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to create keyring")
+		logrus.WithError(err).Fatal("failed to create broadcaster")
 	}
 
-	acc, err := kb.Get(opts.BlockchainFrom)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to get blockchain account info")
-	}
-
-	cliCtx := clicontext.NewCLIContext().
-		WithCodec(cdc).
-		WithBroadcastMode(cliflags.BroadcastSync).
-		WithNodeURI(opts.BlockchainNode).
-		WithFrom(acc.GetName()).
-		WithFromName(acc.GetName()).
-		WithFromAddress(acc.GetAddress()).
-		WithChainID(opts.BlockchainChainID)
-	cliCtx.Keybase = kb
-
-	txBldr := auth.NewTxBuilder(utils.GetTxEncoder(cdc), 0, 0, 0, 1.0, false,
-		opts.BlockchainChainID, opts.BlockchainTxMemo, nil, nil).WithKeybase(kb)
-
-	return blockchain.NewBlockchain(cliCtx, txBldr)
+	return b
 }

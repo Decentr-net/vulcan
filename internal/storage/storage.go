@@ -1,3 +1,4 @@
+// Package storage provides datasource functionality.
 package storage
 
 import (
@@ -8,7 +9,7 @@ import (
 	"github.com/lib/pq"
 )
 
-//go:generate mockgen -destination=./storage_mock.go -package=storage -source=storage.go
+//go:generate mockgen -destination=./mock/storage.go -package=mock -source=storage.go
 
 // ErrNotFound ...
 var ErrNotFound = fmt.Errorf("not found")

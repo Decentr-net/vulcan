@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Decentr-net/go-api"
+
 	"github.com/Decentr-net/vulcan/internal/service"
 )
 
@@ -49,28 +51,28 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		api.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := req.validate(); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		api.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := s.s.Register(r.Context(), req.Email.String(), req.Address); err != nil {
 		switch {
 		case errors.Is(err, service.ErrTooManyAttempts):
-			writeError(w, http.StatusTooManyRequests, "too many attempts")
+			api.WriteError(w, http.StatusTooManyRequests, "too many attempts")
 		case errors.Is(err, service.ErrAlreadyExists):
-			writeError(w, http.StatusConflict, "email or address is already taken")
+			api.WriteError(w, http.StatusConflict, "email or address is already taken")
 		default:
-			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to register request")
+			api.WriteInternalErrorf(r.Context(), w, "failed to register request: %s", err.Error())
 		}
 		return
 	}
 
-	writeOK(w, http.StatusOK, EmptyResponse{})
+	api.WriteOK(w, http.StatusOK, EmptyResponse{})
 }
 
 // confirm confirms registration and creates wallet.
@@ -108,21 +110,21 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 
 	var req ConfirmRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		api.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := s.s.Confirm(r.Context(), req.Email, req.Code); err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
-			writeError(w, http.StatusNotFound, "not found")
+			api.WriteError(w, http.StatusNotFound, "not found")
 		case errors.Is(err, service.ErrAlreadyConfirmed):
-			writeError(w, http.StatusConflict, "already confirmed")
+			api.WriteError(w, http.StatusConflict, "already confirmed")
 		default:
-			writeInternalError(getLogger(r.Context()).WithError(err), w, "failed to confirm registration")
+			api.WriteInternalErrorf(r.Context(), w, "failed to confirm registration: %s", err.Error())
 		}
 		return
 	}
 
-	writeOK(w, http.StatusOK, EmptyResponse{})
+	api.WriteOK(w, http.StatusOK, EmptyResponse{})
 }

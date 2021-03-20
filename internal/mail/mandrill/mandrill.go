@@ -55,7 +55,6 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, code string) er
 	message.AddRecipient(email, "", "to")
 
 	responses, err := s.client.MessagesSendTemplate(&message, s.config.VerificationTemplateName, nil)
-
 	if err != nil {
 		return err
 	}
@@ -81,7 +80,6 @@ func (s *sender) SendWelcomeEmailAsync(_ context.Context, email string) {
 
 	go func() {
 		responses, err := s.client.MessagesSendTemplate(&message, s.config.WelcomeTemplateName, nil)
-
 		if err != nil {
 			log.WithError(err).WithField("email", email).Error("failed to send welcome email")
 			return
