@@ -21,7 +21,7 @@ MOCKGEN_NAME := mockgen
 MOCKGEN_VERSION := v1.4.3
 
 SWAGGER_NAME := swagger
-SWAGGER_VERSION := v0.25.0
+SWAGGER_VERSION := v0.26.0
 
 default: build
 
@@ -100,13 +100,13 @@ install-swagger:
 check-linter-version: ACTUAL_LINTER_VERSION := $(shell $(LINTER_NAME) --version 2>/dev/null | awk '{print $$4}')
 check-linter-version:
 	$(V) [ -z $(ACTUAL_LINTER_VERSION) ] && \
-	 echo 'Linter is not installed, run `make linter-install`' && \
+	 echo 'Linter is not installed, run `make install-linter`' && \
 	 exit 1 || true
 
 	$(V)if [ v$(ACTUAL_LINTER_VERSION) != $(LINTER_VERSION) ] ; then \
 		echo $(LINTER_NAME) is version v$(ACTUAL_LINTER_VERSION), want $(LINTER_VERSION) ; \
 		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
-		'run `make linter-install` to install the correct version' ; \
+		'run `make install-linter` to install the correct version' ; \
         exit 1 ; \
 	fi
 
@@ -114,23 +114,23 @@ check-linter-version:
 check-mockgen-version: ACTUAL_MOCKGEN_VERSION := $(shell $(MOCKGEN_NAME) --version 2>/dev/null)
 check-mockgen-version:
 	$(V) [ -z $(ACTUAL_MOCKGEN_VERSION) ] && \
-	 echo 'Mockgen is not installed, run `make mockgen-install`' && \
+	 echo 'Mockgen is not installed, run `make install-mockgen`' && \
 	 exit 1 || true
 
 	$(V)if [ $(ACTUAL_MOCKGEN_VERSION) != $(MOCKGEN_VERSION) ] ; then \
 		echo $(MOCKGEN_NAME) is version $(ACTUAL_MOCKGEN_VERSION), want $(MOCKGEN_VERSION) ; \
 		echo 'Make sure $$GOBIN has precedence in $$PATH and' \
-		'run `make mockgen-install` to install the correct version' ; \
+		'run `make install-mockgen` to install the correct version' ; \
         exit 1 ; \
 	fi
 
 .PHONY: check-swagger-version
-check-swagger-version: ACTUAL_SWAGGER_VERSION := $(shell $(SWAGGER_NAME) version 2>/dev/null)
+check-swagger-version: ACTUAL_SWAGGER_VERSION := $(shell $(SWAGGER_NAME) version 2>/dev/null | grep version | cut -c 10-17)
 # hack version, see https://github.com/go-swagger/go-swagger/issues/1712#issuecomment-422981313
-check-swagger-version: WANT_SWAGGER_VERSION := dev
+check-swagger-version: WANT_SWAGGER_VERSION := $(SWAGGER_VERSION)
 check-swagger-version:
 	$(V) [ -z $(ACTUAL_SWAGGER_VERSION) ] && \
-	 echo 'Swagger is not installed, run `make swagger-install`' && \
+	 echo 'Swagger is not installed, run `make install-swagger`' && \
 	 exit 1 || true
 
 	$(V)if [ $(ACTUAL_SWAGGER_VERSION) != $(WANT_SWAGGER_VERSION) ] ; then \

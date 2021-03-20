@@ -152,7 +152,7 @@
           "x-go-name": "Error"
         }
       },
-      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+      "x-go-package": "github.com/Decentr-net/go-api"
     },
     "RegisterRequest": {
       "type": "object",
