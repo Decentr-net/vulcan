@@ -14,10 +14,11 @@ import (
 )
 
 type GenesisState struct {
-	Posts      []Post              `json:"posts"`
-	Likes      []Like              `json:"likes"`
-	Moderators []string            `json:"moderators"`
-	Followers  map[string][]string `json:"followers"`
+	Posts          []Post              `json:"posts"`
+	Likes          []Like              `json:"likes"`
+	Moderators     []string            `json:"moderators"`
+	FixedGasParams FixedGasParams      `json:"fixed_gas"`
+	Followers      map[string][]string `json:"followers"`
 }
 
 // GetGenesisStateFromAppState returns community GenesisState given raw application
@@ -88,16 +89,16 @@ func ValidateGenesis(data GenesisState) error {
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Posts:      []Post{},
-		Likes:      []Like{},
-		Moderators: types.DefaultModerators,
-		Followers:  make(map[string][]string),
+		Posts:          []Post{},
+		Likes:          []Like{},
+		Moderators:     types.DefaultModerators,
+		Followers:      types.DefaultFollowers,
+		FixedGasParams: types.DefaultFixedGasParams(),
 	}
 }
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	for _, post := range data.Posts {
-		post.PDV = sdk.ZeroInt()
 		keeper.CreatePost(ctx, post)
 	}
 
@@ -114,31 +115,22 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
 	}
 
 	keeper.SetModerators(ctx, data.Moderators)
+	keeper.SetFixedGasParams(ctx, data.FixedGasParams)
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var posts []Post
-	iterator := k.GetPostsIterator(ctx)
-	defer iterator.Close()
 
-	for ; iterator.Valid(); iterator.Next() {
-		post := k.GetPostByKey(ctx, iterator.Key())
-		post.PDV = sdk.ZeroInt()
-		posts = append(posts, post)
+	it := k.GetPostsIterator(ctx)
+	for ; it.Valid(); it.Next() {
+		posts = append(posts, k.GetPostByKey(ctx, it.Key()))
 	}
+	it.Close()
 
 	var likes []Like
-	iterator = k.GetLikesIterator(ctx)
-	for ; iterator.Valid(); iterator.Next() {
-		like := k.GetLikeByKey(ctx, iterator.Key())
-
-		// temporary solution to avoid invalid likes in exported genesis
-		key := append(like.PostOwner.Bytes(), like.PostUUID.Bytes()...)
-		if p := k.GetPostByKey(ctx, key); p.UUID == uuid.Nil {
-			continue
-		}
-
-		likes = append(likes, like)
+	it = k.GetLikesIterator(ctx)
+	for ; it.Valid(); it.Next() {
+		likes = append(likes, k.GetLikeByKey(ctx, it.Key()))
 	}
 
 	var followers = make(map[string][]string)
@@ -148,9 +140,10 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	})
 
 	return GenesisState{
-		Posts:      posts,
-		Likes:      likes,
-		Followers:  followers,
-		Moderators: k.GetModerators(ctx),
+		Posts:          posts,
+		Likes:          likes,
+		Followers:      followers,
+		Moderators:     k.GetModerators(ctx),
+		FixedGasParams: k.GetFixedGasParams(ctx),
 	}
 }
