@@ -7,7 +7,7 @@ replace github.com/docker/docker => github.com/docker/engine v0.0.0-201907171610
 require (
 	github.com/Decentr-net/decentr v1.3.0
 	github.com/Decentr-net/go-api v0.0.4
-	github.com/Decentr-net/go-broadcaster v0.0.1
+	github.com/Decentr-net/go-broadcaster v0.0.3
 	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
 	github.com/cosmos/cosmos-sdk v0.39.2
 	github.com/getsentry/sentry-go v0.10.0 // indirect

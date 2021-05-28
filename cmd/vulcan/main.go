@@ -61,6 +61,7 @@ var opts = struct {
 	BlockchainClientHome         string `long:"blockchain.client_home" env:"BLOCKCHAIN_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
 	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
 	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
+	BlockchainGas                uint64 `long:"blockchain.gas" env:"BLOCKCHAIN_GAS" default:"10" description:"gas amount"`
 
 	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
@@ -221,6 +222,8 @@ func mustGetBroadcaster() *broadcaster.Broadcaster {
 		From:               opts.BlockchainFrom,
 		ChainID:            opts.BlockchainChainID,
 		GenesisKeyPass:     keys.DefaultKeyPass,
+		Gas:                opts.BlockchainGas,
+		GasAdjust:          1,
 	})
 
 	if err != nil {
