@@ -13,6 +13,7 @@ import (
 
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-chi/chi"
 	"github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -62,6 +63,7 @@ var opts = struct {
 	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
 	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
 	BlockchainGas                uint64 `long:"blockchain.gas" env:"BLOCKCHAIN_GAS" default:"10" description:"gas amount"`
+	BlockchainFee                string `long:"blockchain.fee" env:"BLOCKCHAIN_FEE" default:"1udec" description:"transaction fee"`
 
 	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
@@ -213,6 +215,11 @@ func mustGetDB() *sql.DB {
 }
 
 func mustGetBroadcaster() *broadcaster.Broadcaster {
+	fee, err := sdk.ParseCoin(opts.BlockchainFee)
+	if err != nil {
+		logrus.WithError(err).Error("failed to parse fee")
+	}
+
 	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
 		CLIHome:            opts.BlockchainClientHome,
 		KeyringBackend:     opts.BlockchainKeyringBackend,
@@ -223,7 +230,8 @@ func mustGetBroadcaster() *broadcaster.Broadcaster {
 		ChainID:            opts.BlockchainChainID,
 		GenesisKeyPass:     keys.DefaultKeyPass,
 		Gas:                opts.BlockchainGas,
-		GasAdjust:          1,
+		GasAdjust:          1.2,
+		Fees:               sdk.Coins{fee},
 	})
 
 	if err != nil {
