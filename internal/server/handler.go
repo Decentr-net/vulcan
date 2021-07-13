@@ -5,8 +5,11 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/Decentr-net/go-api"
 
+	"github.com/Decentr-net/vulcan/internal/mail"
 	"github.com/Decentr-net/vulcan/internal/service"
 )
 
@@ -66,6 +69,9 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 			api.WriteError(w, http.StatusTooManyRequests, "too many attempts")
 		case errors.Is(err, service.ErrAlreadyExists):
 			api.WriteError(w, http.StatusConflict, "email or address is already taken")
+		case errors.Is(err, mail.ErrMailRejected):
+			logrus.WithField("request", req).WithError(err).Error("failed to send email with rejected status")
+			api.WriteError(w, http.StatusBadRequest, err.Error())
 		default:
 			api.WriteInternalErrorf(r.Context(), w, "failed to register request: %s", err.Error())
 		}
