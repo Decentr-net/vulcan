@@ -15,6 +15,7 @@ import (
 
 const mandrillSentStatus = "sent"
 const mandrillQueuedStatus = "queued"
+const mandrillRejectedStatus = "rejected"
 
 type sender struct {
 	config *Config
@@ -61,6 +62,9 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, code string) er
 
 	for _, v := range responses {
 		if v.Status != mandrillSentStatus && v.Status != mandrillQueuedStatus {
+			if v.Status == mandrillRejectedStatus {
+				return fmt.Errorf("%w: %s", mail.ErrMailRejected, v.RejectionReason)
+			}
 			return fmt.Errorf("failed to send verification email(%s) to %s: %s - %s", v.Id, v.Email, v.Status, v.RejectionReason) // nolint: goerr113
 		}
 	}
