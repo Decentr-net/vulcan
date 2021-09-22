@@ -120,6 +120,35 @@
           }
         }
       }
+    },
+    "/supply": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "summary": "Returns sum of erc20 and native supply supply.",
+        "operationId": "Supply",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "number"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {

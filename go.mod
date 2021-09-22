@@ -10,6 +10,7 @@ require (
 	github.com/Decentr-net/go-broadcaster v0.0.4
 	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
 	github.com/cosmos/cosmos-sdk v0.39.2
+	github.com/ethereum/go-ethereum v1.10.8
 	github.com/getsentry/sentry-go v0.10.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-chi/cors v1.1.1
@@ -23,5 +24,5 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.8.0
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )

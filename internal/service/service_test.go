@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
 	blockchainmock "github.com/Decentr-net/vulcan/internal/blockchain/mock"
@@ -45,7 +45,7 @@ func TestService_Register(t *testing.T) {
 		},
 		{
 			name: "already registered",
-			req:  &storage.Request{Owner: testOwner, ConfirmedAt: pq.NullTime{Valid: true}},
+			req:  &storage.Request{Owner: testOwner, ConfirmedAt: sql.NullTime{Valid: true}},
 			err:  ErrAlreadyExists,
 		},
 		{
@@ -103,7 +103,12 @@ func TestService_Register(t *testing.T) {
 
 			ctx := context.Background()
 
-			s := New(st, sender, nil, nil, testInitialStakes, mainInitialStakes)
+			s := &service{
+				storage:           st,
+				sender:            sender,
+				initialTestStakes: testInitialStakes,
+				initialMainStakes: mainInitialStakes,
+			}
 
 			var code string
 			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(tc.req, tc.getByAddressErr)
@@ -196,7 +201,14 @@ func TestService_Confirm(t *testing.T) {
 
 			ctx := context.Background()
 
-			s := New(st, sn, btc, bmc, testInitialStakes, mainInitialStakes)
+			s := &service{
+				storage:           st,
+				sender:            sn,
+				btc:               btc,
+				bmc:               bmc,
+				initialTestStakes: testInitialStakes,
+				initialMainStakes: mainInitialStakes,
+			}
 
 			st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(&tc.req, tc.getErr)
 

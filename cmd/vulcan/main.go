@@ -34,6 +34,7 @@ import (
 	"github.com/Decentr-net/vulcan/internal/server"
 	"github.com/Decentr-net/vulcan/internal/service"
 	"github.com/Decentr-net/vulcan/internal/storage/postgres"
+	"github.com/Decentr-net/vulcan/internal/supply"
 )
 
 // nolint:lll,gochecknoglobals
@@ -80,6 +81,9 @@ var opts = struct {
 
 	InitialTestStakes int64 `long:"blockchain.test.initial_stakes" env:"BLOCKCHAIN_TEST_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
 	InitialMainStakes int64 `long:"blockchain.main.initial_stakes" env:"BLOCKCHAIN_MAIN_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
+
+	SupplyNativeNode string `long:"supply.native_node" env:"SUPPLY_NATIVE_NODE" default:"https://zeus.testnet.decentr.xyz" description:"native rest node address"`
+	SupplyERC20Node  string `long:"supply.erc20_node" env:"SUPPLY_ERC20_NODE" default:"" description:"erc20 node address"`
 }{}
 
 var errTerminated = errors.New("terminated")
@@ -136,6 +140,7 @@ func main() {
 		FromEmail:                opts.MandrillFromEmail,
 	})
 
+	sup := supply.New(opts.SupplyNativeNode, opts.SupplyERC20Node)
 	bt := mustGetTestBroadcaster()
 	bm := mustGetMainBroadcaster()
 
@@ -148,6 +153,7 @@ func main() {
 			opts.InitialTestStakes,
 			opts.InitialMainStakes,
 		),
+		sup,
 		r,
 		opts.RequestTimeout,
 	)
@@ -159,6 +165,7 @@ func main() {
 		}),
 		health.SubjectPinger("blockchain_testnet", bt.PingContext),
 		health.SubjectPinger("blockchain_mainnet", bm.PingContext),
+		health.SubjectPinger("supply", sup.PingContext),
 	)
 
 	srv := http.Server{

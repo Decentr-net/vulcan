@@ -71,6 +71,8 @@ go run cmd/vulcan/main.go \
 | blockchain.main.fee   | BLOCKCHAIN_MAIN_FEE    | 1udec | false | transaction fee
 | blockchain.test.initial_stake | BLOCKCHAIN_TEST_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
 | blockchain.main.initial_stake | BLOCKCHAIN_MAIN_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
+| supply.native_node | SUPPLY_NATIVE_NODE | https://zeus.testnet.decentr.xyz | true | native rest node address
+| supply.erc20_node | SUPPLY_ERC20_NODE |  | true | erc20 node address
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
 | sentry.dsn    | SENTRY_DSN    |  | sentry dsn
 

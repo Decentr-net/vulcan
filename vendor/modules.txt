@@ -39,6 +39,8 @@ github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
 # github.com/Microsoft/hcsshim v0.8.6
 github.com/Microsoft/hcsshim/osversion
+# github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6
+github.com/StackExchange/wmi
 # github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 github.com/asaskevich/govalidator
 # github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d
@@ -196,6 +198,8 @@ github.com/cosmos/ledger-go
 github.com/danieljoos/wincred
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
+# github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea
+github.com/deckarep/golang-set
 # github.com/docker/distribution v2.7.1+incompatible
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
@@ -242,7 +246,34 @@ github.com/dvsekhvalnov/jose2go/compact
 github.com/dvsekhvalnov/jose2go/kdf
 github.com/dvsekhvalnov/jose2go/keys/ecc
 github.com/dvsekhvalnov/jose2go/padding
-# github.com/fsnotify/fsnotify v1.4.7
+# github.com/ethereum/go-ethereum v1.10.8
+## explicit
+github.com/ethereum/go-ethereum
+github.com/ethereum/go-ethereum/accounts
+github.com/ethereum/go-ethereum/accounts/abi
+github.com/ethereum/go-ethereum/accounts/abi/bind
+github.com/ethereum/go-ethereum/accounts/external
+github.com/ethereum/go-ethereum/accounts/keystore
+github.com/ethereum/go-ethereum/common
+github.com/ethereum/go-ethereum/common/hexutil
+github.com/ethereum/go-ethereum/common/math
+github.com/ethereum/go-ethereum/common/mclock
+github.com/ethereum/go-ethereum/core/types
+github.com/ethereum/go-ethereum/crypto
+github.com/ethereum/go-ethereum/crypto/secp256k1
+github.com/ethereum/go-ethereum/crypto/secp256k1/libsecp256k1/include
+github.com/ethereum/go-ethereum/crypto/secp256k1/libsecp256k1/src
+github.com/ethereum/go-ethereum/crypto/secp256k1/libsecp256k1/src/modules/recovery
+github.com/ethereum/go-ethereum/ethclient
+github.com/ethereum/go-ethereum/event
+github.com/ethereum/go-ethereum/log
+github.com/ethereum/go-ethereum/metrics
+github.com/ethereum/go-ethereum/p2p/netutil
+github.com/ethereum/go-ethereum/params
+github.com/ethereum/go-ethereum/rlp
+github.com/ethereum/go-ethereum/rpc
+github.com/ethereum/go-ethereum/signer/core/apitypes
+# github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
 # github.com/getsentry/sentry-go v0.10.0
 ## explicit
@@ -266,6 +297,9 @@ github.com/go-kit/kit/metrics/internal/lv
 github.com/go-kit/kit/metrics/prometheus
 # github.com/go-logfmt/logfmt v0.5.0
 github.com/go-logfmt/logfmt
+# github.com/go-ole/go-ole v1.2.1
+github.com/go-ole/go-ole
+github.com/go-ole/go-ole/oleutil
 # github.com/go-openapi/errors v0.19.2
 github.com/go-openapi/errors
 # github.com/go-openapi/strfmt v0.19.5
@@ -296,19 +330,19 @@ github.com/golang-migrate/migrate/v4/source/httpfs
 # github.com/golang/mock v1.4.4
 ## explicit
 github.com/golang/mock/gomock
-# github.com/golang/protobuf v1.4.2
+# github.com/golang/protobuf v1.4.3
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/golang/snappy v0.0.2
+# github.com/golang/snappy v0.0.3
 github.com/golang/snappy
 # github.com/google/btree v1.0.0
 github.com/google/btree
-# github.com/google/uuid v1.1.2
+# github.com/google/uuid v1.1.5
 github.com/google/uuid
-# github.com/gorilla/mux v1.7.4
+# github.com/gorilla/mux v1.8.0
 github.com/gorilla/mux
 # github.com/gorilla/websocket v1.4.2
 github.com/gorilla/websocket
@@ -325,7 +359,7 @@ github.com/gtank/ristretto255/internal/scalar
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-multierror v1.1.0
 github.com/hashicorp/go-multierror
-# github.com/hashicorp/golang-lru v0.5.4
+# github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hashicorp/hcl v1.0.0
@@ -405,6 +439,11 @@ github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
 # github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
 github.com/rcrowley/go-metrics
+# github.com/rjeczalik/notify v0.9.1
+github.com/rjeczalik/notify
+# github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible
+github.com/shirou/gopsutil/cpu
+github.com/shirou/gopsutil/internal/common
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
@@ -427,7 +466,7 @@ github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
-# github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
+# github.com/syndtr/goleveldb v1.0.1-0.20210305035536-64b5b1c73954
 github.com/syndtr/goleveldb/leveldb
 github.com/syndtr/goleveldb/leveldb/cache
 github.com/syndtr/goleveldb/leveldb/comparer
@@ -521,6 +560,10 @@ github.com/tendermint/tm-db
 ## explicit
 github.com/testcontainers/testcontainers-go
 github.com/testcontainers/testcontainers-go/wait
+# github.com/tklauser/go-sysconf v0.3.5
+github.com/tklauser/go-sysconf
+# github.com/tklauser/numcpus v0.2.2
+github.com/tklauser/numcpus
 # github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 github.com/tomasen/realip
 # github.com/zondax/hid v0.9.0
@@ -534,7 +577,7 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c
+# golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -552,8 +595,10 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ripemd160
 golang.org/x/crypto/salsa20/salsa
+golang.org/x/crypto/scrypt
+golang.org/x/crypto/sha3
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20201010224723-4f7140c49acb
+# golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -564,18 +609,18 @@ golang.org/x/net/internal/timeseries
 golang.org/x/net/netutil
 golang.org/x/net/proxy
 golang.org/x/net/trace
-# golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
+# golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20201013132646-2da7054afaeb
+# golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.0.0-20201117132131-f5c789dd3221
+# golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 golang.org/x/term
-# golang.org/x/text v0.3.3
+# golang.org/x/text v0.3.6
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
@@ -655,7 +700,9 @@ google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/ini.v1 v1.57.0
 gopkg.in/ini.v1
-# gopkg.in/yaml.v2 v2.3.0
+# gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
+gopkg.in/natefinch/npipe.v2
+# gopkg.in/yaml.v2 v2.4.0
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 gopkg.in/yaml.v3
