@@ -25,6 +25,7 @@ var (
 	testCode    = "1234"
 
 	testInitialStakes = int64(10)
+	mainInitialStakes = int64(100)
 )
 
 func TestService_Register(t *testing.T) {
@@ -102,7 +103,7 @@ func TestService_Register(t *testing.T) {
 
 			ctx := context.Background()
 
-			s := New(st, sender, nil, testInitialStakes)
+			s := New(st, sender, nil, nil, testInitialStakes, mainInitialStakes)
 
 			var code string
 			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(tc.req, tc.getByAddressErr)
@@ -133,12 +134,13 @@ func TestService_Register(t *testing.T) {
 
 func TestService_Confirm(t *testing.T) {
 	tt := []struct {
-		name    string
-		req     storage.Request
-		getErr  error
-		setErr  error
-		sendErr error
-		err     error
+		name        string
+		req         storage.Request
+		getErr      error
+		setErr      error
+		testSendErr error
+		mainSendErr error
+		err         error
 	}{
 		{
 			name: "success",
@@ -161,10 +163,16 @@ func TestService_Confirm(t *testing.T) {
 			err:    errTest,
 		},
 		{
-			name:    "send error",
-			req:     storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
-			sendErr: errTest,
-			err:     errTest,
+			name:        "test send error",
+			req:         storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+			testSendErr: errTest,
+			err:         errTest,
+		},
+		{
+			name:        "main send error",
+			req:         storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+			mainSendErr: errTest,
+			err:         errTest,
 		},
 		{
 			name:   "set error",
@@ -183,18 +191,23 @@ func TestService_Confirm(t *testing.T) {
 
 			st := storagemock.NewMockStorage(ctrl)
 			sn := mailmock.NewMockSender(ctrl)
-			bc := blockchainmock.NewMockBlockchain(ctrl)
+			btc := blockchainmock.NewMockBlockchain(ctrl)
+			bmc := blockchainmock.NewMockBlockchain(ctrl)
 
 			ctx := context.Background()
 
-			s := New(st, sn, bc, testInitialStakes)
+			s := New(st, sn, btc, bmc, testInitialStakes, mainInitialStakes)
 
 			st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(&tc.req, tc.getErr)
 
 			if tc.getErr == nil {
-				bc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.sendErr)
+				btc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.testSendErr)
 
-				if tc.sendErr == nil {
+				if tc.testSendErr == nil {
+					bmc.EXPECT().SendStakes(tc.req.Address, mainInitialStakes).Return(tc.mainSendErr)
+				}
+
+				if tc.mainSendErr == nil {
 					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)
 
 					st.EXPECT().SetConfirmed(ctx, tc.req.Owner).Return(tc.setErr)
