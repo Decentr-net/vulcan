@@ -104,7 +104,7 @@ func (s *service) checkRegistrationConflicts(ctx context.Context, email, address
 			return fmt.Errorf("failed to check conflicts: %w", err)
 		}
 
-		if r, err = s.storage.GetRequestByOwner(ctx, getEmailHash(email)); err != nil && !errors.Is(err, storage.ErrNotFound) {
+		if r, err = s.storage.GetRequestByOwner(ctx, getEmailHash(truncatePlusPart(email))); err != nil && !errors.Is(err, storage.ErrNotFound) {
 			return fmt.Errorf("failed to check conflicts: %w", err)
 		}
 	}
