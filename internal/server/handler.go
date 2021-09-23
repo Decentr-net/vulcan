@@ -134,3 +134,32 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 
 	api.WriteOK(w, http.StatusOK, EmptyResponse{})
 }
+
+// supply returns sum of erc20 and native supply stakes.
+func (s *server) supply(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /supply Vulcan Supply
+	//
+	// Returns sum of erc20 and native supply supply.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// consumes:
+	// - application/json
+	// responses:
+	//   '200':
+	//     schema:
+	//       type: number
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	amount, err := s.sup.GetCirculatingSupply()
+	if err != nil {
+		api.WriteInternalErrorf(r.Context(), w, "failed to get supply: %s", err.Error())
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, amount)
+}

@@ -24,6 +24,7 @@ import (
 	"github.com/Decentr-net/go-api"
 
 	"github.com/Decentr-net/vulcan/internal/service"
+	"github.com/Decentr-net/vulcan/internal/supply"
 )
 
 //go:generate swagger generate spec -t swagger -m -c . -o ../../static/swagger.json
@@ -31,11 +32,12 @@ import (
 const maxBodySize = 1024
 
 type server struct {
-	s service.Service
+	s   service.Service
+	sup supply.Supply
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, r chi.Router, timeout time.Duration) {
+func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout time.Duration) {
 	r.Use(
 		api.FileServerMiddleware("/docs", "static"),
 		api.LoggerMiddleware,
@@ -53,4 +55,5 @@ func SetupRouter(s service.Service, r chi.Router, timeout time.Duration) {
 
 	r.Post("/v1/register", srv.register)
 	r.Post("/v1/confirm", srv.confirm)
+	r.Get("/v1/supply", srv.supply)
 }

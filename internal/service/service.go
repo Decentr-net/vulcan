@@ -5,14 +5,13 @@ import (
 	"context"
 	"crypto/md5" // nolint:gosec
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/lib/pq"
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/mail"
@@ -62,7 +61,7 @@ func New(
 	bt, bm blockchain.Blockchain,
 	initialTestNetStakes, initialMainNetStakes int64,
 ) Service {
-	return &service{
+	s := &service{
 		storage:           storage,
 		sender:            sender,
 		btc:               bt,
@@ -70,6 +69,8 @@ func New(
 		initialTestStakes: initialTestNetStakes,
 		initialMainStakes: initialMainNetStakes,
 	}
+
+	return s
 }
 
 func (s *service) Register(ctx context.Context, email, address string) error {
@@ -153,7 +154,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 
 	s.sender.SendWelcomeEmailAsync(ctx, req.Email)
 
-	req.ConfirmedAt = pq.NullTime{
+	req.ConfirmedAt = sql.NullTime{
 		Time:  time.Now(),
 		Valid: true,
 	}

@@ -3,10 +3,9 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 //go:generate mockgen -destination=./mock/storage.go -package=mock -source=storage.go
@@ -19,12 +18,12 @@ var ErrAddressIsTaken = fmt.Errorf("address is taken")
 
 // Request ...
 type Request struct {
-	Owner       string      `db:"owner"`
-	Email       string      `db:"email"`
-	Address     string      `db:"address"`
-	Code        string      `db:"code"`
-	CreatedAt   time.Time   `db:"created_at"`
-	ConfirmedAt pq.NullTime `db:"confirmed_at"`
+	Owner       string       `db:"owner"`
+	Email       string       `db:"email"`
+	Address     string       `db:"address"`
+	Code        string       `db:"code"`
+	CreatedAt   time.Time    `db:"created_at"`
+	ConfirmedAt sql.NullTime `db:"confirmed_at"`
 }
 
 // Storage provides methods for interacting with database.

@@ -14,6 +14,7 @@ import (
 
 	"github.com/Decentr-net/vulcan/internal/service"
 	servicemock "github.com/Decentr-net/vulcan/internal/service/mock"
+	supplymock "github.com/Decentr-net/vulcan/internal/supply/mock"
 )
 
 var (
@@ -157,6 +158,56 @@ func Test_Confirm(t *testing.T) {
 			router.ServeHTTP(w, r)
 
 			assert.True(t, strings.Contains(l.String(), tc.rlog))
+			assert.Equal(t, tc.rcode, w.Code)
+			assert.JSONEq(t, tc.rdata, w.Body.String())
+		})
+	}
+}
+
+func Test_Circulating(t *testing.T) {
+	tt := []struct {
+		name   string
+		amount int64
+		err    error
+		rcode  int
+		rdata  string
+	}{
+		{
+			name:   "success",
+			amount: 1000,
+			err:    nil,
+			rcode:  http.StatusOK,
+			rdata:  "1000",
+		},
+		{
+			name:  "internal error",
+			err:   errTest,
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error": "internal error"}`,
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, w, r := test.NewAPITestParameters(http.MethodGet, "v1/supply", nil)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			sup := supplymock.NewMockSupply(ctrl)
+
+			sup.EXPECT().GetCirculatingSupply().Return(tc.amount, tc.err)
+
+			router := chi.NewRouter()
+
+			s := server{sup: sup}
+			router.Get("/v1/supply", s.supply)
+
+			router.ServeHTTP(w, r)
+
 			assert.Equal(t, tc.rcode, w.Code)
 			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})
