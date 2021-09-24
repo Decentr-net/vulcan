@@ -50,7 +50,8 @@ func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout tim
 	)
 
 	srv := server{
-		s: s,
+		s:   s,
+		sup: sup,
 	}
 
 	r.Post("/v1/register", srv.register)
