@@ -7,6 +7,7 @@ run:
     - integration
   skip-dirs:
     - vendor
+    - scripts
   modules-download-mode: vendor
 
 output:
