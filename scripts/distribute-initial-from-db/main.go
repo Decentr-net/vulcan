@@ -90,7 +90,7 @@ func main() {
 	logrus.WithField("msgs_count", len(msgs)).Info("to be processed")
 
 	i := 0
-	batch := 100
+	batch := 10
 	for len(msgs) > 0 {
 		if batch > len(msgs) {
 			batch = len(msgs)
