@@ -23,7 +23,10 @@ import (
 //go:generate mockgen -destination=./mock/supply.go -package=mock -source=supply.go
 
 // nolint
-var erc20TokenAddr = common.HexToAddress("0x30f271c9e86d2b7d00a6376cd96a1cfbd5f0b9b3")
+var (
+	erc20TokenAddr       = common.HexToAddress("0x30f271c9e86d2b7d00a6376cd96a1cfbd5f0b9b3")
+	erc20LockedTokenAddr = common.HexToAddress("0x0ff3285Bac4D0697B3a263107560bDf2D08fC3DB")
+)
 
 // Supply ...
 type Supply interface {
@@ -167,10 +170,16 @@ func (s supply) getERC20CirculatingSupply(ctx context.Context) (int64, error) {
 		return 0, fmt.Errorf("failed to get reserved: %w", err)
 	}
 
+	locked, err := instance.BalanceOf(&bind.CallOpts{Context: ctx}, erc20LockedTokenAddr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get reserved: %w", err)
+	}
+
 	var denom = big.NewInt(10)
 	denom.Exp(denom, big.NewInt(18), nil)
 
 	supply := total.Sub(total, reserved)
+	supply = supply.Sub(supply, locked)
 
 	return supply.Quo(supply, denom).Int64(), nil
 }

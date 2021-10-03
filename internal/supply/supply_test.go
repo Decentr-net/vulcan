@@ -8,6 +8,7 @@ import (
 )
 
 const nativeNode = "https://zeus.mainnet.decentr.xyz"
+
 const ethNode = "" // nolint
 
 func TestBlockchain_GetNativeCirculating(t *testing.T) {
@@ -26,6 +27,15 @@ func TestBlockchain_GetNativeCirculating(t *testing.T) {
 //	require.NoError(t, err)
 //	require.NotZero(t, v)
 //}
+
+//func TestBlockchain_GetERC20Circulating(t *testing.T) {
+//	s := supply{erc20NodeURL: ethNode, nativeNodeURL: nativeNode}
+//
+//	v, err := s.poll()
+//	require.NoError(t, err)
+//	require.NotZero(t, v)
+//}
+
 //
 //func Test_startPollingCirculatingSupply(t *testing.T) {
 //	t.Parallel()
