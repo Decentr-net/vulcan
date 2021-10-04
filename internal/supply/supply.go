@@ -25,7 +25,7 @@ import (
 // nolint
 var (
 	erc20TokenAddr       = common.HexToAddress("0x30f271c9e86d2b7d00a6376cd96a1cfbd5f0b9b3")
-	erc20LockedTokenAddr = common.HexToAddress("0x0ff3285Bac4D0697B3a263107560bDf2D08fC3DB")
+	erc20LockedTokenAddr = common.HexToAddress("0x91b028C41b0268d346E78209Eb5EF5579487b639")
 )
 
 // Supply ...
