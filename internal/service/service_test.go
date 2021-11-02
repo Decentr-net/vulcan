@@ -171,7 +171,6 @@ func TestService_Confirm(t *testing.T) {
 			name:        "test send error",
 			req:         storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
 			testSendErr: errTest,
-			err:         errTest,
 		},
 		{
 			name:        "main send error",
@@ -214,10 +213,7 @@ func TestService_Confirm(t *testing.T) {
 
 			if tc.getErr == nil {
 				btc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.testSendErr)
-
-				if tc.testSendErr == nil {
-					bmc.EXPECT().SendStakes(tc.req.Address, mainInitialStakes).Return(tc.mainSendErr)
-				}
+				bmc.EXPECT().SendStakes(tc.req.Address, mainInitialStakes).Return(tc.mainSendErr)
 
 				if tc.mainSendErr == nil {
 					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)

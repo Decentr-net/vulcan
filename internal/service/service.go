@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/mail"
 	"github.com/Decentr-net/vulcan/internal/storage"
@@ -145,7 +147,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 	}
 
 	if err := s.btc.SendStakes(req.Address, s.initialTestStakes); err != nil {
-		return fmt.Errorf("failed to send stakes to %s on testnet: %w", req.Address, err)
+		log.WithError(err).WithField("address", req.Address).Error("failed to send stakes on testnet")
 	}
 
 	if err := s.bmc.SendStakes(req.Address, s.initialMainStakes); err != nil {
