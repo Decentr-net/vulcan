@@ -21,6 +21,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/keighl/mandrill v0.0.0-20170605120353-1775dd4b3b41
 	github.com/lib/pq v1.3.0
+	github.com/opencontainers/runc v1.0.0-rc95 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.8.0

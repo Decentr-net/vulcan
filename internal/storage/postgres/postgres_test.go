@@ -114,7 +114,9 @@ func migrate(username, password, hostname, dbname string, port int) {
 }
 
 func cleanup(t *testing.T) {
-	_, err := db.ExecContext(ctx, "DELETE FROM request")
+	_, err := db.ExecContext(ctx, "DELETE FROM referral")
+	require.NoError(t, err)
+	_, err = db.ExecContext(ctx, "DELETE FROM request")
 	require.NoError(t, err)
 }
 
@@ -131,6 +133,8 @@ func TestPg_InsertRequest(t *testing.T) {
 	assert.Equal(t, "code", r.Code)
 	assert.False(t, r.CreatedAt.IsZero())
 	assert.False(t, r.ConfirmedAt.Valid)
+	assert.NotEmpty(t, r.ReferralCode)
+	assert.Len(t, r.ReferralCode, 8)
 
 	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "own", "em", "address", "code")))
 	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "owner", "em", "address2", "code")))
@@ -141,6 +145,12 @@ func TestPg_InsertRequest(t *testing.T) {
 
 	assert.Equal(t, "new", r.Address)
 	assert.Equal(t, "code2", r.Code)
+}
+
+func TestPg_CreateReferral(t *testing.T) {
+	defer cleanup(t)
+	require.NoError(t, s.CreateReferral(ctx, &storage.Referral{Sender: "sender", Receiver: "receiver"}))
+	require.Equal(t, s.CreateReferral(ctx, &storage.Referral{Sender: "sender", Receiver: "receiver"}), storage.ErrReferralExists)
 }
 
 func TestPg_SetConfirmed(t *testing.T) {
