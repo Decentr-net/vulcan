@@ -13,8 +13,6 @@ import (
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
-const uniqueViolationErrorCode = "23505"
-
 type pg struct {
 	db *sqlx.DB
 }
@@ -71,11 +69,32 @@ func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code strin
 		INSERT INTO request VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT(email) DO
 			UPDATE SET address=EXCLUDED.address, code=EXCLUDED.code, created_at=EXCLUDED.created_at
 	`, owner, email, address, code); err != nil {
-		if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationErrorCode {
+		if isUniqueViolationErr(err) {
 			return storage.ErrAddressIsTaken
 		}
 		return fmt.Errorf("failed to exec query: %w", err)
 	}
 
 	return nil
+}
+
+func (p pg) CreateReferral(ctx context.Context, referral *storage.Referral) error {
+	if _, err := p.db.NamedExecContext(ctx,
+		`INSERT INTO referral (sender, receiver, registered_at) VALUES (:sender, :receiver, CURRENT_TIMESTAMP)`,
+		referral); err != nil {
+		if isUniqueViolationErr(err) {
+			return storage.ErrReferralExists
+		}
+		return fmt.Errorf("failed to exec query: %w", err)
+	}
+	return nil
+}
+
+func isUniqueViolationErr(err error) bool {
+	const uniqueViolationErrorCode = "23505"
+
+	if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationErrorCode {
+		return true
+	}
+	return false
 }

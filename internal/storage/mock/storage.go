@@ -91,3 +91,17 @@ func (mr *MockStorageMockRecorder) UpsertRequest(ctx, owner, email, address, cod
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRequest", reflect.TypeOf((*MockStorage)(nil).UpsertRequest), ctx, owner, email, address, code)
 }
+
+// CreateReferral mocks base method
+func (m *MockStorage) CreateReferral(ctx context.Context, referral *storage.Referral) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateReferral", ctx, referral)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateReferral indicates an expected call of CreateReferral
+func (mr *MockStorageMockRecorder) CreateReferral(ctx, referral interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReferral", reflect.TypeOf((*MockStorage)(nil).CreateReferral), ctx, referral)
+}
