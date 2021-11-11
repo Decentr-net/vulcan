@@ -43,6 +43,7 @@ var ErrTooManyAttempts = fmt.Errorf("too many attempts")
 type Service interface {
 	Register(ctx context.Context, email, address string) error
 	Confirm(ctx context.Context, owner, code string) error
+	GetReferralCode(ctx context.Context, address string) (string, error)
 }
 
 // Service ...
@@ -166,6 +167,18 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 	}
 
 	return nil
+}
+
+func (s *service) GetReferralCode(ctx context.Context, address string) (string, error) {
+	req, err := s.storage.GetRequestByAddress(ctx, address)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return "", ErrNotFound
+		}
+		return "", fmt.Errorf("failed to get referral code: %w", err)
+	}
+
+	return req.ReferralCode, nil
 }
 
 func truncatePlusPart(email string) string {

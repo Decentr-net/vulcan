@@ -64,6 +64,38 @@
         }
       }
     },
+    "/referral/code/{address}": {
+      "get": {
+        "description": "Returns a referral code of the given account",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "operationId": "GetReferralCode",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "account not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/register": {
       "post": {
         "consumes": [
@@ -123,9 +155,6 @@
     },
     "/supply": {
       "get": {
-        "consumes": [
-          "application/json"
-        ],
         "produces": [
           "application/json"
         ],
