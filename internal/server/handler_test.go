@@ -86,7 +86,7 @@ func Test_Register(t *testing.T) {
 			srv := servicemock.NewMockService(ctrl)
 
 			if tc.serviceErr != errSkip {
-				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m").Return(tc.serviceErr)
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", nil).Return(tc.serviceErr)
 			}
 
 			router := chi.NewRouter()
@@ -120,7 +120,7 @@ func Test_Confirm(t *testing.T) {
 		},
 		{
 			name:       "not found",
-			serviceErr: service.ErrNotFound,
+			serviceErr: service.ErrRequestNotFound,
 			rcode:      http.StatusNotFound,
 			rdata:      `{"error": "not found"}`,
 			rlog:       "",

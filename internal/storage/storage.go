@@ -16,18 +16,22 @@ var ErrNotFound = fmt.Errorf("not found")
 // ErrAddressIsTaken ...
 var ErrAddressIsTaken = fmt.Errorf("address is taken")
 
-// ErrReferralExists ...
-var ErrReferralExists = fmt.Errorf("referral exists")
+// ErrReferralTrackingExists ...
+var ErrReferralTrackingExists = fmt.Errorf("referral tracking exists")
+
+// ErrReferralCodeNotFound ...
+var ErrReferralCodeNotFound = fmt.Errorf("referral code not found")
 
 // Request ...
 type Request struct {
-	Owner        string       `db:"owner"`
-	Email        string       `db:"email"`
-	Address      string       `db:"address"`
-	Code         string       `db:"code"`
-	CreatedAt    time.Time    `db:"created_at"`
-	ConfirmedAt  sql.NullTime `db:"confirmed_at"`
-	ReferralCode string       `db:"referral_code"`
+	Owner                    string         `db:"owner"`
+	Email                    string         `db:"email"`
+	Address                  string         `db:"address"`
+	Code                     string         `db:"code"`
+	CreatedAt                time.Time      `db:"created_at"`
+	ConfirmedAt              sql.NullTime   `db:"confirmed_at"`
+	OwnReferralCode          string         `db:"own_referral_code"`
+	RegisteredByReferralCode sql.NullString `db:"registered_by_referral_code"`
 }
 
 // ReferralStatus represents a referral workflow status: registered -> installed -> confirmed.
@@ -42,8 +46,8 @@ const (
 	ConfirmedReferralStatus ReferralStatus = "confirmed"
 )
 
-// Referral ...
-type Referral struct {
+// ReferralTracking ...
+type ReferralTracking struct {
 	Sender         string         `db:"sender"`
 	Receiver       string         `db:"receiver"`
 	Status         ReferralStatus `db:"status"`
@@ -58,13 +62,14 @@ type Referral struct {
 type Storage interface {
 	// GetRequestByOwner returns request by owner.
 	GetRequestByOwner(ctx context.Context, owner string) (*Request, error)
+	// GetRequestByOwnReferralCode returns request by referral code.
+	GetRequestByOwnReferralCode(ctx context.Context, ownReferralCode string) (*Request, error)
 	// GetRequestByAddress returns request by address.
 	GetRequestByAddress(ctx context.Context, address string) (*Request, error)
 	// SetConfirmed sets request confirmed.
 	SetConfirmed(ctx context.Context, owner string) error
 	// UpsertRequest inserts request into storage.
-	UpsertRequest(ctx context.Context, owner, email, address, code string) error
-
-	// CreateReferral creates a new referral
-	CreateReferral(ctx context.Context, referral *Referral) error
+	UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error
+	// CreateReferralTracking creates a new referral tracking
+	CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error
 }

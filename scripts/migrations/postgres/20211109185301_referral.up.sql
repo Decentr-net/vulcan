@@ -1,7 +1,8 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-ALTER TABLE request ADD COLUMN referral_code TEXT NULL;
-CREATE UNIQUE INDEX request_referral_code_idx ON request(referral_code);
+ALTER TABLE request
+    ADD COLUMN own_referral_code TEXT NULL UNIQUE,
+    ADD COLUMN registered_by_referral_code TEXT NULL REFERENCES request (own_referral_code);
 
 CREATE OR REPLACE FUNCTION unique_referral_code()
     RETURNS TRIGGER AS $$
@@ -14,7 +15,7 @@ BEGIN
 
     -- generate the first part of a query as a string with safely
     -- escaped table name, using || to concat the parts
-    qry := 'SELECT referral_code FROM ' || quote_ident(TG_TABLE_NAME) || ' WHERE referral_code=';
+    qry := 'SELECT own_referral_code FROM ' || quote_ident(TG_TABLE_NAME) || ' WHERE own_referral_code=';
 
     -- This loop will probably only run once per call until we've generated
     -- millions of ids.
@@ -47,7 +48,7 @@ BEGIN
         -- and try again.
     END LOOP;
 
-    NEW.referral_code = key;
+    NEW.own_referral_code = key;
 
     -- The RECORD returned here is what will actually be INSERTed,
     -- or what the next trigger will get if there is one.
@@ -70,12 +71,12 @@ CREATE TRIGGER trigger_request_unique_referral_code
     BEFORE INSERT ON request
     FOR EACH ROW EXECUTE PROCEDURE unique_referral_code();
 
-ALTER TABLE request ALTER COLUMN referral_code SET NOT NULL;
+ALTER TABLE request ALTER COLUMN own_referral_code SET NOT NULL;
 
 -- Referral
 CREATE TYPE REFERRAL_STATUS AS ENUM ('registered', 'installed', 'confirmed');
 
-CREATE TABLE referral (
+CREATE TABLE referral_tracking (
     sender VARCHAR NOT NULL,
     receiver VARCHAR NOT NULL,
     status REFERRAL_STATUS NOT NULL DEFAULT ('registered'),

@@ -36,6 +36,18 @@ func (p pg) GetRequestByOwner(ctx context.Context, owner string) (*storage.Reque
 	return &r, nil
 }
 
+func (p pg) GetRequestByOwnReferralCode(ctx context.Context, ownReferralCode string) (*storage.Request, error) {
+	var r storage.Request
+	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM request WHERE own_referral_code=$1`, ownReferralCode); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, storage.ErrReferralCodeNotFound
+		}
+		return nil, fmt.Errorf("failed to exec query: %w", err)
+	}
+
+	return &r, nil
+}
+
 func (p pg) GetRequestByAddress(ctx context.Context, address string) (*storage.Request, error) {
 	var r storage.Request
 	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM request WHERE address=$1`, address); err != nil {
@@ -64,12 +76,18 @@ func (p pg) SetConfirmed(ctx context.Context, owner string) error {
 	return nil
 }
 
-func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code string) error {
+func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error {
 	if _, err := p.db.ExecContext(ctx, `
-		INSERT INTO request VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP) ON CONFLICT(email) DO
-			UPDATE SET address=EXCLUDED.address, code=EXCLUDED.code, created_at=EXCLUDED.created_at
-	`, owner, email, address, code); err != nil {
-		if isUniqueViolationErr(err) {
+		INSERT INTO request (owner, email, address, code, created_at, registered_by_referral_code)
+		    VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) ON CONFLICT(email) DO
+			UPDATE SET 
+			           address=EXCLUDED.address, 
+			           code=EXCLUDED.code, 
+			           created_at=EXCLUDED.created_at,
+			           registered_by_referral_code=EXCLUDED.registered_by_referral_code
+	`, owner, email, address, code, referralCode); err != nil {
+		if isUniqueViolationErr(err, "request_address_key") ||
+			isUniqueViolationErr(err, "request_owner_key") {
 			return storage.ErrAddressIsTaken
 		}
 		return fmt.Errorf("failed to exec query: %w", err)
@@ -78,22 +96,38 @@ func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code strin
 	return nil
 }
 
-func (p pg) CreateReferral(ctx context.Context, referral *storage.Referral) error {
-	if _, err := p.db.NamedExecContext(ctx,
-		`INSERT INTO referral (sender, receiver, registered_at) VALUES (:sender, :receiver, CURRENT_TIMESTAMP)`,
-		referral); err != nil {
-		if isUniqueViolationErr(err) {
-			return storage.ErrReferralExists
+func (p pg) CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error {
+	if _, err := p.db.ExecContext(ctx,
+		`INSERT INTO referral_tracking (sender, receiver, registered_at) 
+                   VALUES (
+                        (SELECT address FROM request WHERE own_referral_code = $2), 
+                        $1, 
+                        CURRENT_TIMESTAMP
+			        )`,
+		receiver, referralCode); err != nil {
+		switch {
+		case isNotNullViolationError(err, "sender"):
+			return storage.ErrReferralCodeNotFound
+		case isUniqueViolationErr(err, "referral_tracking_pkey"):
+			return storage.ErrReferralTrackingExists
+		default:
+			return fmt.Errorf("failed to exec query: %w", err)
 		}
-		return fmt.Errorf("failed to exec query: %w", err)
 	}
 	return nil
 }
 
-func isUniqueViolationErr(err error) bool {
-	const uniqueViolationErrorCode = "23505"
+func isUniqueViolationErr(err error, constraint string) bool {
+	if err1, ok := err.(*pq.Error); ok &&
+		err1.Code == "23505" && err1.Constraint == constraint {
+		return true
+	}
+	return false
+}
 
-	if err, ok := err.(*pq.Error); ok && err.Code == uniqueViolationErrorCode {
+func isNotNullViolationError(err error, column string) bool {
+	if err1, ok := err.(*pq.Error); ok &&
+		err1.Code == "23502" && err1.Column == column {
 		return true
 	}
 	return false

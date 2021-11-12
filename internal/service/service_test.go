@@ -124,15 +124,15 @@ func TestService_Register(t *testing.T) {
 				})
 
 				if tc.senderErr == nil {
-					st.EXPECT().UpsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0))).DoAndReturn(
-						func(_ context.Context, _, _, _, c string) error {
+					st.EXPECT().UpsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).DoAndReturn(
+						func(_ context.Context, _, _, _, c string, _ sql.NullString) error {
 							assert.Equal(t, code, c)
 							return tc.setErr
 						})
 				}
 			}
 
-			assert.True(t, errors.Is(s.Register(ctx, testEmail, testAddress), tc.err))
+			assert.True(t, errors.Is(s.Register(ctx, testEmail, testAddress, nil), tc.err))
 		})
 	}
 }
@@ -146,12 +146,12 @@ func TestService_GetReferralCode(t *testing.T) {
 	}{
 		{
 			name: "success",
-			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+			req:  storage.Request{Owner: testOwner, Address: testAddress, OwnReferralCode: testCode},
 		},
 		{
 			name:   "not found",
 			getErr: storage.ErrNotFound,
-			err:    ErrNotFound,
+			err:    ErrRequestNotFound,
 		},
 	}
 
@@ -175,7 +175,7 @@ func TestService_GetReferralCode(t *testing.T) {
 			if err != nil {
 				assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
 			}
-			assert.Equal(t, tc.req.ReferralCode, code)
+			assert.Equal(t, tc.req.OwnReferralCode, code)
 		})
 	}
 }
@@ -197,12 +197,12 @@ func TestService_Confirm(t *testing.T) {
 		{
 			name:   "not found",
 			getErr: storage.ErrNotFound,
-			err:    ErrNotFound,
+			err:    ErrRequestNotFound,
 		},
 		{
 			name: "wrong code",
 			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: "wrong"},
-			err:  ErrNotFound,
+			err:  ErrRequestNotFound,
 		},
 
 		{
