@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/go-api"
-
 	"github.com/Decentr-net/vulcan/internal/mail"
 	"github.com/Decentr-net/vulcan/internal/service"
 )
@@ -144,8 +144,6 @@ func (s *server) supply(w http.ResponseWriter, r *http.Request) {
 	// ---
 	// produces:
 	// - application/json
-	// consumes:
-	// - application/json
 	// responses:
 	//   '200':
 	//     schema:
@@ -162,4 +160,45 @@ func (s *server) supply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.WriteOK(w, http.StatusOK, amount)
+}
+
+// getReferralCode return a referral code of the given account.
+func (s *server) getReferralCode(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /referral/code/{address} Vulcan GetReferralCode
+	//
+	// Returns a referral code of the given account
+	//
+	// ---
+	// produces:
+	// - application/json
+	// responses:
+	//   '200':
+	//     schema:
+	//       type: string
+	//   '404':
+	//      description: account not found
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	address := chi.URLParam(r, "address")
+
+	code, err := s.s.GetReferralCode(r.Context(), address)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrNotFound):
+			api.WriteError(w, http.StatusNotFound, "not found")
+		default:
+			api.WriteInternalErrorf(r.Context(), w, "failed to get referral code: %s", err.Error())
+		}
+		return
+	}
+	api.WriteOK(w, http.StatusOK, struct {
+		Code string `json:"code"`
+	}{
+		Code: code,
+	})
 }

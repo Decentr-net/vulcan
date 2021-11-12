@@ -60,3 +60,18 @@ func (mr *MockServiceMockRecorder) Confirm(ctx, owner, code interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Confirm", reflect.TypeOf((*MockService)(nil).Confirm), ctx, owner, code)
 }
+
+// GetReferralCode mocks base method
+func (m *MockService) GetReferralCode(ctx context.Context, address string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferralCode", ctx, address)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferralCode indicates an expected call of GetReferralCode
+func (mr *MockServiceMockRecorder) GetReferralCode(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralCode", reflect.TypeOf((*MockService)(nil).GetReferralCode), ctx, address)
+}

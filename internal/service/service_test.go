@@ -137,6 +137,49 @@ func TestService_Register(t *testing.T) {
 	}
 }
 
+func TestService_GetReferralCode(t *testing.T) {
+	tt := []struct {
+		name   string
+		req    storage.Request
+		getErr error
+		err    error
+	}{
+		{
+			name: "success",
+			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+		},
+		{
+			name:   "not found",
+			getErr: storage.ErrNotFound,
+			err:    ErrNotFound,
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+			st := storagemock.NewMockStorage(ctrl)
+
+			s := &service{
+				storage:           st,
+				initialTestStakes: testInitialStakes,
+				initialMainStakes: mainInitialStakes,
+			}
+
+			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(&tc.req, tc.getErr)
+			code, err := s.GetReferralCode(ctx, testAddress)
+			if err != nil {
+				assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
+			}
+			assert.Equal(t, tc.req.ReferralCode, code)
+		})
+	}
+}
+
 func TestService_Confirm(t *testing.T) {
 	tt := []struct {
 		name        string
