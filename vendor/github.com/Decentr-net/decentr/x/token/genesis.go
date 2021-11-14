@@ -1,48 +1,66 @@
 package token
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/decentr/x/token/keeper"
+	"github.com/Decentr-net/decentr/x/token/types"
 )
 
-type GenesisState struct {
-	Balances map[string]sdk.Int `json:"balances"`
-}
+// InitGenesis initializes the capability module's state from a provided genesis
+// state.
+func InitGenesis(ctx sdk.Context, keeper keeper.Keeper, genState types.GenesisState) {
+	if keeper.SetParams(ctx, types.DefaultParams()); genState.Params != nil {
+		keeper.SetParams(ctx, *genState.Params)
+	}
 
-func ValidateGenesis(data GenesisState) error {
-	for account := range data.Balances {
-		if _, err := sdk.AccAddressFromBech32(account); err != nil {
-			return err
+	for k, v := range genState.Balances {
+		address, err := sdk.AccAddressFromBech32(k)
+		if err != nil {
+			panic(fmt.Errorf("invalid address %s in balances : %w", k, err))
 		}
+		keeper.SetBalance(ctx, address, v.Dec)
 	}
-	return nil
+
+	for k, v := range genState.Deltas {
+		address, err := sdk.AccAddressFromBech32(k)
+		if err != nil {
+			panic(fmt.Errorf("invalid address %s in deltas : %w", k, err))
+		}
+		keeper.SetBalanceDelta(ctx, address, v.Dec)
+	}
+
+	for _, v := range genState.BanList {
+		keeper.SetBan(ctx, v, true)
+	}
 }
 
-func DefaultGenesisState() GenesisState {
-	return GenesisState{
-		Balances: make(map[string]sdk.Int),
-	}
-}
+// ExportGenesis returns the capability module's exported genesis.
+func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
+	params := k.GetParams(ctx)
+	balances := map[string]sdk.DecProto{}
+	deltas := map[string]sdk.DecProto{}
+	banlist := make([]sdk.AccAddress, 0)
 
-func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) {
-	for account, balance := range data.Balances {
-		addr, _ := sdk.AccAddressFromBech32(account)
-		keeper.SetBalance(ctx, addr, balance)
-	}
-}
+	k.IterateBalance(ctx, func(address sdk.AccAddress, balance sdk.Dec) (stop bool) {
+		balances[address.String()] = sdk.DecProto{Dec: balance}
+		return false
+	})
+	k.IterateBalanceDelta(ctx, func(address sdk.AccAddress, delta sdk.Dec) (stop bool) {
+		deltas[address.String()] = sdk.DecProto{Dec: delta}
+		return false
+	})
+	k.IterateBanList(ctx, func(address sdk.AccAddress) (stop bool) {
+		banlist = append(banlist, address)
+		return false
+	})
 
-func ExportGenesis(ctx sdk.Context, keeper Keeper) GenesisState {
-	out := make(map[string]sdk.Int)
-
-	it := keeper.GetBalanceIterator(ctx)
-	defer it.Close()
-
-	for ; it.Valid(); it.Next() {
-		amount := keeper.GetBalance(ctx, it.Key())
-		owner := sdk.AccAddress(it.Key())
-		out[owner.String()] = amount
-	}
-
-	return GenesisState{
-		Balances: out,
+	return &types.GenesisState{
+		Params:   &params,
+		Balances: balances,
+		Deltas:   deltas,
+		BanList:  banlist,
 	}
 }

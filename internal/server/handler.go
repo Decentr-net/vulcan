@@ -5,14 +5,17 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Decentr-net/vulcan/internal/storage"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Decentr-net/decentr/config"
 	"github.com/Decentr-net/go-api"
+
 	"github.com/Decentr-net/vulcan/internal/mail"
 	"github.com/Decentr-net/vulcan/internal/service"
+	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
 // register sends email with link to create new wallet.
@@ -395,6 +398,6 @@ func toReferralTrackingStatsItem(item storage.ReferralTrackingStats) ReferralTra
 		Registered: item.Registered,
 		Installed:  item.Installed,
 		Confirmed:  item.Confirmed,
-		Reward:     item.Reward,
+		Reward:     sdk.NewCoin(config.DefaultBondDenom, item.Reward),
 	}
 }

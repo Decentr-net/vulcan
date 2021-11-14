@@ -33,18 +33,16 @@ func (m *MockSender) EXPECT() *MockSenderMockRecorder {
 	return m.recorder
 }
 
-// SendVerificationEmail mocks base method
-func (m *MockSender) SendVerificationEmail(ctx context.Context, email, code string) error {
+// SendVerificationEmailAsync mocks base method
+func (m *MockSender) SendVerificationEmailAsync(ctx context.Context, email, code string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendVerificationEmail", ctx, email, code)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "SendVerificationEmailAsync", ctx, email, code)
 }
 
-// SendVerificationEmail indicates an expected call of SendVerificationEmail
-func (mr *MockSenderMockRecorder) SendVerificationEmail(ctx, email, code interface{}) *gomock.Call {
+// SendVerificationEmailAsync indicates an expected call of SendVerificationEmailAsync
+func (mr *MockSenderMockRecorder) SendVerificationEmailAsync(ctx, email, code interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendVerificationEmail", reflect.TypeOf((*MockSender)(nil).SendVerificationEmail), ctx, email, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendVerificationEmailAsync", reflect.TypeOf((*MockSender)(nil).SendVerificationEmailAsync), ctx, email, code)
 }
 
 // SendWelcomeEmailAsync mocks base method

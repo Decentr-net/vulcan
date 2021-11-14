@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Decentr-net/vulcan/internal/blockchain"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/Decentr-net/vulcan/internal/blockchain"
 	blockchainmock "github.com/Decentr-net/vulcan/internal/blockchain/mock"
 	mailmock "github.com/Decentr-net/vulcan/internal/mail/mock"
 	"github.com/Decentr-net/vulcan/internal/storage"
@@ -28,70 +28,114 @@ var (
 	testEmail   = "decentr@decentr.xyz"
 	testCode    = "1234"
 
-	testInitialStakes = int64(10)
-	mainInitialStakes = int64(100)
+	initialStakes = sdk.NewInt(100)
 )
 
 func TestService_Register(t *testing.T) {
 	tt := []struct {
-		name            string
-		req             *storage.Request
-		getByAddressErr error
-		getByOwnerErr   error
-		setErr          error
-		senderErr       error
-		err             error
+		name          string
+		mockSetupFunc func(s *storagemock.MockStorage, m *mailmock.MockSender)
+		err           error
 	}{
 		{
-			name:            "success",
-			getByAddressErr: storage.ErrNotFound,
-			getByOwnerErr:   storage.ErrNotFound,
+			name: "success",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
+				var code string
+				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).DoAndReturn(
+					func(_ context.Context, _, _, _, c string, _ sql.NullString) error {
+						code = c
+						return nil
+					},
+				)
+				m.EXPECT().SendVerificationEmailAsync(gomock.Any(), testEmail, gomock.Any()).Do(func(_ context.Context, _, c string) {
+					assert.Equal(t, code, c)
+				})
+			},
 		},
 		{
 			name: "already registered",
-			req:  &storage.Request{Owner: testOwner, ConfirmedAt: sql.NullTime{Valid: true}},
-			err:  ErrAlreadyExists,
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(&storage.Request{Owner: testOwner, ConfirmedAt: sql.NullTime{Valid: true}}, nil)
+			},
+			err: ErrAlreadyExists,
+		},
+		{
+			name: "already registered#2",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{Owner: testOwner, ConfirmedAt: sql.NullTime{Valid: true}}, nil)
+			},
+			err: ErrAlreadyExists,
 		},
 		{
 			name: "too many attempts",
-			req:  &storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, CreatedAt: time.Now()},
-			err:  ErrTooManyAttempts,
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, CreatedAt: time.Now()}, nil)
+			},
+			err: ErrTooManyAttempts,
 		},
 		{
 			name: "not confirmed request already exists",
-			req:  &storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, Address: testAddress, Code: testCode},
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, Address: testAddress, Code: testCode}, nil)
+				var code string
+				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).DoAndReturn(
+					func(_ context.Context, _, _, _, c string, _ sql.NullString) error {
+						code = c
+						return nil
+					},
+				)
+				m.EXPECT().SendVerificationEmailAsync(gomock.Any(), testEmail, gomock.Any()).Do(func(_ context.Context, _, c string) {
+					assert.Equal(t, code, c)
+				})
+			},
 		},
 		{
-			name:            "getFailed",
-			getByAddressErr: errTest,
-			err:             errTest,
+			name: "getByAddressFailed",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, errTest)
+			},
+			err: errTest,
 		},
 		{
-			name:            "getFailed",
-			getByAddressErr: storage.ErrNotFound,
-			getByOwnerErr:   errTest,
-			err:             errTest,
+			name: "getByOwnerFailed",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, errTest)
+			},
+			err: errTest,
 		},
 		{
-			name:            "errAddressIsBusy",
-			getByAddressErr: storage.ErrNotFound,
-			getByOwnerErr:   storage.ErrNotFound,
-			setErr:          storage.ErrAddressIsTaken,
-			err:             ErrAlreadyExists,
+			name: "errAddressIsBusy",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
+				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).Return(storage.ErrAddressIsTaken)
+			},
+			err: ErrAlreadyExists,
 		},
 		{
-			name:            "setFailed",
-			getByAddressErr: storage.ErrNotFound,
-			getByOwnerErr:   storage.ErrNotFound,
-			setErr:          errTest,
-			err:             errTest,
+			name: "setFailed",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
+				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).Return(errTest)
+			},
+			err: errTest,
 		},
 		{
-			name:            "senderFailed",
-			getByAddressErr: storage.ErrNotFound,
-			getByOwnerErr:   storage.ErrNotFound,
-			senderErr:       errTest,
-			err:             errTest,
+			name: "senderFailed",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
+				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).Return(nil)
+				m.EXPECT().SendVerificationEmailAsync(gomock.Any(), testEmail, gomock.Any())
+			},
+			err: nil,
 		},
 	}
 
@@ -101,6 +145,7 @@ func TestService_Register(t *testing.T) {
 			t.Parallel()
 
 			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			st := storagemock.NewMockStorage(ctrl)
 			sender := mailmock.NewMockSender(ctrl)
@@ -108,35 +153,15 @@ func TestService_Register(t *testing.T) {
 			ctx := context.Background()
 
 			s := &service{
-				storage:           st,
-				sender:            sender,
-				initialTestStakes: testInitialStakes,
-				initialMainStakes: mainInitialStakes,
+				storage:       st,
+				sender:        sender,
+				initialStakes: initialStakes,
 			}
 
-			var code string
-			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(tc.req, tc.getByAddressErr)
-			if tc.getByAddressErr == storage.ErrNotFound {
-				st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(tc.req, tc.getByOwnerErr)
-			}
-
-			if (tc.getByAddressErr == nil || tc.getByAddressErr == storage.ErrNotFound) &&
-				(tc.getByOwnerErr == nil || tc.getByOwnerErr == storage.ErrNotFound) {
-				sender.EXPECT().SendVerificationEmail(ctx, testEmail, gomock.Any()).DoAndReturn(func(_ context.Context, _, c string) error {
-					code = c
-					return tc.senderErr
-				})
-
-				if tc.senderErr == nil {
-					st.EXPECT().UpsertRequest(ctx, testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).DoAndReturn(
-						func(_ context.Context, _, _, _, c string, _ sql.NullString) error {
-							assert.Equal(t, code, c)
-							return tc.setErr
-						})
-				}
-			}
+			tc.mockSetupFunc(st, sender)
 
 			assert.True(t, errors.Is(s.Register(ctx, testEmail, testAddress, nil), tc.err))
+			time.Sleep(100 * time.Millisecond)
 		})
 	}
 }
@@ -169,9 +194,8 @@ func TestService_GetReferralCode(t *testing.T) {
 			st := storagemock.NewMockStorage(ctrl)
 
 			s := &service{
-				storage:           st,
-				initialTestStakes: testInitialStakes,
-				initialMainStakes: mainInitialStakes,
+				storage:       st,
+				initialStakes: initialStakes,
 			}
 
 			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(&tc.req, tc.getErr)
@@ -186,50 +210,84 @@ func TestService_GetReferralCode(t *testing.T) {
 
 func TestService_Confirm(t *testing.T) {
 	tt := []struct {
-		name        string
-		req         storage.Request
-		getErr      error
-		setErr      error
-		testSendErr error
-		mainSendErr error
-		err         error
+		name          string
+		mockSetupFunc func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain)
+		err           error
 	}{
 		{
 			name: "success",
-			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain) {
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{
+					Owner:   testOwner,
+					Email:   testEmail,
+					Address: testAddress,
+					Code:    testCode,
+				}, nil)
+
+				bc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: testAddress, Amount: initialStakes},
+				}, "").Return(nil)
+				m.EXPECT().SendWelcomeEmailAsync(gomock.Any(), testEmail)
+				s.EXPECT().SetConfirmed(gomock.Any(), testOwner).Return(nil)
+			},
 		},
 		{
-			name:   "not found",
-			getErr: storage.ErrNotFound,
-			err:    ErrRequestNotFound,
+			name: "not found",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain) {
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
+			},
+			err: ErrRequestNotFound,
 		},
 		{
 			name: "wrong code",
-			req:  storage.Request{Owner: testOwner, Address: testAddress, Code: "wrong"},
-			err:  ErrRequestNotFound,
-		},
-
-		{
-			name:   "check error",
-			getErr: errTest,
-			err:    errTest,
-		},
-		{
-			name:        "test send error",
-			req:         storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
-			testSendErr: errTest,
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain) {
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{
+					Owner:   testOwner,
+					Email:   testEmail,
+					Address: testAddress,
+					Code:    "wrong",
+				}, nil)
+			},
+			err: ErrRequestNotFound,
 		},
 		{
-			name:        "main send error",
-			req:         storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
-			mainSendErr: errTest,
-			err:         errTest,
+			name: "check error",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain) {
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, errTest)
+			},
+			err: errTest,
 		},
 		{
-			name:   "set error",
-			req:    storage.Request{Owner: testOwner, Address: testAddress, Code: testCode},
-			setErr: errTest,
-			err:    errTest,
+			name: "send error",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain) {
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{
+					Owner:   testOwner,
+					Email:   testEmail,
+					Address: testAddress,
+					Code:    testCode,
+				}, nil)
+				bc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: testAddress, Amount: initialStakes},
+				}, "").Return(errTest)
+			},
+			err: errTest,
+		},
+		{
+			name: "set error",
+			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender, bc *blockchainmock.MockBlockchain) {
+				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{
+					Owner:   testOwner,
+					Email:   testEmail,
+					Address: testAddress,
+					Code:    testCode,
+				}, nil)
+				bc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: testAddress, Amount: initialStakes},
+				}, "").Return(nil)
+				m.EXPECT().SendWelcomeEmailAsync(gomock.Any(), testEmail)
+				s.EXPECT().SetConfirmed(gomock.Any(), testOwner).Return(errTest)
+			},
+			err: errTest,
 		},
 	}
 
@@ -242,40 +300,20 @@ func TestService_Confirm(t *testing.T) {
 
 			st := storagemock.NewMockStorage(ctrl)
 			sn := mailmock.NewMockSender(ctrl)
-			btc := blockchainmock.NewMockBlockchain(ctrl)
-			bmc := blockchainmock.NewMockBlockchain(ctrl)
+			bc := blockchainmock.NewMockBlockchain(ctrl)
 
 			ctx := context.Background()
 
 			s := &service{
-				storage:           st,
-				sender:            sn,
-				btc:               btc,
-				bmc:               bmc,
-				initialTestStakes: testInitialStakes,
-				initialMainStakes: mainInitialStakes,
+				storage:       st,
+				sender:        sn,
+				bc:            bc,
+				initialStakes: initialStakes,
 			}
 
-			st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(&tc.req, tc.getErr)
+			tc.mockSetupFunc(st, sn, bc)
 
-			if tc.getErr == nil {
-				btc.EXPECT().SendStakes([]blockchain.Stake{
-					{Address: tc.req.Address, Amount: testInitialStakes},
-				}, "").Return(tc.testSendErr)
-				bmc.EXPECT().SendStakes([]blockchain.Stake{
-					{Address: tc.req.Address, Amount: mainInitialStakes},
-				}, "").Return(tc.mainSendErr)
-
-				if tc.mainSendErr == nil {
-					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)
-
-					st.EXPECT().SetConfirmed(ctx, tc.req.Owner).Return(tc.setErr)
-				}
-			}
-
-			err := s.Confirm(ctx, testEmail, testCode)
-
-			assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
+			assert.ErrorIs(t, s.Confirm(ctx, testEmail, testCode), tc.err)
 		})
 	}
 }

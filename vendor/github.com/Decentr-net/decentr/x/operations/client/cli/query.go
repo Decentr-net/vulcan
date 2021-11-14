@@ -3,19 +3,17 @@ package cli
 import (
 	"fmt"
 
-	"github.com/Decentr-net/decentr/x/operations/types"
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/Decentr-net/decentr/x/operations/types"
 )
 
-// GetQueryCmd returns the cli query commands for this module
-func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	// Group profile queries under a subcommand
-	profileQueryCmd := &cobra.Command{
+func GetQueryCmd(_ string) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("Querying commands for the %s module", types.ModuleName),
 		DisableFlagParsing:         true,
@@ -23,35 +21,69 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	profileQueryCmd.AddCommand(
-		flags.GetCommands(
-			GetCmdMinGasPrice(cdc),
-		)...,
+	cmd.AddCommand(
+		NewMinGasPriceCmd(),
+		NewIsAccountBannedCmd(),
 	)
 
-	return profileQueryCmd
+	return cmd
 }
 
-func GetCmdMinGasPrice(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+func NewMinGasPriceCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "min-gas-price",
 		Short: "Query the current min gas price value",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			route := fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryMinGasPrice)
-			res, _, err := cliCtx.QueryWithData(route, nil)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			var mgp sdk.DecCoin
-			if err := cdc.UnmarshalJSON(res, &mgp); err != nil {
+			queryClient := types.NewQueryClient(clientCtx)
+
+			out, err := queryClient.MinGasPrice(cmd.Context(), &types.MinGasPriceRequest{})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(out)
+		},
+	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
+}
+
+func NewIsAccountBannedCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "is-account-banned [address]",
+		Short: "Query if the account banned",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
 				return err
 			}
 
-			return cliCtx.PrintOutput(mgp)
+			address, err := sdk.AccAddressFromBech32(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid address: %w", err)
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+
+			out, err := queryClient.IsAccountBanned(cmd.Context(), &types.IsAccountBannedRequest{
+				Address: address,
+			})
+			if err != nil {
+				return err
+			}
+			return clientCtx.PrintProto(out)
 		},
 	}
+
+	flags.AddQueryFlagsToCmd(cmd)
+
+	return cmd
 }

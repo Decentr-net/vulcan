@@ -5,22 +5,20 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/Decentr-net/decentr/app"
-	"github.com/Decentr-net/go-broadcaster"
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/jessevdk/go-flags"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
+
+	"github.com/Decentr-net/decentr/config"
+	"github.com/Decentr-net/go-broadcaster"
 )
 
 func init() {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	config.Seal()
+	config.SetAddressPrefixes()
 }
 
 var opts = struct {
@@ -81,8 +79,8 @@ func main() {
 			logrus.WithError(err).Errorf("failed to parse: %s", v)
 		}
 
-		msgs = append(msgs, bank.NewMsgSend(bt.From(), to, sdk.Coins{sdk.Coin{
-			Denom:  app.DefaultBondDenom,
+		msgs = append(msgs, banktypes.NewMsgSend(bt.From(), to, sdk.Coins{sdk.Coin{
+			Denom:  config.DefaultBondDenom,
 			Amount: sdk.NewInt(opts.InitialMainStakes),
 		}}))
 	}
@@ -96,7 +94,7 @@ func main() {
 			batch = len(msgs)
 		}
 
-		if err := bt.Broadcast(msgs[:batch], ""); err != nil {
+		if _, err := bt.Broadcast(msgs[:batch], ""); err != nil {
 			logrus.WithError(err).Fatal("failed to broadcast")
 		}
 
@@ -121,20 +119,19 @@ func getAddresses(db *sqlx.DB) ([]string, error) {
 }
 
 func mustGetMainBroadcaster() *broadcaster.Broadcaster {
-	fee, err := sdk.ParseCoin(opts.BlockchainMainFee)
+	fee, err := sdk.ParseCoinNormalized(opts.BlockchainMainFee)
 	if err != nil {
 		logrus.WithError(err).Error("failed to parse fee")
 	}
 
-	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
-		CLIHome:            opts.BlockchainMainClientHome,
+	b, err := broadcaster.New(broadcaster.Config{
+		KeyringRootDir:     opts.BlockchainMainClientHome,
 		KeyringBackend:     opts.BlockchainMainKeyringBackend,
 		KeyringPromptInput: opts.BlockchainMainKeyringPromptInput,
 		NodeURI:            opts.BlockchainMainNode,
 		BroadcastMode:      cliflags.BroadcastBlock,
 		From:               opts.BlockchainMainFrom,
 		ChainID:            opts.BlockchainMainChainID,
-		GenesisKeyPass:     keys.DefaultKeyPass,
 		Gas:                opts.BlockchainMainGas,
 		GasAdjust:          1.2,
 		Fees:               sdk.Coins{fee},

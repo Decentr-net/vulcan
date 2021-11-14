@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
@@ -66,37 +67,30 @@ type Service interface {
 type service struct {
 	storage storage.Storage
 	sender  mail.Sender
-	btc     blockchain.Blockchain
-	bmc     blockchain.Blockchain
+	bc      blockchain.Blockchain
 
 	rc referral.Config
 
-	initialTestStakes int64
-	initialMainStakes int64
-
-	initialTestMemo string
-	initialMainMemo string
+	initialStakes sdk.Int
+	initialMemo   string
 }
 
 // New creates new instance of service.
 func New(
 	storage storage.Storage,
 	sender mail.Sender,
-	bt, bm blockchain.Blockchain,
-	initialTestNetStakes, initialMainNetStakes int64,
-	initialTestMemo, initialMainMemo string,
+	bc blockchain.Blockchain,
+	initialNetStakes sdk.Int,
+	initialMemo string,
 	rc referral.Config,
 ) Service {
 	s := &service{
-		storage:           storage,
-		sender:            sender,
-		btc:               bt,
-		bmc:               bm,
-		rc:                rc,
-		initialTestStakes: initialTestNetStakes,
-		initialMainStakes: initialMainNetStakes,
-		initialTestMemo:   initialTestMemo,
-		initialMainMemo:   initialMainMemo,
+		storage:       storage,
+		sender:        sender,
+		bc:            bc,
+		rc:            rc,
+		initialStakes: initialNetStakes,
+		initialMemo:   initialMemo,
 	}
 
 	return s
@@ -129,16 +123,14 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 		}
 	}
 
-	if err := s.sender.SendVerificationEmail(ctx, email, code); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
-	}
-
 	if err := s.storage.UpsertRequest(ctx, owner, email, address, code, referralCodeAsNullString); err != nil {
 		if errors.Is(err, storage.ErrAddressIsTaken) {
 			return ErrAlreadyExists
 		}
 		return fmt.Errorf("failed to create request: %w", err)
 	}
+
+	s.sender.SendVerificationEmailAsync(ctx, email, code)
 
 	return nil
 }
@@ -190,7 +182,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return ErrRequestNotFound
 	}
 
-	if err := s.bmc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialMainStakes}}, s.initialMainMemo); err != nil {
+	if err := s.bc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialStakes}}, s.initialMemo); err != nil {
 		return fmt.Errorf("failed to send stakes to %s on mainnet: %w", req.Address, err)
 	}
 
@@ -302,7 +294,7 @@ func (s *service) GetReferralTrackingStats(ctx context.Context, address string) 
 	}
 
 	if len(stats) != 2 {
-		return nil, fmt.Errorf("unexpected number of stats item: %d", len(stats)) // nolint:err113
+		return nil, fmt.Errorf("unexpected number of stats item: %d", len(stats))
 	}
 
 	return stats, err

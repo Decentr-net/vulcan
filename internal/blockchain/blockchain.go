@@ -7,9 +7,9 @@ import (
 
 	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/bank"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	"github.com/Decentr-net/decentr/app"
+	"github.com/Decentr-net/decentr/config"
 	"github.com/Decentr-net/go-broadcaster"
 )
 
@@ -17,9 +17,7 @@ import (
 
 // nolint: gochecknoinits
 func init() {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(app.Bech32PrefixAccAddr, app.Bech32PrefixAccPub)
-	config.Seal()
+	config.SetAddressPrefixes()
 }
 
 // ErrInvalidAddress is returned when address is invalid. It is unexpected situation.
@@ -28,7 +26,7 @@ var ErrInvalidAddress = errors.New("invalid address")
 // Stake ...
 type Stake struct {
 	Address string
-	Amount  int64
+	Amount  sdk.Int
 }
 
 // Blockchain is interface for interacting with the blockchain.
@@ -57,15 +55,20 @@ func (b blockchain) SendStakes(stakes []Stake, memo string) error {
 				return fmt.Errorf("%w: %s", ErrInvalidAddress, stake.Address)
 			}
 
-			messages[idx] = bank.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
-				Denom:  app.DefaultBondDenom,
-				Amount: sdk.NewInt(stake.Amount),
+			messages[idx] = banktypes.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
+				Denom:  config.DefaultBondDenom,
+				Amount: stake.Amount,
 			}})
 			if err := messages[idx].ValidateBasic(); err != nil {
 				return err
 			}
 		}
-		return b.b.Broadcast(messages, memo)
+
+		if _, err := b.b.Broadcast(messages, memo); err != nil {
+			return fmt.Errorf("failed to broadcast msg: %w", err)
+		}
+
+		return nil
 	}
 
 	return retry.Do(sendStakes, retry.Attempts(3))

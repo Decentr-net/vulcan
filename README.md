@@ -52,27 +52,17 @@ go run cmd/vulcan/main.go \
 | mandrill.welcome_email_template_name    | MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME    |  | true | mandrill's welcome template to be sent
 | mandrill.from_name    | MANDRILL_FROM_NAME    | decentr.xyz | false | name for emails sender
 | mandrill.from_email    | MANDRILL_FROM_NAME    | noreply@decentrdev.com | true | email for emails sender
-| blockchain.test.node   | BLOCKCHAIN_TEST_NODE    | http://zeus.testnet.decentr.xyz:26657 | true | decentr node address
-| blockchain.test.from   | BLOCKCHAIN_TEST_FROM    | | true | decentr account name to send stakes
-| blockchain.test.tx_memo   | BLOCKCHAIN_TEST_TX_MEMO    | | false | decentr tx's memo
-| blockchain.test.chain_id   | BLOCKCHAIN_TEST_CHAIN_ID    | testnet | true| decentr chain id
-| blockchain.test.client_home   | BLOCKCHAIN_TEST_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
-| blockchain.test.keyring_backend   | BLOCKCHAIN_TEST_KEYRING_BACKEND    | test | true | decentrcli keyring backend
-| blockchain.test.keyring_prompt_input   | BLOCKCHAIN_TEST_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
-| blockchain.test.gas   | BLOCKCHAIN_TEST_GAS    | 10 | false | gas amount
-| blockchain.test.fee   | BLOCKCHAIN_TEST_FEE    | 1udec | false | transaction fee
-| blockchain.main.node   | BLOCKCHAIN_MAIN_NODE    | http://zeus.mainnet.decentr.xyz:26657 | true | decentr node address
-| blockchain.main.from   | BLOCKCHAIN_MAIN_FROM    | | true | decentr account name to send stakes
-| blockchain.main.tx_memo   | BLOCKCHAIN_MAIN_TX_MEMO    | | false | decentr tx's memo
-| blockchain.main.chain_id   | BLOCKCHAIN_MAIN_CHAIN_ID    | testnet | true| decentr chain id
-| blockchain.main.client_home   | BLOCKCHAIN_MAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
-| blockchain.main.keyring_backend   | BLOCKCHAIN_MAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
-| blockchain.main.keyring_prompt_input   | BLOCKCHAIN_MAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
-| blockchain.main.gas   | BLOCKCHAIN_MAIN_GAS    | 10 | false | gas amount
-| blockchain.main.fee   | BLOCKCHAIN_MAIN_FEE    | 1udec | false | transaction fee
-| blockchain.test.initial_stake | BLOCKCHAIN_TEST_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
-| blockchain.main.initial_stake | BLOCKCHAIN_MAIN_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
-| referral.threshold_updv   | REFERRAL_THRESHOLD_UPDV   | 100 | true | how many uPDV a user should obtain to get a referral reward
+| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.mainnet.decentr.xyz:26657 | true | decentr node address
+| blockchain.from   | BLOCKCHAIN_FROM    | | true | decentr account name to send stakes
+| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | false | decentr tx's memo
+| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | true| decentr chain id
+| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
+| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
+| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
+| blockchain.gas   | BLOCKCHAIN_GAS    | 10 | false | gas amount
+| blockchain.fee   | BLOCKCHAIN_FEE    | 1udec | false | transaction fee
+| blockchain.initial_stake | BLOCKCHAIN_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
+| referral.threshold_pdv   | REFERRAL_THRESHOLD_PDV   | 100 | true | how many uPDV a user should obtain to get a referral reward
 | referral.threshold_days   | REFERRAL_THRESHOLD_DAYS   | 30 | true | how many days a user should wait to get a referral reward
 | supply.native_node | SUPPLY_NATIVE_NODE | https://zeus.testnet.decentr.xyz | true | native rest node address
 | supply.erc20_node | SUPPLY_ERC20_NODE |  | true | erc20 node address
@@ -86,17 +76,17 @@ go run cmd/vulcan/main.go \
 | postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | true | postgres maximal open connections count, 0 means unlimited
 | postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | true | postgres maximal idle connections count
 | postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | true | postgres migrations directory
-| blockchain.main.node   | BLOCKCHAIN_MAIN_NODE    | http://zeus.mainnet.decentr.xyz:26657 | true | decentr node address
-| blockchain.main.from   | BLOCKCHAIN_MAIN_FROM    | | true | decentr account name to send stakes
-| blockchain.main.tx_memo   | BLOCKCHAIN_MAIN_TX_MEMO    | | false | decentr tx's memo
-| blockchain.main.chain_id   | BLOCKCHAIN_MAIN_CHAIN_ID    | testnet | true| decentr chain id
-| blockchain.main.client_home   | BLOCKCHAIN_MAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
-| blockchain.main.keyring_backend   | BLOCKCHAIN_MAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
-| blockchain.main.keyring_prompt_input   | BLOCKCHAIN_MAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
-| blockchain.main.gas   | BLOCKCHAIN_MAIN_GAS    | 10 | false | gas amount
-| blockchain.main.fee   | BLOCKCHAIN_MAIN_FEE    | 1udec | false | transaction fee
-| blockchain.main.rest_node_url   | BLOCKCHAIN_MAIN_REST_NODE_URL    | http://hera.mainnet.decentr.xyz | false | REST endpoint url
-| referral.threshold_updv   | REFERRAL_THRESHOLD_UPDV   | 100 | true | how many uPDV a user should obtain to get a referral reward
+| blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.mainnet.decentr.xyz:26657 | true | decentr node address
+| blockchain.from   | BLOCKCHAIN_FROM    | | true | decentr account name to send stakes
+| blockchain.tx_memo   | BLOCKCHAIN_TX_MEMO    | | false | decentr tx's memo
+| blockchain.chain_id   | BLOCKCHAIN_CHAIN_ID    | testnet | true| decentr chain id
+| blockchain.client_home   | BLOCKCHAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
+| blockchain.keyring_backend   | BLOCKCHAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
+| blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
+| blockchain.gas   | BLOCKCHAIN_GAS    | 10 | false | gas amount
+| blockchain.fee   | BLOCKCHAIN_FEE    | 1udec | false | transaction fee
+| blockchain.grpc_node_url   | BLOCKCHAIN_MAIN_GRPC_NODE_URL    | http://hera.mainnet.decentr.xyz | false | GRPC endpoint url
+| referral.threshold_pdv   | REFERRAL_THRESHOLD_PDV   | 0.000100 | true | how many uPDV a user should obtain to get a referral reward
 | referral.threshold_days   | REFERRAL_THRESHOLD_DAYS   | 30 | true | how many days a user should wait to get a referral reward
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
 | sentry.dsn    | SENTRY_DSN    |  | sentry dsn

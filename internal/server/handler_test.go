@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Decentr-net/vulcan/internal/referral"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/Decentr-net/go-api/test"
+	"github.com/Decentr-net/vulcan/internal/referral"
 	"github.com/Decentr-net/vulcan/internal/service"
 	servicemock "github.com/Decentr-net/vulcan/internal/service/mock"
 	"github.com/Decentr-net/vulcan/internal/storage"
@@ -217,7 +218,7 @@ func Test_GetReferralConfig(t *testing.T) {
 	defer ctrl.Finish()
 
 	srv := servicemock.NewMockService(ctrl)
-	srv.EXPECT().GetReferralConfig().Return(referral.NewConfig(100, 30))
+	srv.EXPECT().GetReferralConfig().Return(referral.NewConfig(sdk.MustNewDecFromStr("0.000100"), 30))
 
 	router := chi.NewRouter()
 
@@ -228,59 +229,59 @@ func Test_GetReferralConfig(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `{
-  "thresholdUpdv": 100,
+  "thresholdPDV": "0.000100000000000000",
   "thresholdDays": 30,
-  "receiverReward": 10000000,
+  "receiverReward": "10000000",
   "senderBonus": [
     {
       "count": 100,
-      "reward": 100000000
+      "reward": "100000000"
     },
     {
       "count": 250,
-      "reward": 250000000
+      "reward": "250000000"
     },
     {
       "count": 500,
-      "reward": 500000000
+      "reward": "500000000"
     },
     {
       "count": 1000,
-      "reward": 1000000000
+      "reward": "1000000000"
     },
     {
       "count": 2500,
-      "reward": 2500000000
+      "reward": "2500000000"
     },
     {
       "count": 5000,
-      "reward": 5000000000
+      "reward": "5000000000"
     },
     {
       "count": 10000,
-      "reward": 10000000000
+      "reward": "10000000000"
     }
   ],
   "senderRewardLevels": [
     {
       "from": 1,
       "to": 100,
-      "reward": 10000000
+      "reward": "10000000"
     },
     {
       "from": 101,
       "to": 250,
-      "reward": 12500000
+      "reward": "12500000"
     },
     {
       "from": 251,
       "to": 500,
-      "reward": 15000000
+      "reward": "15000000"
     },
     {
       "from": 501,
       "to": null,
-      "reward": 20000000
+      "reward": "20000000"
     }
   ]
 }`, w.Body.String())

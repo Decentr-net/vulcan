@@ -43,10 +43,10 @@ type ReferralCodeResponse struct {
 // ReferralTrackingStatsItem ...
 // swagger:model
 type ReferralTrackingStatsItem struct {
-	Registered int `json:"registered"`
-	Installed  int `json:"installed"`
-	Confirmed  int `json:"confirmed"`
-	Reward     int `json:"reward"`
+	Registered int      `json:"registered"`
+	Installed  int      `json:"installed"`
+	Confirmed  int      `json:"confirmed"`
+	Reward     sdk.Coin `json:"reward"`
 }
 
 // ReferralTrackingStatsResponse ...

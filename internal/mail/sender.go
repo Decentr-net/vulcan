@@ -13,6 +13,6 @@ var ErrMailRejected = errors.New("email is rejected")
 
 // Sender is interface for sending the emails.
 type Sender interface {
-	SendVerificationEmail(ctx context.Context, email, code string) error
+	SendVerificationEmailAsync(ctx context.Context, email, code string)
 	SendWelcomeEmailAsync(ctx context.Context, email string)
 }

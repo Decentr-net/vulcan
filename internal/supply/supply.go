@@ -3,24 +3,24 @@ package supply
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
-	"strconv"
 	"time"
 
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/Decentr-net/decentr/x/token/types"
+	"github.com/Decentr-net/decentr/config"
 )
 
 //go:generate mockgen -destination=./mock/supply.go -package=mock -source=supply.go
+
+const udecDenominator = 10e6
 
 // nolint
 var (
@@ -34,17 +34,17 @@ type Supply interface {
 }
 
 type supply struct {
-	nativeNodeURL string
-	erc20NodeURL  string
+	nativeBankClient banktypes.QueryClient
+	erc20NodeURL     string
 
 	circulatingSupply int64
 }
 
 // New returns new instance of supply.
-func New(nativeNodeURL, erc20NodeURL string) *supply { // nolint
+func New(nativeBankClient banktypes.QueryClient, erc20NodeURL string) *supply { // nolint
 	s := &supply{
-		nativeNodeURL: nativeNodeURL,
-		erc20NodeURL:  erc20NodeURL,
+		nativeBankClient: nativeBankClient,
+		erc20NodeURL:     erc20NodeURL,
 	}
 
 	s.startPolling()
@@ -61,7 +61,7 @@ func (s *supply) PingContext(_ context.Context) error {
 
 func (s *supply) GetCirculatingSupply() (int64, error) {
 	if s.circulatingSupply == 0 {
-		return 0, errors.New("circulating supply is unavailable") // nolint
+		return 0, errors.New("circulating supply is unavailable")
 	}
 	return s.circulatingSupply, nil
 }
@@ -120,37 +120,14 @@ func (s *supply) poll() (int64, error) {
 }
 
 func (s supply) getNativeCirculatingSupply(ctx context.Context) (int64, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/supply/total", s.nativeNodeURL), nil)
+	resp, err := s.nativeBankClient.SupplyOf(ctx, &banktypes.QuerySupplyOfRequest{
+		Denom: config.DefaultBondDenom,
+	})
 	if err != nil {
-		return 0, fmt.Errorf("failed to create request: %w", err)
+		return 0, fmt.Errorf("failed to get supply: %w", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, fmt.Errorf("failed to do request: %w", err)
-	}
-	defer resp.Body.Close() // nolint
-
-	var out struct {
-		Result []struct {
-			Amount string `json:"amount"`
-		} `json:"result"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return 0, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	if len(out.Result) == 0 {
-		return 0, errors.New("supply: empty result") // nolint:err113
-	}
-
-	v, err := strconv.ParseInt(out.Result[0].Amount, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse amount: %w", err)
-	}
-
-	return v / types.Denominator, nil
+	return resp.Amount.Amount.Int64() / udecDenominator, nil
 }
 
 func (s supply) getERC20CirculatingSupply(ctx context.Context) (int64, error) {

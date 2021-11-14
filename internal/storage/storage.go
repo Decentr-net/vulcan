@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 //go:generate mockgen -destination=./mock/storage.go -package=mock -source=storage.go
@@ -60,10 +62,10 @@ type ReferralTracking struct {
 
 // ReferralTrackingStats ...
 type ReferralTrackingStats struct {
-	Registered int `db:"registered"`
-	Installed  int `db:"installed"`
-	Confirmed  int `db:"confirmed"`
-	Reward     int `db:"reward"`
+	Registered int     `db:"registered"`
+	Installed  int     `db:"installed"`
+	Confirmed  int     `db:"confirmed"`
+	Reward     sdk.Int `db:"reward"`
 }
 
 // RegisterStats ...
@@ -95,7 +97,7 @@ type Storage interface {
 	// TransitionReferralTrackingToInstalled transitions referral tracking of the given referral code receiver as installed
 	TransitionReferralTrackingToInstalled(ctx context.Context, receiver string) error
 	// TransitionReferralTrackingToConfirmed transitions referral tracking as confirmed
-	TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string, senderReward, receiverReward int) error
+	TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string, senderReward, receiverReward sdk.Int) error
 	// GetReferralTrackingByReceiver returns referral tracking by the given receiver address
 	GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*ReferralTracking, error)
 	// GetReferralTrackingStats returns referral tracking stats: total + 30 last days
