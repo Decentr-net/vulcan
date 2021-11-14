@@ -162,21 +162,26 @@ func (s *server) supply(w http.ResponseWriter, r *http.Request) {
 	api.WriteOK(w, http.StatusOK, amount)
 }
 
-// getReferralCode return a referral code of the given account.
-func (s *server) getReferralCode(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /referral/code/{address} Vulcan GetReferralCode
+// trackReferralBrowserInstallation tracks the Decentr browser installation.
+func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation POST /referral/track/install/{address} Vulcan TrackBrowserInstallation
 	//
-	// Returns a referral code of the given account
+	// Tracks the Decentr browser installation.
 	//
 	// ---
 	// produces:
 	// - application/json
+	// consumes:
+	// - application/json
 	// responses:
 	//   '200':
-	//     schema:
-	//       type: string
+	//     description: referral marked with installed status
 	//   '404':
-	//      description: account not found
+	//      description: referral tracking not found
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '409':
+	//      description: referral is already marked as installed
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 	//   '500':
@@ -186,19 +191,90 @@ func (s *server) getReferralCode(w http.ResponseWriter, r *http.Request) {
 
 	address := chi.URLParam(r, "address")
 
-	code, err := s.s.GetReferralCode(r.Context(), address)
+	if err := s.s.TrackReferralBrowserInstallation(r.Context(), address); err != nil {
+		switch {
+		case errors.Is(err, service.ErrReferralTrackingNotFound):
+			api.WriteError(w, http.StatusNotFound, "not found")
+		case errors.Is(err, service.ErrReferralTrackingInvalidStatus):
+			api.WriteError(w, http.StatusConflict, "status is installed or confirmed")
+		default:
+			api.WriteInternalErrorf(r.Context(), w, "failed to track browser installation: %s", err.Error())
+		}
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, EmptyResponse{})
+}
+
+// getOwnReferralCode return a referral code of the given account.
+func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /referral/code/{address} Vulcan GetOwnReferralCode
+	//
+	// Returns a referral code of the given account
+	//
+	// ---
+	// produces:
+	// - application/json
+	// responses:
+	//   '200':
+	//     schema:
+	//       "$ref": "#/definitions/ReferralCodeResponse"
+	//   '404':
+	//      description: referral code not found
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	address := chi.URLParam(r, "address")
+
+	code, err := s.s.GetOwnReferralCode(r.Context(), address)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to get referral code: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, "failed to get own referral code: %s", err.Error())
 		}
 		return
 	}
-	api.WriteOK(w, http.StatusOK, struct {
-		Code string `json:"code"`
-	}{
-		Code: code,
-	})
+	api.WriteOK(w, http.StatusOK, ReferralCodeResponse{Code: code})
+}
+
+func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /referral/code/{address}/registration Vulcan GetRegistrationReferralCode
+	//
+	// Returns a referral code the account was registered with
+	//
+	// ---
+	// produces:
+	// - application/json
+	// responses:
+	//   '200':
+	//     schema:
+	//       "$ref": "#/definitions/ReferralCodeResponse"
+	//   '404':
+	//      description: referral code not found
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	address := chi.URLParam(r, "address")
+
+	code, err := s.s.GetRegistrationReferralCode(r.Context(), address)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrRequestNotFound):
+			api.WriteError(w, http.StatusNotFound, "not found")
+		default:
+			api.WriteInternalErrorf(r.Context(), w, "failed to get registered referral code: %s", err.Error())
+		}
+		return
+	}
+	api.WriteOK(w, http.StatusOK, ReferralCodeResponse{Code: code})
 }

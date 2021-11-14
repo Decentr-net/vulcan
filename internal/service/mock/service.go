@@ -61,17 +61,46 @@ func (mr *MockServiceMockRecorder) Confirm(ctx, owner, code interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Confirm", reflect.TypeOf((*MockService)(nil).Confirm), ctx, owner, code)
 }
 
-// GetReferralCode mocks base method
-func (m *MockService) GetReferralCode(ctx context.Context, address string) (string, error) {
+// GetOwnReferralCode mocks base method
+func (m *MockService) GetOwnReferralCode(ctx context.Context, address string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReferralCode", ctx, address)
+	ret := m.ctrl.Call(m, "GetOwnReferralCode", ctx, address)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetReferralCode indicates an expected call of GetReferralCode
-func (mr *MockServiceMockRecorder) GetReferralCode(ctx, address interface{}) *gomock.Call {
+// GetOwnReferralCode indicates an expected call of GetOwnReferralCode
+func (mr *MockServiceMockRecorder) GetOwnReferralCode(ctx, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralCode", reflect.TypeOf((*MockService)(nil).GetReferralCode), ctx, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwnReferralCode", reflect.TypeOf((*MockService)(nil).GetOwnReferralCode), ctx, address)
+}
+
+// GetRegistrationReferralCode mocks base method
+func (m *MockService) GetRegistrationReferralCode(ctx context.Context, address string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegistrationReferralCode", ctx, address)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRegistrationReferralCode indicates an expected call of GetRegistrationReferralCode
+func (mr *MockServiceMockRecorder) GetRegistrationReferralCode(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationReferralCode", reflect.TypeOf((*MockService)(nil).GetRegistrationReferralCode), ctx, address)
+}
+
+// TrackReferralBrowserInstallation mocks base method
+func (m *MockService) TrackReferralBrowserInstallation(ctx context.Context, address string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TrackReferralBrowserInstallation", ctx, address)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TrackReferralBrowserInstallation indicates an expected call of TrackReferralBrowserInstallation
+func (mr *MockServiceMockRecorder) TrackReferralBrowserInstallation(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackReferralBrowserInstallation", reflect.TypeOf((*MockService)(nil).TrackReferralBrowserInstallation), ctx, address)
 }

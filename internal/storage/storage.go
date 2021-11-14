@@ -31,7 +31,7 @@ type Request struct {
 	CreatedAt                time.Time      `db:"created_at"`
 	ConfirmedAt              sql.NullTime   `db:"confirmed_at"`
 	OwnReferralCode          string         `db:"own_referral_code"`
-	RegisteredByReferralCode sql.NullString `db:"registered_by_referral_code"`
+	RegistrationReferralCode sql.NullString `db:"registration_referral_code"`
 }
 
 // ReferralStatus represents a referral workflow status: registered -> installed -> confirmed.
@@ -72,4 +72,8 @@ type Storage interface {
 	UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error
 	// CreateReferralTracking creates a new referral tracking
 	CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error
+	// MarkReferralTrackingInstalled marks referral tracking of the given referral code receiver as installed
+	MarkReferralTrackingInstalled(ctx context.Context, receiver string) error
+	// GetReferralTrackingByReceiver returns referral tracking by the given receiver address
+	GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*ReferralTracking, error)
 }

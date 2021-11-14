@@ -133,7 +133,7 @@ func TestPg_InsertRequest(t *testing.T) {
 	assert.Equal(t, "e@mail.com", r.Email)
 	assert.Equal(t, "address", r.Address)
 	assert.Equal(t, "code", r.Code)
-	assert.Equal(t, sql.NullString{}, r.RegisteredByReferralCode)
+	assert.Equal(t, sql.NullString{}, r.RegistrationReferralCode)
 	assert.False(t, r.CreatedAt.IsZero())
 	assert.False(t, r.ConfirmedAt.Valid)
 	assert.NotEmpty(t, r.OwnReferralCode)
@@ -221,4 +221,59 @@ func TestPg_GetRequestByOwner(t *testing.T) {
 
 	_, err = s.GetRequestByAddress(ctx, "not_exists")
 	assert.True(t, errors.Is(err, storage.ErrNotFound))
+}
+
+func TestPg_GetReferralTrackingByReceiver(t *testing.T) {
+	defer cleanup(t)
+
+	const (
+		receiverAddr = "receiver"
+		senderArr    = "sender"
+	)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", senderArr, "code",
+		sql.NullString{},
+	))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
+	require.NoError(t, err)
+
+	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
+	rt, err := s.GetReferralTrackingByReceiver(ctx, receiverAddr)
+	require.NoError(t, err)
+
+	assert.Equal(t, storage.RegisteredReferralStatus, rt.Status)
+	assert.Equal(t, receiverAddr, rt.Receiver)
+	assert.Equal(t, senderArr, rt.Sender)
+}
+
+func TestPg_MarkReferralTrackingInstalled(t *testing.T) {
+	defer cleanup(t)
+
+	const (
+		receiverAddr = "receiver"
+		senderArr    = "sender"
+	)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", senderArr, "code",
+		sql.NullString{},
+	))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
+	require.NoError(t, err)
+
+	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
+	require.NoError(t, s.MarkReferralTrackingInstalled(ctx, receiverAddr))
+
+	rt, err := s.GetReferralTrackingByReceiver(ctx, receiverAddr)
+	require.NoError(t, err)
+
+	assert.Equal(t, storage.InstalledReferralStatus, rt.Status)
+	assert.Equal(t, receiverAddr, rt.Receiver)
+	assert.Equal(t, senderArr, rt.Sender)
+
+	// second time, should be no err
+	require.NoError(t, s.MarkReferralTrackingInstalled(ctx, receiverAddr))
 }

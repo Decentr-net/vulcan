@@ -34,6 +34,12 @@ type ConfirmRequest struct {
 	Code  string `json:"code"`
 }
 
+// ReferralCodeResponse ...
+// swagger:model
+type ReferralCodeResponse struct {
+	Code string `json:"code"`
+}
+
 func (r RegisterRequest) validate() error {
 	if !isEmailValid(r.Email.String()) {
 		return fmt.Errorf("%w: invalid email", errInvalidRequest)

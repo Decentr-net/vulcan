@@ -171,7 +171,7 @@ func TestService_GetReferralCode(t *testing.T) {
 			}
 
 			st.EXPECT().GetRequestByAddress(ctx, testAddress).Return(&tc.req, tc.getErr)
-			code, err := s.GetReferralCode(ctx, testAddress)
+			code, err := s.GetOwnReferralCode(ctx, testAddress)
 			if err != nil {
 				assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
 			}

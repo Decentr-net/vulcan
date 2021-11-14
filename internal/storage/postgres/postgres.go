@@ -78,13 +78,13 @@ func (p pg) SetConfirmed(ctx context.Context, owner string) error {
 
 func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error {
 	if _, err := p.db.ExecContext(ctx, `
-		INSERT INTO request (owner, email, address, code, created_at, registered_by_referral_code)
+		INSERT INTO request (owner, email, address, code, created_at, registration_referral_code)
 		    VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) ON CONFLICT(email) DO
 			UPDATE SET 
 			           address=EXCLUDED.address, 
 			           code=EXCLUDED.code, 
 			           created_at=EXCLUDED.created_at,
-			           registered_by_referral_code=EXCLUDED.registered_by_referral_code
+			           registration_referral_code=EXCLUDED.registration_referral_code
 	`, owner, email, address, code, referralCode); err != nil {
 		if isUniqueViolationErr(err, "request_address_key") ||
 			isUniqueViolationErr(err, "request_owner_key") {
@@ -99,7 +99,7 @@ func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code strin
 func (p pg) CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error {
 	if _, err := p.db.ExecContext(ctx,
 		`INSERT INTO referral_tracking (sender, receiver, registered_at) 
-                   VALUES (
+                VALUES (
                         (SELECT address FROM request WHERE own_referral_code = $2), 
                         $1, 
                         CURRENT_TIMESTAMP
@@ -113,6 +113,30 @@ func (p pg) CreateReferralTracking(ctx context.Context, receiver string, referra
 		default:
 			return fmt.Errorf("failed to exec query: %w", err)
 		}
+	}
+	return nil
+}
+
+func (p pg) GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*storage.ReferralTracking, error) {
+	var r storage.ReferralTracking
+	if err := sqlx.GetContext(ctx, p.db, &r, `SELECT * FROM referral_tracking WHERE receiver=$1`, receiver); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, storage.ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to exec query: %w", err)
+	}
+
+	return &r, nil
+}
+
+func (p pg) MarkReferralTrackingInstalled(ctx context.Context, receiver string) error {
+	_, err := p.db.ExecContext(ctx,
+		`UPDATE referral_tracking
+               SET status = 'installed',
+                   installed_at = CURRENT_TIMESTAMP
+                WHERE receiver = $1 and status = 'registered'`, receiver)
+	if err != nil {
+		return fmt.Errorf("failed to exec query: %w", err)
 	}
 	return nil
 }
