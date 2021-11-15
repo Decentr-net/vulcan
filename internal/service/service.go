@@ -52,6 +52,7 @@ type Service interface {
 	GetOwnReferralCode(ctx context.Context, address string) (string, error)
 	GetRegistrationReferralCode(ctx context.Context, address string) (string, error)
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
+	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
 }
 
 // Service ...
@@ -234,7 +235,7 @@ func (s *service) TrackReferralBrowserInstallation(ctx context.Context, address 
 		return ErrReferralTrackingInvalidStatus
 	}
 
-	if err := s.storage.MarkReferralTrackingInstalled(ctx, address); err != nil {
+	if err := s.storage.TransitionReferralTrackingToInstalled(ctx, address); err != nil {
 		return fmt.Errorf("failed to mark referral tracking installed: %w", err)
 	}
 	return nil
@@ -254,6 +255,27 @@ func (s *service) GetRegistrationReferralCode(ctx context.Context, address strin
 	}
 
 	return req.RegistrationReferralCode.String, nil
+}
+
+func (s *service) GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error) {
+	_, err := s.storage.GetRequestByAddress(ctx, address)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, ErrRequestNotFound
+		}
+		return nil, fmt.Errorf("failed to get request by address: %w", err)
+	}
+
+	stats, err := s.storage.GetReferralTrackingStats(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(stats) != 2 {
+		return nil, fmt.Errorf("unexpected number of stats item: %d", len(stats)) // nolint:err113
+	}
+
+	return stats, err
 }
 
 func truncatePlusPart(email string) string {
