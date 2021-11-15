@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 ALTER TABLE request
     ADD COLUMN own_referral_code TEXT NULL UNIQUE,
-    ADD COLUMN registered_by_referral_code TEXT NULL REFERENCES request (own_referral_code);
+    ADD COLUMN registration_referral_code TEXT NULL REFERENCES request (own_referral_code);
 
 CREATE OR REPLACE FUNCTION unique_referral_code()
     RETURNS TRIGGER AS $$
@@ -78,7 +78,7 @@ CREATE TYPE REFERRAL_STATUS AS ENUM ('registered', 'installed', 'confirmed');
 
 CREATE TABLE referral_tracking (
     sender VARCHAR NOT NULL,
-    receiver VARCHAR NOT NULL,
+    receiver VARCHAR NOT NULL UNIQUE,
     status REFERRAL_STATUS NOT NULL DEFAULT ('registered'),
     registered_at TIMESTAMP NOT NULL,
     installed_at TIMESTAMP,

@@ -121,3 +121,32 @@ func (mr *MockStorageMockRecorder) CreateReferralTracking(ctx, receiver, referra
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReferralTracking", reflect.TypeOf((*MockStorage)(nil).CreateReferralTracking), ctx, receiver, referralCode)
 }
+
+// MarkReferralTrackingInstalled mocks base method
+func (m *MockStorage) MarkReferralTrackingInstalled(ctx context.Context, receiver string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkReferralTrackingInstalled", ctx, receiver)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkReferralTrackingInstalled indicates an expected call of MarkReferralTrackingInstalled
+func (mr *MockStorageMockRecorder) MarkReferralTrackingInstalled(ctx, receiver interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkReferralTrackingInstalled", reflect.TypeOf((*MockStorage)(nil).MarkReferralTrackingInstalled), ctx, receiver)
+}
+
+// GetReferralTrackingByReceiver mocks base method
+func (m *MockStorage) GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*storage.ReferralTracking, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferralTrackingByReceiver", ctx, receiver)
+	ret0, _ := ret[0].(*storage.ReferralTracking)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferralTrackingByReceiver indicates an expected call of GetReferralTrackingByReceiver
+func (mr *MockStorageMockRecorder) GetReferralTrackingByReceiver(ctx, receiver interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralTrackingByReceiver", reflect.TypeOf((*MockStorage)(nil).GetReferralTrackingByReceiver), ctx, receiver)
+}

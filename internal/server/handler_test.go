@@ -24,12 +24,13 @@ var (
 
 func Test_Register(t *testing.T) {
 	tt := []struct {
-		name       string
-		body       []byte
-		serviceErr error
-		rcode      int
-		rdata      string
-		rlog       string
+		name         string
+		body         []byte
+		serviceErr   error
+		rcode        int
+		rdata        string
+		rlog         string
+		referralCode string
 	}{
 		{
 			name:       "success",
@@ -71,6 +72,15 @@ func Test_Register(t *testing.T) {
 			rdata:      `{"error": "internal error"}`,
 			rlog:       "failed to register request",
 		},
+		{
+			name:         "referral code",
+			body:         []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", "referralCode": "abcdef12"}`),
+			serviceErr:   nil,
+			rcode:        http.StatusOK,
+			rdata:        `{}`,
+			rlog:         "",
+			referralCode: "abcdef12",
+		},
 	}
 
 	for i := range tt {
@@ -85,7 +95,9 @@ func Test_Register(t *testing.T) {
 
 			srv := servicemock.NewMockService(ctrl)
 
-			if tc.serviceErr != errSkip {
+			if tc.referralCode != "" {
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", &tc.referralCode).Return(tc.serviceErr)
+			} else if tc.serviceErr != errSkip {
 				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", nil).Return(tc.serviceErr)
 			}
 

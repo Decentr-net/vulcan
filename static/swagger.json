@@ -73,16 +73,86 @@
         "tags": [
           "Vulcan"
         ],
-        "operationId": "GetReferralCode",
+        "operationId": "GetOwnReferralCode",
         "responses": {
           "200": {
             "description": "",
             "schema": {
-              "type": "string"
+              "$ref": "#/definitions/ReferralCodeResponse"
             }
           },
           "404": {
-            "description": "account not found",
+            "description": "referral code not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/referral/code/{address}/registration": {
+      "get": {
+        "description": "Returns a referral code the account was registered with",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "operationId": "GetRegistrationReferralCode",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/ReferralCodeResponse"
+            }
+          },
+          "404": {
+            "description": "referral code not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/referral/track/install/{address}": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "summary": "Tracks the Decentr browser installation.",
+        "operationId": "TrackBrowserInstallation",
+        "responses": {
+          "200": {
+            "description": "referral marked with installed status"
+          },
+          "404": {
+            "description": "referral tracking not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "referral is already marked as installed",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -211,6 +281,17 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/go-api"
+    },
+    "ReferralCodeResponse": {
+      "type": "object",
+      "title": "ReferralCodeResponse ...",
+      "properties": {
+        "code": {
+          "type": "string",
+          "x-go-name": "Code"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
     },
     "RegisterRequest": {
       "type": "object",

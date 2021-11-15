@@ -39,11 +39,19 @@ var ErrRequestNotFound = fmt.Errorf("request not found")
 // ErrTooManyAttempts is returned when throttling interval didn't pass.
 var ErrTooManyAttempts = fmt.Errorf("too many attempts")
 
+// ErrReferralTrackingNotFound ...
+var ErrReferralTrackingNotFound = fmt.Errorf("referral tracking not found")
+
+// ErrReferralTrackingInvalidStatus ...
+var ErrReferralTrackingInvalidStatus = fmt.Errorf("referral tracking has invalid status")
+
 // Service ...
 type Service interface {
 	Register(ctx context.Context, email, address string, referralCode *string) error
 	Confirm(ctx context.Context, owner, code string) error
-	GetReferralCode(ctx context.Context, address string) (string, error)
+	GetOwnReferralCode(ctx context.Context, address string) (string, error)
+	GetRegistrationReferralCode(ctx context.Context, address string) (string, error)
+	TrackReferralBrowserInstallation(ctx context.Context, address string) error
 }
 
 // Service ...
@@ -92,11 +100,18 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 
 	var referralCodeAsNullString sql.NullString
 	if referralCode != nil {
+		referralCodeAsNullString = sql.NullString{Valid: true, String: *referralCode}
+
 		// check the given referral code exists
 		if _, err := s.storage.GetRequestByOwnReferralCode(ctx, *referralCode); err != nil {
-			return fmt.Errorf("failed to get request by own referral code: %w", err)
+			if errors.Is(err, storage.ErrReferralCodeNotFound) {
+				log.WithField("referral_code", *referralCode).
+					Warn("referral code not found")
+				referralCodeAsNullString = sql.NullString{Valid: false}
+			} else {
+				return fmt.Errorf("failed to get request by own referral code: %w", err)
+			}
 		}
-		referralCodeAsNullString = sql.NullString{Valid: true, String: *referralCode}
 	}
 
 	if err := s.storage.UpsertRequest(ctx, owner, email, address, code, referralCodeAsNullString); err != nil {
@@ -175,10 +190,10 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return fmt.Errorf("failed to update request: %w", err)
 	}
 
-	if req.RegisteredByReferralCode.Valid {
+	if req.RegistrationReferralCode.Valid {
 		// referral code has been provided during the registration, start tracking
-		if err := s.storage.CreateReferralTracking(ctx, req.Owner, req.RegisteredByReferralCode.String); err != nil {
-			logger := log.WithField("referral_code", req.RegisteredByReferralCode.String)
+		if err := s.storage.CreateReferralTracking(ctx, req.Owner, req.RegistrationReferralCode.String); err != nil {
+			logger := log.WithField("referral_code", req.RegistrationReferralCode.String)
 
 			switch err {
 			case storage.ErrReferralTrackingExists:
@@ -194,7 +209,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 	return nil
 }
 
-func (s *service) GetReferralCode(ctx context.Context, address string) (string, error) {
+func (s *service) GetOwnReferralCode(ctx context.Context, address string) (string, error) {
 	req, err := s.storage.GetRequestByAddress(ctx, address)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -204,6 +219,41 @@ func (s *service) GetReferralCode(ctx context.Context, address string) (string, 
 	}
 
 	return req.OwnReferralCode, nil
+}
+
+func (s *service) TrackReferralBrowserInstallation(ctx context.Context, address string) error {
+	rt, err := s.storage.GetReferralTrackingByReceiver(ctx, address)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return ErrReferralTrackingNotFound
+		}
+		return err
+	}
+
+	if rt.Status != storage.RegisteredReferralStatus {
+		return ErrReferralTrackingInvalidStatus
+	}
+
+	if err := s.storage.MarkReferralTrackingInstalled(ctx, address); err != nil {
+		return fmt.Errorf("failed to mark referral tracking installed: %w", err)
+	}
+	return nil
+}
+
+func (s *service) GetRegistrationReferralCode(ctx context.Context, address string) (string, error) {
+	req, err := s.storage.GetRequestByAddress(ctx, address)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return "", ErrRequestNotFound
+		}
+		return "", fmt.Errorf("failed to get referral code: %w", err)
+	}
+
+	if !req.RegistrationReferralCode.Valid {
+		return "", ErrRequestNotFound
+	}
+
+	return req.RegistrationReferralCode.String, nil
 }
 
 func truncatePlusPart(email string) string {
