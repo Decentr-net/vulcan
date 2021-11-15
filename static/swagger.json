@@ -227,6 +227,10 @@
           "type": "string",
           "format": "email",
           "x-go-name": "Email"
+        },
+        "referralCode": {
+          "type": "string",
+          "x-go-name": "ReferralCode"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"

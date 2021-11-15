@@ -63,7 +63,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.s.Register(r.Context(), req.Email.String(), req.Address); err != nil {
+	if err := s.s.Register(r.Context(), req.Email.String(), req.Address, req.ReferralCode); err != nil {
 		switch {
 		case errors.Is(err, service.ErrTooManyAttempts):
 			api.WriteError(w, http.StatusTooManyRequests, "too many attempts")
@@ -122,7 +122,7 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.s.Confirm(r.Context(), req.Email, req.Code); err != nil {
 		switch {
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		case errors.Is(err, service.ErrAlreadyConfirmed):
 			api.WriteError(w, http.StatusConflict, "already confirmed")
@@ -189,7 +189,7 @@ func (s *server) getReferralCode(w http.ResponseWriter, r *http.Request) {
 	code, err := s.s.GetReferralCode(r.Context(), address)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrNotFound):
+		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		default:
 			api.WriteInternalErrorf(r.Context(), w, "failed to get referral code: %s", err.Error())

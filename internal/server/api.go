@@ -22,8 +22,9 @@ type EmptyResponse struct{}
 // swagger:model
 type RegisterRequest struct {
 	// required: true
-	Email   strfmt.Email `json:"email"`
-	Address string       `json:"address"`
+	Email        strfmt.Email `json:"email"`
+	Address      string       `json:"address"`
+	ReferralCode *string      `json:"referralCode"`
 }
 
 // ConfirmRequest ...

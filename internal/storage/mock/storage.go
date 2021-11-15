@@ -6,6 +6,7 @@ package mock
 
 import (
 	context "context"
+	sql "database/sql"
 	storage "github.com/Decentr-net/vulcan/internal/storage"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -49,6 +50,21 @@ func (mr *MockStorageMockRecorder) GetRequestByOwner(ctx, owner interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequestByOwner", reflect.TypeOf((*MockStorage)(nil).GetRequestByOwner), ctx, owner)
 }
 
+// GetRequestByOwnReferralCode mocks base method
+func (m *MockStorage) GetRequestByOwnReferralCode(ctx context.Context, ownReferralCode string) (*storage.Request, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRequestByOwnReferralCode", ctx, ownReferralCode)
+	ret0, _ := ret[0].(*storage.Request)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRequestByOwnReferralCode indicates an expected call of GetRequestByOwnReferralCode
+func (mr *MockStorageMockRecorder) GetRequestByOwnReferralCode(ctx, ownReferralCode interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRequestByOwnReferralCode", reflect.TypeOf((*MockStorage)(nil).GetRequestByOwnReferralCode), ctx, ownReferralCode)
+}
+
 // GetRequestByAddress mocks base method
 func (m *MockStorage) GetRequestByAddress(ctx context.Context, address string) (*storage.Request, error) {
 	m.ctrl.T.Helper()
@@ -79,29 +95,29 @@ func (mr *MockStorageMockRecorder) SetConfirmed(ctx, owner interface{}) *gomock.
 }
 
 // UpsertRequest mocks base method
-func (m *MockStorage) UpsertRequest(ctx context.Context, owner, email, address, code string) error {
+func (m *MockStorage) UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertRequest", ctx, owner, email, address, code)
+	ret := m.ctrl.Call(m, "UpsertRequest", ctx, owner, email, address, code, referralCode)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertRequest indicates an expected call of UpsertRequest
-func (mr *MockStorageMockRecorder) UpsertRequest(ctx, owner, email, address, code interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) UpsertRequest(ctx, owner, email, address, code, referralCode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRequest", reflect.TypeOf((*MockStorage)(nil).UpsertRequest), ctx, owner, email, address, code)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRequest", reflect.TypeOf((*MockStorage)(nil).UpsertRequest), ctx, owner, email, address, code, referralCode)
 }
 
-// CreateReferral mocks base method
-func (m *MockStorage) CreateReferral(ctx context.Context, referral *storage.Referral) error {
+// CreateReferralTracking mocks base method
+func (m *MockStorage) CreateReferralTracking(ctx context.Context, receiver, referralCode string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateReferral", ctx, referral)
+	ret := m.ctrl.Call(m, "CreateReferralTracking", ctx, receiver, referralCode)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateReferral indicates an expected call of CreateReferral
-func (mr *MockStorageMockRecorder) CreateReferral(ctx, referral interface{}) *gomock.Call {
+// CreateReferralTracking indicates an expected call of CreateReferralTracking
+func (mr *MockStorageMockRecorder) CreateReferralTracking(ctx, receiver, referralCode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReferral", reflect.TypeOf((*MockStorage)(nil).CreateReferral), ctx, referral)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReferralTracking", reflect.TypeOf((*MockStorage)(nil).CreateReferralTracking), ctx, receiver, referralCode)
 }

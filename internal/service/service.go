@@ -33,15 +33,15 @@ var ErrAlreadyExists = fmt.Errorf("email or address is already taken")
 // ErrAlreadyConfirmed is returned when request is already confirmed.
 var ErrAlreadyConfirmed = fmt.Errorf("already confirmed")
 
-// ErrNotFound is returned when request not found for owner/code pair.
-var ErrNotFound = fmt.Errorf("not found")
+// ErrRequestNotFound is returned when request not found for owner/code pair.
+var ErrRequestNotFound = fmt.Errorf("request not found")
 
 // ErrTooManyAttempts is returned when throttling interval didn't pass.
 var ErrTooManyAttempts = fmt.Errorf("too many attempts")
 
 // Service ...
 type Service interface {
-	Register(ctx context.Context, email, address string) error
+	Register(ctx context.Context, email, address string, referralCode *string) error
 	Confirm(ctx context.Context, owner, code string) error
 	GetReferralCode(ctx context.Context, address string) (string, error)
 }
@@ -76,7 +76,7 @@ func New(
 	return s
 }
 
-func (s *service) Register(ctx context.Context, email, address string) error {
+func (s *service) Register(ctx context.Context, email, address string, referralCode *string) error {
 	var (
 		owner = getEmailHash(truncatePlusPart(email))
 		code  = randomCode()
@@ -90,7 +90,16 @@ func (s *service) Register(ctx context.Context, email, address string) error {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
-	if err := s.storage.UpsertRequest(ctx, owner, email, address, code); err != nil {
+	var referralCodeAsNullString sql.NullString
+	if referralCode != nil {
+		// check the given referral code exists
+		if _, err := s.storage.GetRequestByOwnReferralCode(ctx, *referralCode); err != nil {
+			return fmt.Errorf("failed to get request by own referral code: %w", err)
+		}
+		referralCodeAsNullString = sql.NullString{Valid: true, String: *referralCode}
+	}
+
+	if err := s.storage.UpsertRequest(ctx, owner, email, address, code, referralCodeAsNullString); err != nil {
 		if errors.Is(err, storage.ErrAddressIsTaken) {
 			return ErrAlreadyExists
 		}
@@ -134,7 +143,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 	req, err := s.storage.GetRequestByOwner(ctx, getEmailHash(truncatePlusPart(email)))
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return ErrNotFound
+			return ErrRequestNotFound
 		}
 		return fmt.Errorf("failed to check request: %w", err)
 	}
@@ -144,7 +153,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 	}
 
 	if req.Code != code {
-		return ErrNotFound
+		return ErrRequestNotFound
 	}
 
 	if err := s.btc.SendStakes(req.Address, s.initialTestStakes); err != nil {
@@ -166,6 +175,22 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return fmt.Errorf("failed to update request: %w", err)
 	}
 
+	if req.RegisteredByReferralCode.Valid {
+		// referral code has been provided during the registration, start tracking
+		if err := s.storage.CreateReferralTracking(ctx, req.Owner, req.RegisteredByReferralCode.String); err != nil {
+			logger := log.WithField("referral_code", req.RegisteredByReferralCode.String)
+
+			switch err {
+			case storage.ErrReferralTrackingExists:
+				logger.Warn("referral tracking already exists")
+			case storage.ErrReferralCodeNotFound:
+				logger.Warn("referral code not found")
+			default:
+				return fmt.Errorf("failed to create a  referral tracking: %w", err)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -173,12 +198,12 @@ func (s *service) GetReferralCode(ctx context.Context, address string) (string, 
 	req, err := s.storage.GetRequestByAddress(ctx, address)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
-			return "", ErrNotFound
+			return "", ErrRequestNotFound
 		}
 		return "", fmt.Errorf("failed to get referral code: %w", err)
 	}
 
-	return req.ReferralCode, nil
+	return req.OwnReferralCode, nil
 }
 
 func truncatePlusPart(email string) string {

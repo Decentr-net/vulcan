@@ -114,7 +114,7 @@ func migrate(username, password, hostname, dbname string, port int) {
 }
 
 func cleanup(t *testing.T) {
-	_, err := db.ExecContext(ctx, "DELETE FROM referral")
+	_, err := db.ExecContext(ctx, "DELETE FROM referral_tracking")
 	require.NoError(t, err)
 	_, err = db.ExecContext(ctx, "DELETE FROM request")
 	require.NoError(t, err)
@@ -123,7 +123,9 @@ func cleanup(t *testing.T) {
 func TestPg_InsertRequest(t *testing.T) {
 	defer cleanup(t)
 
-	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", "address", "code", sql.NullString{},
+	))
 	r, err := s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
 
@@ -131,15 +133,17 @@ func TestPg_InsertRequest(t *testing.T) {
 	assert.Equal(t, "e@mail.com", r.Email)
 	assert.Equal(t, "address", r.Address)
 	assert.Equal(t, "code", r.Code)
+	assert.Equal(t, sql.NullString{}, r.RegisteredByReferralCode)
 	assert.False(t, r.CreatedAt.IsZero())
 	assert.False(t, r.ConfirmedAt.Valid)
-	assert.NotEmpty(t, r.ReferralCode)
-	assert.Len(t, r.ReferralCode, 8)
+	assert.NotEmpty(t, r.OwnReferralCode)
+	assert.Len(t, r.OwnReferralCode, 8)
 
-	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "own", "em", "address", "code")))
-	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "owner", "em", "address2", "code")))
+	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "own", "em", "address", "code", sql.NullString{})))
+	require.True(t, errors.Is(storage.ErrAddressIsTaken, s.UpsertRequest(ctx, "owner", "em", "address2", "code", sql.NullString{})))
 
-	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "new", "code2"))
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com",
+		"new", "code2", sql.NullString{}))
 	r, err = s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
 
@@ -147,16 +151,31 @@ func TestPg_InsertRequest(t *testing.T) {
 	assert.Equal(t, "code2", r.Code)
 }
 
-func TestPg_CreateReferral(t *testing.T) {
+func TestPg_CreateReferralTracking(t *testing.T) {
 	defer cleanup(t)
-	require.NoError(t, s.CreateReferral(ctx, &storage.Referral{Sender: "sender", Receiver: "receiver"}))
-	require.Equal(t, s.CreateReferral(ctx, &storage.Referral{Sender: "sender", Receiver: "receiver"}), storage.ErrReferralExists)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", "address", "code",
+		sql.NullString{},
+	))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
+	require.NoError(t, err)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner2",
+		"e2@mail.com", "address2", "code2",
+		sql.NullString{Valid: true, String: r.OwnReferralCode},
+	))
+
+	require.Equal(t, storage.ErrReferralCodeNotFound, s.CreateReferralTracking(ctx, "receiver", "not exists"))
+	require.NoError(t, s.CreateReferralTracking(ctx, "receiver", r.OwnReferralCode))
+	require.Equal(t, storage.ErrReferralTrackingExists, s.CreateReferralTracking(ctx, "receiver", r.OwnReferralCode))
 }
 
 func TestPg_SetConfirmed(t *testing.T) {
 	defer cleanup(t)
 
-	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code", sql.NullString{}))
 	require.NoError(t, s.SetConfirmed(ctx, "owner"))
 	r, err := s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
@@ -169,7 +188,7 @@ func TestPg_SetConfirmed(t *testing.T) {
 func TestPg_GetRequestByAddress(t *testing.T) {
 	defer cleanup(t)
 
-	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code", sql.NullString{}))
 
 	r, err := s.GetRequestByOwner(ctx, "owner")
 	require.NoError(t, err)
@@ -188,7 +207,7 @@ func TestPg_GetRequestByAddress(t *testing.T) {
 func TestPg_GetRequestByOwner(t *testing.T) {
 	defer cleanup(t)
 
-	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code"))
+	require.NoError(t, s.UpsertRequest(ctx, "owner", "e@mail.com", "address", "code", sql.NullString{}))
 
 	r, err := s.GetRequestByAddress(ctx, "address")
 	require.NoError(t, err)
