@@ -6,6 +6,7 @@ package mock
 
 import (
 	context "context"
+	storage "github.com/Decentr-net/vulcan/internal/storage"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -103,4 +104,19 @@ func (m *MockService) TrackReferralBrowserInstallation(ctx context.Context, addr
 func (mr *MockServiceMockRecorder) TrackReferralBrowserInstallation(ctx, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrackReferralBrowserInstallation", reflect.TypeOf((*MockService)(nil).TrackReferralBrowserInstallation), ctx, address)
+}
+
+// GetReferralTrackingStats mocks base method
+func (m *MockService) GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferralTrackingStats", ctx, address)
+	ret0, _ := ret[0].([]*storage.ReferralTrackingStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferralTrackingStats indicates an expected call of GetReferralTrackingStats
+func (mr *MockServiceMockRecorder) GetReferralTrackingStats(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralTrackingStats", reflect.TypeOf((*MockService)(nil).GetReferralTrackingStats), ctx, address)
 }

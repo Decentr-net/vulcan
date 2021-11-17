@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Decentr-net/vulcan/internal/storage"
+
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 
@@ -206,6 +208,46 @@ func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http
 	api.WriteOK(w, http.StatusOK, EmptyResponse{})
 }
 
+func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /referral/track/stats/{address} Vulcan GetReferralTrackingStats
+	//
+	// Returns a referral tracking stats of the given account
+	//
+	// ---
+	// produces:
+	// - application/json
+	// responses:
+	//   '200':
+	//     schema:
+	//       "$ref": "#/definitions/ReferralTrackingStatsResponse"
+	//   '404':
+	//      description: address not found
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	address := chi.URLParam(r, "address")
+
+	stats, err := s.s.GetReferralTrackingStats(r.Context(), address)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrRequestNotFound):
+			api.WriteError(w, http.StatusNotFound, "not found")
+		default:
+			api.WriteInternalErrorf(r.Context(), w, "failed to get referral tracking stats: %s", err.Error())
+		}
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, ReferralTrackingStatsResponse{
+		Total:      toReferralTrackingStatsItem(*stats[0]),
+		Last30Days: toReferralTrackingStatsItem(*stats[1]),
+	})
+}
+
 // getOwnReferralCode return a referral code of the given account.
 func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /referral/code/{address} Vulcan GetOwnReferralCode
@@ -277,4 +319,13 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	api.WriteOK(w, http.StatusOK, ReferralCodeResponse{Code: code})
+}
+
+func toReferralTrackingStatsItem(item storage.ReferralTrackingStats) ReferralTrackingStatsItem {
+	return ReferralTrackingStatsItem{
+		Registered: item.Registered,
+		Installed:  item.Installed,
+		Confirmed:  item.Confirmed,
+		Reward:     item.Reward,
+	}
 }

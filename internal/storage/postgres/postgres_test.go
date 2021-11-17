@@ -265,7 +265,7 @@ func TestPg_MarkReferralTrackingInstalled(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
-	require.NoError(t, s.MarkReferralTrackingInstalled(ctx, receiverAddr))
+	require.NoError(t, s.TransitionReferralTrackingToInstalled(ctx, receiverAddr))
 
 	rt, err := s.GetReferralTrackingByReceiver(ctx, receiverAddr)
 	require.NoError(t, err)
@@ -275,5 +275,73 @@ func TestPg_MarkReferralTrackingInstalled(t *testing.T) {
 	assert.Equal(t, senderArr, rt.Sender)
 
 	// second time, should be no err
-	require.NoError(t, s.MarkReferralTrackingInstalled(ctx, receiverAddr))
+	require.NoError(t, s.TransitionReferralTrackingToInstalled(ctx, receiverAddr))
+}
+
+func TestPg_GetReferralTrackingStats(t *testing.T) {
+	defer cleanup(t)
+
+	const (
+		receiverAddr = "receiver"
+		senderArr    = "sender"
+	)
+
+	// empty
+	stats, err := s.GetReferralTrackingStats(ctx, senderArr)
+	require.NoError(t, err)
+	require.Len(t, stats, 2)
+	require.Equal(t, *stats[0], storage.ReferralTrackingStats{})
+	require.Equal(t, *stats[1], storage.ReferralTrackingStats{})
+
+	// registered
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", senderArr, "code",
+		sql.NullString{},
+	))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
+	require.NoError(t, err)
+
+	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
+	stats, err = s.GetReferralTrackingStats(ctx, senderArr)
+	require.NoError(t, err)
+	require.Len(t, stats, 2)
+	require.Equal(t, storage.ReferralTrackingStats{
+		Registered: 1,
+	}, *stats[0])
+	require.Equal(t, storage.ReferralTrackingStats{
+		Registered: 1,
+	}, *stats[1])
+
+	// installed
+	require.NoError(t, s.TransitionReferralTrackingToInstalled(ctx, receiverAddr))
+	stats, err = s.GetReferralTrackingStats(ctx, senderArr)
+	require.NoError(t, err)
+	require.Len(t, stats, 2)
+	require.Equal(t, storage.ReferralTrackingStats{
+		Registered: 1,
+		Installed:  1,
+	}, *stats[0])
+	require.Equal(t, storage.ReferralTrackingStats{
+		Registered: 1,
+		Installed:  1,
+	}, *stats[1])
+
+	// confirmed
+	require.NoError(t, s.TransitionReferralTrackingToConfirmed(ctx, receiverAddr, 10, 5))
+	stats, err = s.GetReferralTrackingStats(ctx, senderArr)
+	require.NoError(t, err)
+	require.Len(t, stats, 2)
+	require.Equal(t, storage.ReferralTrackingStats{
+		Registered: 1,
+		Installed:  1,
+		Confirmed:  1,
+		Reward:     10,
+	}, *stats[0])
+	require.Equal(t, storage.ReferralTrackingStats{
+		Registered: 1,
+		Installed:  1,
+		Confirmed:  1,
+		Reward:     10,
+	}, *stats[1])
 }

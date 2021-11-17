@@ -58,6 +58,14 @@ type ReferralTracking struct {
 	ReceiverReward sql.NullInt32  `db:"receiver_reward"`
 }
 
+// ReferralTrackingStats ...
+type ReferralTrackingStats struct {
+	Registered int `db:"registered"`
+	Installed  int `db:"installed"`
+	Confirmed  int `db:"confirmed"`
+	Reward     int `db:"reward"`
+}
+
 // Storage provides methods for interacting with database.
 type Storage interface {
 	// GetRequestByOwner returns request by owner.
@@ -72,8 +80,12 @@ type Storage interface {
 	UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error
 	// CreateReferralTracking creates a new referral tracking
 	CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error
-	// MarkReferralTrackingInstalled marks referral tracking of the given referral code receiver as installed
-	MarkReferralTrackingInstalled(ctx context.Context, receiver string) error
+	// TransitionReferralTrackingToInstalled transitions referral tracking of the given referral code receiver as installed
+	TransitionReferralTrackingToInstalled(ctx context.Context, receiver string) error
+	// TransitionReferralTrackingToConfirmed transitions referral tracking as confirmed
+	TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string, senderReward, receiverReward int) error
 	// GetReferralTrackingByReceiver returns referral tracking by the given receiver address
 	GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*ReferralTracking, error)
+	// GetReferralTrackingStats returns referral tracking stats: total + 30 last days
+	GetReferralTrackingStats(ctx context.Context, sender string) ([]*ReferralTrackingStats, error)
 }

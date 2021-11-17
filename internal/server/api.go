@@ -40,6 +40,22 @@ type ReferralCodeResponse struct {
 	Code string `json:"code"`
 }
 
+// ReferralTrackingStatsItem ...
+// swagger:model
+type ReferralTrackingStatsItem struct {
+	Registered int `json:"registered"`
+	Installed  int `json:"installed"`
+	Confirmed  int `json:"confirmed"`
+	Reward     int `json:"reward"`
+}
+
+// ReferralTrackingStatsResponse ...
+// swagger:model
+type ReferralTrackingStatsResponse struct {
+	Total      ReferralTrackingStatsItem `json:"total"`
+	Last30Days ReferralTrackingStatsItem `json:"last30Days"`
+}
+
 func (r RegisterRequest) validate() error {
 	if !isEmailValid(r.Email.String()) {
 		return fmt.Errorf("%w: invalid email", errInvalidRequest)

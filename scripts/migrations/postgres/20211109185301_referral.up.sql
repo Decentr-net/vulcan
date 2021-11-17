@@ -1,15 +1,16 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 ALTER TABLE request
-    ADD COLUMN own_referral_code TEXT NULL UNIQUE,
+    ADD COLUMN own_referral_code          TEXT NULL UNIQUE,
     ADD COLUMN registration_referral_code TEXT NULL REFERENCES request (own_referral_code);
 
 CREATE OR REPLACE FUNCTION unique_referral_code()
-    RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS
+$$
 
 DECLARE
-    key TEXT;
-    qry TEXT;
+    key   TEXT;
+    qry   TEXT;
     found TEXT;
 BEGIN
 
@@ -27,7 +28,8 @@ BEGIN
         -- Base64 encoding contains 2 URL unsafe characters by default.
         -- The URL-safe version has these replacements.
         key := replace(key, '/', '_'); -- url safe replacement
-        key := replace(key, '+', '-'); -- url safe replacement
+        key := replace(key, '+', '-');
+        -- url safe replacement
 
         -- Concat the generated key (safely quoted) with the generated query
         -- and run it.
@@ -54,36 +56,88 @@ BEGIN
     -- or what the next trigger will get if there is one.
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE 'plpgsql';
 
 CREATE TRIGGER trigger_request_unique_referral_code
-    BEFORE UPDATE ON request
-    FOR EACH ROW EXECUTE PROCEDURE unique_referral_code();
+    BEFORE UPDATE
+    ON request
+    FOR EACH ROW
+EXECUTE PROCEDURE unique_referral_code();
 
 -- Dummy update to invoke the trigger_request_unique_referral_code
-UPDATE request SET owner = owner;
+UPDATE request
+SET owner = owner;
 
 -- Existing request updated, drop the trigger
 DROP TRIGGER trigger_request_unique_referral_code ON request;
 
 -- Recreate the trigger but apply it only on INSERT
 CREATE TRIGGER trigger_request_unique_referral_code
-    BEFORE INSERT ON request
-    FOR EACH ROW EXECUTE PROCEDURE unique_referral_code();
+    BEFORE INSERT
+    ON request
+    FOR EACH ROW
+EXECUTE PROCEDURE unique_referral_code();
 
-ALTER TABLE request ALTER COLUMN own_referral_code SET NOT NULL;
+ALTER TABLE request
+    ALTER COLUMN own_referral_code SET NOT NULL;
 
 -- Referral
 CREATE TYPE REFERRAL_STATUS AS ENUM ('registered', 'installed', 'confirmed');
 
-CREATE TABLE referral_tracking (
-    sender VARCHAR NOT NULL,
-    receiver VARCHAR NOT NULL UNIQUE,
-    status REFERRAL_STATUS NOT NULL DEFAULT ('registered'),
-    registered_at TIMESTAMP NOT NULL,
-    installed_at TIMESTAMP,
-    confirmed_at TIMESTAMP,
-    sender_reward INT,
+CREATE TABLE referral_tracking
+(
+    sender          VARCHAR         NOT NULL,
+    receiver        VARCHAR         NOT NULL UNIQUE,
+    status          REFERRAL_STATUS NOT NULL DEFAULT ('registered'),
+    registered_at   TIMESTAMP       NOT NULL,
+    installed_at    TIMESTAMP,
+    confirmed_at    TIMESTAMP,
+    sender_reward   INT,
     receiver_reward INT,
     PRIMARY KEY (sender, receiver)
 );
+
+CREATE INDEX referral_tracking_registered_at_idx ON referral_tracking (registered_at);
+
+CREATE OR REPLACE FUNCTION referral_tracking_sender_stats(addr VARCHAR, since INTERVAL)
+    RETURNS TABLE
+            (
+                registered INT,
+                installed  INT,
+                confirmed  INT,
+                reward     INT
+            )
+AS
+$$
+BEGIN
+    RETURN QUERY
+        SELECT COALESCE(
+                       (SELECT COUNT(*)
+                        FROM referral_tracking
+                        WHERE sender = addr
+                          AND CASE WHEN since IS NULL THEN TRUE ELSE registered_at > NOW() - since END),
+                       0)::INT AS registered,
+               COALESCE(
+                       (SELECT COUNT(*)
+                        FROM referral_tracking
+                        WHERE sender = addr
+                          AND installed_at IS NOT NULL
+                          AND CASE WHEN since IS NULL THEN TRUE ELSE registered_at > NOW() - since END),
+                       0)::INT AS installed,
+               COALESCE(
+                       (SELECT COUNT(*)
+                        FROM referral_tracking
+                        WHERE sender = addr
+                          AND confirmed_at IS NOT NULL
+                          AND CASE WHEN since IS NULL THEN TRUE ELSE registered_at > NOW() - since END),
+                       0)::INT AS confirmed,
+               COALESCE(
+                       (SELECT SUM(COALESCE(sender_reward, 0))
+                        FROM referral_tracking
+                        WHERE sender = addr
+                          AND CASE WHEN since IS NULL THEN TRUE ELSE registered_at > NOW() - since END),
+                       0)::INT AS reward;
+END;
+$$ LANGUAGE 'plpgsql';
+
+

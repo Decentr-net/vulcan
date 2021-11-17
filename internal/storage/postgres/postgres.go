@@ -78,8 +78,8 @@ func (p pg) SetConfirmed(ctx context.Context, owner string) error {
 
 func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error {
 	if _, err := p.db.ExecContext(ctx, `
-		INSERT INTO request (owner, email, address, code, created_at, registration_referral_code)
-		    VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) ON CONFLICT(email) DO
+			INSERT INTO request (owner, email, address, code, created_at, registration_referral_code)
+			VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) ON CONFLICT(email) DO
 			UPDATE SET 
 			           address=EXCLUDED.address, 
 			           code=EXCLUDED.code, 
@@ -97,13 +97,13 @@ func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code strin
 }
 
 func (p pg) CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error {
-	if _, err := p.db.ExecContext(ctx,
-		`INSERT INTO referral_tracking (sender, receiver, registered_at) 
-                VALUES (
-                        (SELECT address FROM request WHERE own_referral_code = $2), 
-                        $1, 
-                        CURRENT_TIMESTAMP
-			        )`,
+	if _, err := p.db.ExecContext(ctx, `
+			INSERT INTO referral_tracking (sender, receiver, registered_at) 
+			VALUES (
+				(SELECT address FROM request WHERE own_referral_code = $2), 
+				$1, 
+				CURRENT_TIMESTAMP
+			)`,
 		receiver, referralCode); err != nil {
 		switch {
 		case isNotNullViolationError(err, "sender"):
@@ -129,12 +129,36 @@ func (p pg) GetReferralTrackingByReceiver(ctx context.Context, receiver string) 
 	return &r, nil
 }
 
-func (p pg) MarkReferralTrackingInstalled(ctx context.Context, receiver string) error {
-	_, err := p.db.ExecContext(ctx,
-		`UPDATE referral_tracking
-               SET status = 'installed',
-                   installed_at = CURRENT_TIMESTAMP
-                WHERE receiver = $1 and status = 'registered'`, receiver)
+func (p pg) GetReferralTrackingStats(ctx context.Context, sender string) ([]*storage.ReferralTrackingStats, error) {
+	var stats []*storage.ReferralTrackingStats
+	err := sqlx.SelectContext(ctx, p.db, &stats, `
+				SELECT * FROM referral_tracking_sender_stats($1, NULL)	
+				UNION ALL
+				SELECT * FROM referral_tracking_sender_stats($1, '30 days'::INTERVAL)`, sender)
+	return stats, err
+}
+
+func (p pg) TransitionReferralTrackingToInstalled(ctx context.Context, receiver string) error {
+	_, err := p.db.ExecContext(ctx, `
+				UPDATE referral_tracking
+				SET status = 'installed',
+					installed_at = CURRENT_TIMESTAMP
+				WHERE receiver = $1 and status = 'registered'`, receiver)
+	if err != nil {
+		return fmt.Errorf("failed to exec query: %w", err)
+	}
+	return nil
+}
+
+func (p pg) TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string,
+	senderReward, receiverReward int) error {
+	_, err := p.db.ExecContext(ctx, `
+				UPDATE referral_tracking
+				SET status = 'confirmed',
+					sender_reward = $2,
+					receiver_reward = $3,
+					confirmed_at = CURRENT_TIMESTAMP
+				WHERE receiver = $1`, receiver, senderReward, receiverReward)
 	if err != nil {
 		return fmt.Errorf("failed to exec query: %w", err)
 	}
