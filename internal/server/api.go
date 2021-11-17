@@ -56,6 +56,20 @@ type ReferralTrackingStatsResponse struct {
 	Last30Days ReferralTrackingStatsItem `json:"last30Days"`
 }
 
+// RegisterStats ...
+// swagger:model
+type RegisterStats struct {
+	AccountsCount int         `json:"accountsCount"`
+	Stats         []StatsItem `json:"stats"`
+}
+
+// StatsItem ...
+// Date is RFC3999 date, value is number of new accounts.
+type StatsItem struct {
+	Date  string `json:"date"`
+	Value int    `json:"value"`
+}
+
 func (r RegisterRequest) validate() error {
 	if !isEmailValid(r.Email.String()) {
 		return fmt.Errorf("%w: invalid email", errInvalidRequest)

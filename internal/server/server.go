@@ -56,8 +56,10 @@ func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout tim
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Post("/register", srv.register)
+		r.Get("/register/stats", srv.getRegisterStats)
 		r.Post("/confirm", srv.confirm)
 		r.Get("/supply", srv.supply)
+
 		r.Route("/referral", func(r chi.Router) {
 			r.Get("/code/{address}", srv.getOwnReferralCode)
 			r.Get("/code/{address}/registration", srv.getRegistrationReferralCode)

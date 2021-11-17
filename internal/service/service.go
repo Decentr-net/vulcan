@@ -49,6 +49,7 @@ var ErrReferralTrackingInvalidStatus = fmt.Errorf("referral tracking has invalid
 type Service interface {
 	Register(ctx context.Context, email, address string, referralCode *string) error
 	Confirm(ctx context.Context, owner, code string) error
+	GetRegisterStats(ctx context.Context) ([]*storage.RegisterStats, int, error)
 	GetOwnReferralCode(ctx context.Context, address string) (string, error)
 	GetRegistrationReferralCode(ctx context.Context, address string) (string, error)
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
@@ -276,6 +277,18 @@ func (s *service) GetReferralTrackingStats(ctx context.Context, address string) 
 	}
 
 	return stats, err
+}
+
+func (s *service) GetRegisterStats(ctx context.Context) ([]*storage.RegisterStats, int, error) {
+	stats, err := s.storage.GetConfirmedRegistrationsStats(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get stats:%w", err)
+	}
+	total, err := s.storage.GetConfirmedRegistrationsTotal(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get total:%w", err)
+	}
+	return stats, total, nil
 }
 
 func truncatePlusPart(email string) string {

@@ -62,6 +62,22 @@ func (mr *MockServiceMockRecorder) Confirm(ctx, owner, code interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Confirm", reflect.TypeOf((*MockService)(nil).Confirm), ctx, owner, code)
 }
 
+// GetRegisterStats mocks base method
+func (m *MockService) GetRegisterStats(ctx context.Context) ([]*storage.RegisterStats, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegisterStats", ctx)
+	ret0, _ := ret[0].([]*storage.RegisterStats)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetRegisterStats indicates an expected call of GetRegisterStats
+func (mr *MockServiceMockRecorder) GetRegisterStats(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegisterStats", reflect.TypeOf((*MockService)(nil).GetRegisterStats), ctx)
+}
+
 // GetOwnReferralCode mocks base method
 func (m *MockService) GetOwnReferralCode(ctx context.Context, address string) (string, error) {
 	m.ctrl.T.Helper()

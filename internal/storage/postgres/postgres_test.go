@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"testing"
+	"time"
 
 	m "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -149,6 +151,51 @@ func TestPg_InsertRequest(t *testing.T) {
 
 	assert.Equal(t, "new", r.Address)
 	assert.Equal(t, "code2", r.Code)
+}
+
+func TestPg_GetConfirmedRegistrationsTotal(t *testing.T) {
+	defer cleanup(t)
+
+	count, err := s.GetConfirmedRegistrationsTotal(ctx)
+	require.NoError(t, err)
+	require.Zero(t, count)
+
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", "address", "code", sql.NullString{},
+	))
+	require.NoError(t, s.SetConfirmed(ctx, "owner"))
+
+	count, err = s.GetConfirmedRegistrationsTotal(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
+func TestPg_GetConfirmedAccountStats(t *testing.T) {
+	defer cleanup(t)
+
+	stats, err := s.GetConfirmedRegistrationsStats(ctx)
+	require.NoError(t, err)
+	require.Len(t, stats, 0)
+
+	for i := 0; i < 10; i++ {
+		is := strconv.Itoa(i)
+		require.NoError(t, s.UpsertRequest(ctx, "owner"+is,
+			"e@mail.com"+is, "address"+is, "code"+is, sql.NullString{},
+		))
+		require.NoError(t, s.SetConfirmed(ctx, "owner"+is))
+	}
+
+	stats, err = s.GetConfirmedRegistrationsStats(ctx)
+	require.NoError(t, err)
+	require.Len(t, stats, 1)
+	require.True(t, dateEqual(time.Now().UTC(), stats[0].Date))
+	require.Equal(t, 10, stats[0].Value)
+}
+
+func dateEqual(date1, date2 time.Time) bool {
+	y1, m1, d1 := date1.Date()
+	y2, m2, d2 := date2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
 func TestPg_CreateReferralTracking(t *testing.T) {

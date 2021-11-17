@@ -83,6 +83,47 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	api.WriteOK(w, http.StatusOK, EmptyResponse{})
 }
 
+// getRegisterStats ...
+func (s *server) getRegisterStats(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /register/stats Vulcan RegisterStats
+	//
+	// Confirmed registrations stats
+	//
+	// ---
+	// produces:
+	// - application/json
+	// consumes:
+	// - application/json
+	// responses:
+	//   '200':
+	//     description: confirmation link was sent.
+	//     schema:
+	//       "$ref": "#/definitions/RegisterStats"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	dbStats, total, err := s.s.GetRegisterStats(r.Context())
+	if err != nil {
+		api.WriteInternalErrorf(r.Context(), w, "failed to get accounts stats: %s", err.Error())
+		return
+	}
+
+	stats := make([]StatsItem, 0, len(dbStats))
+	for _, item := range dbStats {
+		stats = append(stats, StatsItem{
+			Date:  item.Date.Format("2006-01-02"),
+			Value: item.Value,
+		})
+	}
+
+	api.WriteOK(w, http.StatusOK, RegisterStats{
+		AccountsCount: total,
+		Stats:         stats,
+	})
+}
+
 // confirm confirms registration and creates wallet.
 func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation POST /confirm Vulcan Confirm
