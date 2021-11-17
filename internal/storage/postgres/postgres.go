@@ -165,6 +165,27 @@ func (p pg) TransitionReferralTrackingToConfirmed(ctx context.Context, receiver 
 	return nil
 }
 
+func (p pg) GetConfirmedRegistrationsStats(ctx context.Context) ([]*storage.RegisterStats, error) {
+	var stats []*storage.RegisterStats
+	err := sqlx.SelectContext(ctx, p.db, &stats, `
+				SELECT confirmed_at::DATE as date, COUNT(*) as value
+				FROM request
+				WHERE confirmed_at IS NOT NULL AND confirmed_at > NOW() -'30 day'::INTERVAL
+				GROUP BY date
+				ORDER BY date DESC
+	`)
+	return stats, err
+}
+
+func (p pg) GetConfirmedRegistrationsTotal(ctx context.Context) (int, error) {
+	var total int
+	err := sqlx.GetContext(ctx, p.db, &total, `
+				SELECT COUNT(*) FROM request
+				WHERE confirmed_at IS NOT NULL 
+	`)
+	return total, err
+}
+
 func isUniqueViolationErr(err error, constraint string) bool {
 	if err1, ok := err.(*pq.Error); ok &&
 		err1.Code == "23505" && err1.Constraint == constraint {

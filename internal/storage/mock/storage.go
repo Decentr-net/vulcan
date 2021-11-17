@@ -35,6 +35,36 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
+// GetConfirmedRegistrationsTotal mocks base method
+func (m *MockStorage) GetConfirmedRegistrationsTotal(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfirmedRegistrationsTotal", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfirmedRegistrationsTotal indicates an expected call of GetConfirmedRegistrationsTotal
+func (mr *MockStorageMockRecorder) GetConfirmedRegistrationsTotal(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfirmedRegistrationsTotal", reflect.TypeOf((*MockStorage)(nil).GetConfirmedRegistrationsTotal), ctx)
+}
+
+// GetConfirmedRegistrationsStats mocks base method
+func (m *MockStorage) GetConfirmedRegistrationsStats(ctx context.Context) ([]*storage.RegisterStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfirmedRegistrationsStats", ctx)
+	ret0, _ := ret[0].([]*storage.RegisterStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfirmedRegistrationsStats indicates an expected call of GetConfirmedRegistrationsStats
+func (mr *MockStorageMockRecorder) GetConfirmedRegistrationsStats(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfirmedRegistrationsStats", reflect.TypeOf((*MockStorage)(nil).GetConfirmedRegistrationsStats), ctx)
+}
+
 // GetRequestByOwner mocks base method
 func (m *MockStorage) GetRequestByOwner(ctx context.Context, owner string) (*storage.Request, error) {
 	m.ctrl.T.Helper()

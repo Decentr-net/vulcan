@@ -66,8 +66,18 @@ type ReferralTrackingStats struct {
 	Reward     int `db:"reward"`
 }
 
+// RegisterStats ...
+type RegisterStats struct {
+	Date  time.Time `json:"date"`
+	Value int       `json:"value"`
+}
+
 // Storage provides methods for interacting with database.
 type Storage interface {
+	// GetConfirmedRegistrationsTotal return a total number of all confirmed accounts (requests)
+	GetConfirmedRegistrationsTotal(ctx context.Context) (int, error)
+	// GetConfirmedRegistrationsStats return confirmed accounts stats for the last 30 days
+	GetConfirmedRegistrationsStats(ctx context.Context) ([]*RegisterStats, error)
 	// GetRequestByOwner returns request by owner.
 	GetRequestByOwner(ctx context.Context, owner string) (*Request, error)
 	// GetRequestByOwnReferralCode returns request by referral code.

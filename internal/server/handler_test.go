@@ -5,15 +5,16 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/Decentr-net/go-api/test"
-
 	"github.com/Decentr-net/vulcan/internal/service"
 	servicemock "github.com/Decentr-net/vulcan/internal/service/mock"
+	"github.com/Decentr-net/vulcan/internal/storage"
 	supplymock "github.com/Decentr-net/vulcan/internal/supply/mock"
 )
 
@@ -113,6 +114,37 @@ func Test_Register(t *testing.T) {
 			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})
 	}
+}
+
+func Test_GetRegisterStats(t *testing.T) {
+	_, w, r := test.NewAPITestParameters(http.MethodGet, "v1/register/stats", []byte{})
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	srv := servicemock.NewMockService(ctrl)
+	srv.EXPECT().GetRegisterStats(gomock.Not(gomock.Nil())).Return(
+		[]*storage.RegisterStats{
+			{Date: time.Date(2021, 10, 21, 0, 0, 0, 0, time.UTC), Value: 10},
+			{Date: time.Date(2021, 10, 22, 0, 0, 0, 0, time.UTC), Value: 15},
+		}, 100, nil)
+
+	router := chi.NewRouter()
+
+	s := server{s: srv}
+	router.Get("/v1/register/stats", s.getRegisterStats)
+
+	router.ServeHTTP(w, r)
+
+	assert.JSONEq(t,
+		`{
+                     "accountsCount":100,
+                     "stats": [
+                        {"date":"2021-10-21", "value": 10},
+                        {"date":"2021-10-22", "value": 15}
+                     ]
+                  }`,
+		w.Body.String())
 }
 
 func Test_Confirm(t *testing.T) {

@@ -255,6 +255,35 @@
         }
       }
     },
+    "/register/stats": {
+      "get": {
+        "description": "Confirmed registrations stats",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "operationId": "RegisterStats",
+        "responses": {
+          "200": {
+            "description": "confirmation link was sent.",
+            "schema": {
+              "$ref": "#/definitions/RegisterStats"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/supply": {
       "get": {
         "produces": [
@@ -384,6 +413,42 @@
         "referralCode": {
           "type": "string",
           "x-go-name": "ReferralCode"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "RegisterStats": {
+      "type": "object",
+      "title": "RegisterStats ...",
+      "properties": {
+        "accountsCount": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "AccountsCount"
+        },
+        "stats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StatsItem"
+          },
+          "x-go-name": "Stats"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "StatsItem": {
+      "description": "Date is RFC3999 date, value is number of new accounts.",
+      "type": "object",
+      "title": "StatsItem ...",
+      "properties": {
+        "date": {
+          "type": "string",
+          "x-go-name": "Date"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Value"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
