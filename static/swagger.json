@@ -421,17 +421,17 @@
       "type": "object",
       "title": "RegisterStats ...",
       "properties": {
-        "accountsCount": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "AccountsCount"
-        },
         "stats": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/StatsItem"
           },
           "x-go-name": "Stats"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Total"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"

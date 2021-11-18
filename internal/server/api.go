@@ -59,8 +59,8 @@ type ReferralTrackingStatsResponse struct {
 // RegisterStats ...
 // swagger:model
 type RegisterStats struct {
-	AccountsCount int         `json:"accountsCount"`
-	Stats         []StatsItem `json:"stats"`
+	Total int         `json:"total"`
+	Stats []StatsItem `json:"stats"`
 }
 
 // StatsItem ...

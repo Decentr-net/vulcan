@@ -138,7 +138,7 @@ func Test_GetRegisterStats(t *testing.T) {
 
 	assert.JSONEq(t,
 		`{
-                     "accountsCount":100,
+                     "total":100,
                      "stats": [
                         {"date":"2021-10-21", "value": 10},
                         {"date":"2021-10-22", "value": 15}

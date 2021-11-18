@@ -119,8 +119,8 @@ func (s *server) getRegisterStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.WriteOK(w, http.StatusOK, RegisterStats{
-		AccountsCount: total,
-		Stats:         stats,
+		Total: total,
+		Stats: stats,
 	})
 }
 
