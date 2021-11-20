@@ -74,6 +74,8 @@ type RegisterStats struct {
 
 // Storage provides methods for interacting with database.
 type Storage interface {
+	// InTx runs code in transaction
+	InTx(ctx context.Context, f func(s Storage) error) error
 	// GetConfirmedRegistrationsTotal return a total number of all confirmed accounts (requests)
 	GetConfirmedRegistrationsTotal(ctx context.Context) (int, error)
 	// GetConfirmedRegistrationsStats return confirmed accounts stats for the last 30 days
@@ -98,4 +100,6 @@ type Storage interface {
 	GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*ReferralTracking, error)
 	// GetReferralTrackingStats returns referral tracking stats: total + 30 last days
 	GetReferralTrackingStats(ctx context.Context, sender string) ([]*ReferralTrackingStats, error)
+	// GetUnconfirmedReferralTracking returns referral tracking installed more than 30 days ago
+	GetUnconfirmedReferralTracking(ctx context.Context) ([]*ReferralTracking, error)
 }

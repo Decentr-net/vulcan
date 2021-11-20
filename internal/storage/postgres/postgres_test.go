@@ -325,6 +325,45 @@ func TestPg_MarkReferralTrackingInstalled(t *testing.T) {
 	require.NoError(t, s.TransitionReferralTrackingToInstalled(ctx, receiverAddr))
 }
 
+func TestPg_GetUnconfirmedReferralTracking(t *testing.T) {
+	defer cleanup(t)
+
+	requireNoUnconfirmed := func() {
+		referrals, err := s.GetUnconfirmedReferralTracking(ctx)
+		require.NoError(t, err)
+		require.Len(t, referrals, 0)
+	}
+
+	const (
+		receiverAddr = "receiver"
+		senderArr    = "sender"
+	)
+
+	requireNoUnconfirmed()
+
+	// registered
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", senderArr, "code",
+		sql.NullString{},
+	))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
+	require.NoError(t, err)
+
+	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
+	requireNoUnconfirmed()
+
+	require.NoError(t, s.TransitionReferralTrackingToInstalled(ctx, receiverAddr))
+	requireNoUnconfirmed()
+
+	_, err = db.ExecContext(ctx, `UPDATE referral_tracking SET installed_at = NOW() - '31 day'::interval`)
+	require.NoError(t, err)
+
+	referrals, err := s.GetUnconfirmedReferralTracking(ctx)
+	require.NoError(t, err)
+	require.Len(t, referrals, 1)
+}
+
 func TestPg_GetReferralTrackingStats(t *testing.T) {
 	defer cleanup(t)
 

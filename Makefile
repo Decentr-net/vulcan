@@ -2,8 +2,11 @@
 V := @
 
 OUT_DIR := ./build
-OUT := $(OUT_DIR)/vulcan
-MAIN_PKG := ./cmd/vulcan
+VULCAN_OUT := $(OUT_DIR)/vulcan
+VULCAN_MAIN_PKG := ./cmd/vulcan
+
+REFERRAL_OUT := $(OUT_DIR)/referral
+REFERRAL_MAIN_PKG := ./cmd/referral
 
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
@@ -27,17 +30,26 @@ default: build
 
 .PHONY: build
 build:
-	@echo BUILDING $(OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(OUT) $(MAIN_PKG)
+	@echo BUILDING $(VULCAN_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(VULCAN_OUT) $(VULCAN_MAIN_PKG)
+	@echo DONE
+
+	@echo BUILDING $(REFERRAL_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(REFERRAL_OUT) $(REFERRAL_MAIN_PKG)
 	@echo DONE
 
 .PHONY: linux
 linux: export GOOS := linux
 linux: export GOARCH := amd64
-linux: LINUX_OUT := $(OUT)-$(GOOS)-$(GOARCH)
+linux: LINUX_VULCAN_OUT := $(VULCAN_OUT)-$(GOOS)-$(GOARCH)
+linux: LINUX_REFERRAL_OUT := $(REFERRAL_OUT)-$(GOOS)-$(GOARCH)
 linux:
-	@echo BUILDING $(LINUX_OUT)
-	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_OUT) $(MAIN_PKG)
+	@echo BUILDING $(LINUX_VULCAN_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_VULCAN_OUT) $(VULCAN_MAIN_PKG)
+	@echo DONE
+
+	@echo BUILDING $(LINUX_REFERRAL_OUT)
+	$(V) CGO_ENABLED=0 go build -mod=vendor -ldflags "$(LDFLAGS)" -o $(LINUX_REFERRAL_OUT) $(REFERRAL_MAIN_PKG)
 	@echo DONE
 
 .PHONY: image

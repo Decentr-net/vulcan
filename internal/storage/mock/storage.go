@@ -35,6 +35,20 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
+// InTx mocks base method
+func (m *MockStorage) InTx(ctx context.Context, f func(storage.Storage) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InTx", ctx, f)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InTx indicates an expected call of InTx
+func (mr *MockStorageMockRecorder) InTx(ctx, f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InTx", reflect.TypeOf((*MockStorage)(nil).InTx), ctx, f)
+}
+
 // GetConfirmedRegistrationsTotal mocks base method
 func (m *MockStorage) GetConfirmedRegistrationsTotal(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
@@ -208,4 +222,19 @@ func (m *MockStorage) GetReferralTrackingStats(ctx context.Context, sender strin
 func (mr *MockStorageMockRecorder) GetReferralTrackingStats(ctx, sender interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralTrackingStats", reflect.TypeOf((*MockStorage)(nil).GetReferralTrackingStats), ctx, sender)
+}
+
+// GetUnconfirmedReferralTracking mocks base method
+func (m *MockStorage) GetUnconfirmedReferralTracking(ctx context.Context) ([]*storage.ReferralTracking, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnconfirmedReferralTracking", ctx)
+	ret0, _ := ret[0].([]*storage.ReferralTracking)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUnconfirmedReferralTracking indicates an expected call of GetUnconfirmedReferralTracking
+func (mr *MockStorageMockRecorder) GetUnconfirmedReferralTracking(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnconfirmedReferralTracking", reflect.TypeOf((*MockStorage)(nil).GetUnconfirmedReferralTracking), ctx)
 }
