@@ -7,14 +7,16 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // TokenResponse ...
 type TokenResponse struct {
 	Height string `json:"height"`
 	Result struct {
-		Balance      string `json:"balance"`
-		BalanceDelta string `json:"balanceDelta"`
+		Balance      sdk.Dec `json:"balance"`
+		BalanceDelta sdk.Dec `json:"balanceDelta"`
 	} `json:"result"`
 }
 

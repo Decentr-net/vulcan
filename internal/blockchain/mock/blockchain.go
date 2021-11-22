@@ -5,6 +5,7 @@
 package mock
 
 import (
+	blockchain "github.com/Decentr-net/vulcan/internal/blockchain"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,15 +34,15 @@ func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 }
 
 // SendStakes mocks base method
-func (m *MockBlockchain) SendStakes(address string, amount int64) error {
+func (m *MockBlockchain) SendStakes(stakes []blockchain.Stake) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendStakes", address, amount)
+	ret := m.ctrl.Call(m, "SendStakes", stakes)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendStakes indicates an expected call of SendStakes
-func (mr *MockBlockchainMockRecorder) SendStakes(address, amount interface{}) *gomock.Call {
+func (mr *MockBlockchainMockRecorder) SendStakes(stakes interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStakes", reflect.TypeOf((*MockBlockchain)(nil).SendStakes), address, amount)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStakes", reflect.TypeOf((*MockBlockchain)(nil).SendStakes), stakes)
 }

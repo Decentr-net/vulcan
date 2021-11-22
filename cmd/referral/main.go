@@ -48,9 +48,9 @@ var opts = struct {
 	BlockchainMainFee                string `long:"blockchain.main.fee" env:"BLOCKCHAIN_MAIN_FEE" default:"1udec" description:"transaction fee"`
 	BlockchainMainRESTNodeURL        string `long:"blockchain.main.rest_node_url" env:"BLOCKCHAIN_MAIN_REST_NODE_URL" default:"http://hera.mainnet.decentr.xyz" description:"REST endpoint URL"`
 
-	ReferralSenderReward   int `long:"referral.sender_reward" env:"REFERRAL_SENDER_REWARD" description:"referral sender reward uDEC'"`
-	ReferralReceiverReward int `long:"referral.receiver_reward" env:"REFERRAL_RECEIVER_REWARD" description:"referral receiver reward uDEC'"`
-	ReferralUPDVThreshold  int `long:"referral.updv_threshold" env:"REFERRAL_UPDV_THRESHOLD" description:"how many uPDV a user should obtain to get a referral reward'"`
+	ReferralSenderReward   int `long:"referral.sender_reward" env:"REFERRAL_SENDER_REWARD" default:"10" description:"referral sender reward uDEC'"`
+	ReferralReceiverReward int `long:"referral.receiver_reward" env:"REFERRAL_RECEIVER_REWARD" default:"10"  description:"referral receiver reward uDEC'"`
+	ReferralUPDVThreshold  int `long:"referral.updv_threshold" env:"REFERRAL_UPDV_THRESHOLD" default:"100" description:"how many uPDV a user should obtain to get a referral reward'"`
 
 	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`

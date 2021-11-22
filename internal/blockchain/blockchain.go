@@ -24,9 +24,15 @@ func init() {
 // ErrInvalidAddress is returned when address is invalid. It is unexpected situation.
 var ErrInvalidAddress = errors.New("invalid address")
 
+// Stake ...
+type Stake struct {
+	Address string
+	Amount  int64
+}
+
 // Blockchain is interface for interacting with the blockchain.
 type Blockchain interface {
-	SendStakes(address string, amount int64) error
+	SendStakes(stakes []Stake) error
 }
 
 type blockchain struct {
@@ -42,19 +48,23 @@ func New(b *broadcaster.Broadcaster, memo string) Blockchain {
 	}
 }
 
-func (b blockchain) SendStakes(address string, amount int64) error {
-	to, err := sdk.AccAddressFromBech32(address)
-	if err != nil {
-		return fmt.Errorf("%w: %s", ErrInvalidAddress, address)
+// SendStakes ...
+func (b blockchain) SendStakes(stakes []Stake) error {
+	msgs := make([]sdk.Msg, len(stakes))
+	for idx, stake := range stakes {
+		to, err := sdk.AccAddressFromBech32(stake.Address)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrInvalidAddress, stake.Address)
+		}
+
+		msgs[idx] = bank.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
+			Denom:  app.DefaultBondDenom,
+			Amount: sdk.NewInt(stake.Amount),
+		}})
+		if err := msgs[idx].ValidateBasic(); err != nil {
+			return err
+		}
 	}
 
-	msg := bank.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
-		Denom:  app.DefaultBondDenom,
-		Amount: sdk.NewInt(amount),
-	}})
-	if err := msg.ValidateBasic(); err != nil {
-		return err
-	}
-
-	return b.b.BroadcastMsg(msg, b.memo)
+	return b.b.Broadcast(msgs, b.memo)
 }

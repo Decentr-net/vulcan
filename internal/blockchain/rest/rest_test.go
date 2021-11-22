@@ -2,8 +2,9 @@ package rest
 
 import (
 	"context"
-	"strconv"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +16,7 @@ func TestBlockchainRESTClient_GetTokenBalance(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotEmpty(t, resp.Height)
-	balance, err := strconv.ParseFloat(resp.Result.Balance, 64)
+	balance := resp.Result.Balance
 	require.NoError(t, err)
-	require.Greater(t, balance, 1.0)
+	require.True(t, balance.GT(sdk.NewDec(1)))
 }
