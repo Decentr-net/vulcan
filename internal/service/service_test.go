@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Decentr-net/vulcan/internal/blockchain"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
@@ -255,8 +257,12 @@ func TestService_Confirm(t *testing.T) {
 			st.EXPECT().GetRequestByOwner(ctx, testOwner).Return(&tc.req, tc.getErr)
 
 			if tc.getErr == nil {
-				btc.EXPECT().SendStakes(tc.req.Address, testInitialStakes).Return(tc.testSendErr)
-				bmc.EXPECT().SendStakes(tc.req.Address, mainInitialStakes).Return(tc.mainSendErr)
+				btc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: tc.req.Address, Amount: testInitialStakes},
+				}).Return(tc.testSendErr)
+				bmc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: tc.req.Address, Amount: mainInitialStakes},
+				}).Return(tc.mainSendErr)
 
 				if tc.mainSendErr == nil {
 					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)

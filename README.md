@@ -35,6 +35,7 @@ go run cmd/vulcan/main.go \
 ```
 
 ## Parameters
+### vulcand
 | CLI param         | Environment var          | Default | Required | Description
 |---------------|------------------|---------------|-------|---------------------------------
 | http.host         | HTTP_HOST         | 0.0.0.0  | true | host to bind server
@@ -75,6 +76,30 @@ go run cmd/vulcan/main.go \
 | supply.erc20_node | SUPPLY_ERC20_NODE |  | true | erc20 node address
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
 | sentry.dsn    | SENTRY_DSN    |  | sentry dsn
+
+### referrald
+| CLI param         | Environment var          | Default | Required | Description
+|---------------|------------------|---------------|-------|---------------------------------
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | true | postgres dsn
+| postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | true | postgres maximal open connections count, 0 means unlimited
+| postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | true | postgres maximal idle connections count
+| postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | true | postgres migrations directory
+| blockchain.main.node   | BLOCKCHAIN_MAIN_NODE    | http://zeus.mainnet.decentr.xyz:26657 | true | decentr node address
+| blockchain.main.from   | BLOCKCHAIN_MAIN_FROM    | | true | decentr account name to send stakes
+| blockchain.main.tx_memo   | BLOCKCHAIN_MAIN_TX_MEMO    | | false | decentr tx's memo
+| blockchain.main.chain_id   | BLOCKCHAIN_MAIN_CHAIN_ID    | testnet | true| decentr chain id
+| blockchain.main.client_home   | BLOCKCHAIN_MAIN_CLIENT_HOME    | ~/.decentrcli | true | decentrcli home directory
+| blockchain.main.keyring_backend   | BLOCKCHAIN_MAIN_KEYRING_BACKEND    | test | true | decentrcli keyring backend
+| blockchain.main.keyring_prompt_input   | BLOCKCHAIN_MAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
+| blockchain.main.gas   | BLOCKCHAIN_MAIN_GAS    | 10 | false | gas amount
+| blockchain.main.fee   | BLOCKCHAIN_MAIN_FEE    | 1udec | false | transaction fee
+| blockchain.main.rest_node_url   | BLOCKCHAIN_MAIN_REST_NODE_URL    | http://hera.mainnet.decentr.xyz | false | REST endpoint url
+| referral.sender_reward      | REFERRAL_SENDER_REWARD    |   | true | referral sender reward uDEC
+| referral.receiver_reward   | REFERRAL_RECEIVER_REWARD   |  | true | referral sender reward uDEC
+| referral.updv_threshold   | REFERRAL_UPDV_THRESHOLD   |  | true | how many uPDV a user should obtain to get a referral reward
+| log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
+| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
+
 
 ## Development
 ### Makefile

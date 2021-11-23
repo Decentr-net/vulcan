@@ -9,6 +9,7 @@ RUN make linux
 FROM alpine:${ALPINE_VERSION}
 RUN apk update && apk add ca-certificates
 COPY --from=0 /go/src/github.com/Decentr-net/vulcan/build/vulcan-linux-amd64 /vulcand
+COPY --from=0 /go/src/github.com/Decentr-net/vulcan/build/referral-linux-amd64 /referrald
 COPY static /static
 COPY scripts/migrations /migrations
 ENTRYPOINT [ "/vulcand" ]
