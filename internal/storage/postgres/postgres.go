@@ -212,13 +212,13 @@ func (p pg) GetConfirmedRegistrationsStats(ctx context.Context) ([]*storage.Regi
 	return stats, err
 }
 
-func (p pg) GetUnconfirmedReferralTracking(ctx context.Context) ([]*storage.ReferralTracking, error) {
+func (p pg) GetUnconfirmedReferralTracking(ctx context.Context, days int) ([]*storage.ReferralTracking, error) {
 	var rt []*storage.ReferralTracking
-	err := sqlx.SelectContext(ctx, p.ext, &rt, `
+	err := sqlx.SelectContext(ctx, p.ext, &rt, fmt.Sprintf(`
 				SELECT *
 				FROM referral_tracking
-				WHERE status = 'installed' AND installed_at < NOW() -'30 day'::INTERVAL
-	`)
+				WHERE status = 'installed' AND installed_at < NOW() -'%d day'::INTERVAL
+	`, days))
 	return rt, err
 }
 

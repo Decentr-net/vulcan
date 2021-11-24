@@ -31,6 +31,7 @@ import (
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/health"
 	"github.com/Decentr-net/vulcan/internal/mail/mandrill"
+	"github.com/Decentr-net/vulcan/internal/referral"
 	"github.com/Decentr-net/vulcan/internal/server"
 	"github.com/Decentr-net/vulcan/internal/service"
 	"github.com/Decentr-net/vulcan/internal/storage/postgres"
@@ -81,6 +82,11 @@ var opts = struct {
 
 	InitialTestStakes int64 `long:"blockchain.test.initial_stakes" env:"BLOCKCHAIN_TEST_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
 	InitialMainStakes int64 `long:"blockchain.main.initial_stakes" env:"BLOCKCHAIN_MAIN_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
+
+	ReferralSenderReward   int `long:"referral.sender_reward" env:"REFERRAL_SENDER_REWARD" default:"10" description:"referral sender reward uDEC'"`
+	ReferralReceiverReward int `long:"referral.receiver_reward" env:"REFERRAL_RECEIVER_REWARD" default:"10"  description:"referral receiver reward uDEC'"`
+	ReferralThresholdUPDV  int `long:"referral.threshold_updv" env:"REFERRAL_THRESHOLD_UPDV" default:"100" description:"how many uPDV a user should obtain to get a referral reward'"`
+	ReferralThresholdDays  int `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
 
 	SupplyNativeNode string `long:"supply.native_node" env:"SUPPLY_NATIVE_NODE" default:"https://zeus.testnet.decentr.xyz" description:"native rest node address"`
 	SupplyERC20Node  string `long:"supply.erc20_node" env:"SUPPLY_ERC20_NODE" default:"" description:"erc20 node address"`
@@ -144,6 +150,13 @@ func main() {
 	bt := mustGetTestBroadcaster()
 	bm := mustGetMainBroadcaster()
 
+	rc := referral.Config{
+		SenderReward:   opts.ReferralSenderReward,
+		ReceiverReward: opts.ReferralReceiverReward,
+		ThresholdUPDV:  opts.ReferralThresholdUPDV,
+		ThresholdDays:  opts.ReferralThresholdDays,
+	}
+
 	server.SetupRouter(
 		service.New(
 			postgres.New(db),
@@ -152,6 +165,7 @@ func main() {
 			blockchain.New(bm, opts.BlockchainMainTxMemo),
 			opts.InitialTestStakes,
 			opts.InitialMainStakes,
+			rc,
 		),
 		sup,
 		r,

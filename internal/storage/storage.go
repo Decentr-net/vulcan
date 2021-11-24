@@ -100,6 +100,6 @@ type Storage interface {
 	GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*ReferralTracking, error)
 	// GetReferralTrackingStats returns referral tracking stats: total + 30 last days
 	GetReferralTrackingStats(ctx context.Context, sender string) ([]*ReferralTrackingStats, error)
-	// GetUnconfirmedReferralTracking returns referral tracking installed more than 30 days ago
-	GetUnconfirmedReferralTracking(ctx context.Context) ([]*ReferralTracking, error)
+	// GetUnconfirmedReferralTracking returns referral tracking installed more than given days  ago
+	GetUnconfirmedReferralTracking(ctx context.Context, days int) ([]*ReferralTracking, error)
 }

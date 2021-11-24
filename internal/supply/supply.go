@@ -141,6 +141,10 @@ func (s supply) getNativeCirculatingSupply(ctx context.Context) (int64, error) {
 		return 0, fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	if len(out.Result) == 0 {
+		return 0, errors.New("supply: empty result") // nolint:err113
+	}
+
 	v, err := strconv.ParseInt(out.Result[0].Amount, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse amount: %w", err)

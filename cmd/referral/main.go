@@ -50,7 +50,8 @@ var opts = struct {
 
 	ReferralSenderReward   int `long:"referral.sender_reward" env:"REFERRAL_SENDER_REWARD" default:"10" description:"referral sender reward uDEC'"`
 	ReferralReceiverReward int `long:"referral.receiver_reward" env:"REFERRAL_RECEIVER_REWARD" default:"10"  description:"referral receiver reward uDEC'"`
-	ReferralUPDVThreshold  int `long:"referral.updv_threshold" env:"REFERRAL_UPDV_THRESHOLD" default:"100" description:"how many uPDV a user should obtain to get a referral reward'"`
+	ReferralThresholdUPDV  int `long:"referral.threshold_updv" env:"REFERRAL_THRESHOLD_UPDV" default:"100" description:"how many uPDV a user should obtain to get a referral reward'"`
+	ReferralThresholdDays  int `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
 
 	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
@@ -106,8 +107,12 @@ func main() {
 		b := blockchain.New(bm, opts.BlockchainMainTxMemo)
 		brc := rest.NewBlockchainRESTClient(opts.BlockchainMainRESTNodeURL)
 
-		referral.NewRewarder(postgres.New(db), b, brc,
-			opts.ReferralSenderReward, opts.ReferralReceiverReward, opts.ReferralUPDVThreshold).Run(ctx, 12*time.Hour)
+		referral.NewRewarder(postgres.New(db), b, brc, referral.Config{
+			SenderReward:   opts.ReferralSenderReward,
+			ReceiverReward: opts.ReferralReceiverReward,
+			ThresholdUPDV:  opts.ReferralThresholdUPDV,
+			ThresholdDays:  opts.ReferralThresholdDays,
+		}).Run(ctx, 12*time.Hour)
 		return nil
 	})
 

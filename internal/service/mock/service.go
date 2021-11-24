@@ -6,6 +6,7 @@ package mock
 
 import (
 	context "context"
+	referral "github.com/Decentr-net/vulcan/internal/referral"
 	storage "github.com/Decentr-net/vulcan/internal/storage"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -91,6 +92,20 @@ func (m *MockService) GetOwnReferralCode(ctx context.Context, address string) (s
 func (mr *MockServiceMockRecorder) GetOwnReferralCode(ctx, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOwnReferralCode", reflect.TypeOf((*MockService)(nil).GetOwnReferralCode), ctx, address)
+}
+
+// GetReferralConfig mocks base method
+func (m *MockService) GetReferralConfig() referral.Config {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferralConfig")
+	ret0, _ := ret[0].(referral.Config)
+	return ret0
+}
+
+// GetReferralConfig indicates an expected call of GetReferralConfig
+func (mr *MockServiceMockRecorder) GetReferralConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralConfig", reflect.TypeOf((*MockService)(nil).GetReferralConfig))
 }
 
 // GetRegistrationReferralCode mocks base method
