@@ -17,7 +17,7 @@ import (
 
 // register sends email with link to create new wallet.
 func (s *server) register(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /register Vulcan Register
+	// swagger:operation POST /v1/register Vulcan Register
 	//
 	// Sends confirmation link via email. After confirmation stakes will be sent.
 	//
@@ -85,7 +85,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 
 // getRegisterStats ...
 func (s *server) getRegisterStats(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /register/stats Vulcan RegisterStats
+	// swagger:operation GET /v1/register/stats Vulcan RegisterStats
 	//
 	// Confirmed registrations stats
 	//
@@ -126,7 +126,7 @@ func (s *server) getRegisterStats(w http.ResponseWriter, r *http.Request) {
 
 // confirm confirms registration and creates wallet.
 func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /confirm Vulcan Confirm
+	// swagger:operation POST /v1/confirm Vulcan Confirm
 	//
 	// Confirms registration and sends stakes.
 	//
@@ -180,7 +180,7 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 
 // supply returns sum of erc20 and native supply stakes.
 func (s *server) supply(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /supply Vulcan Supply
+	// swagger:operation GET /v1/supply Vulcan Supply
 	//
 	// Returns sum of erc20 and native supply supply.
 	//
@@ -205,9 +205,37 @@ func (s *server) supply(w http.ResponseWriter, r *http.Request) {
 	api.WriteOK(w, http.StatusOK, amount)
 }
 
+// getReferralConfig returns referral config.
+func (s *server) getReferralConfig(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/referral/config Vulcan RetReferralParams
+	//
+	// Returns referral params
+	//
+	// ---
+	// produces:
+	// - application/json
+	// responses:
+	//   '200':
+	//     schema:
+	//       "$ref": "#/definitions/ReferralConfig"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	c := s.s.GetReferralConfig()
+
+	api.WriteOK(w, http.StatusOK, ReferralConfig{
+		SenderReward:   c.SenderReward,
+		ReceiverReward: c.ReceiverReward,
+		ThresholdUPDV:  c.ThresholdUPDV,
+		ThresholdDays:  c.ThresholdDays,
+	})
+}
+
 // trackReferralBrowserInstallation tracks the Decentr browser installation.
 func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation POST /referral/track/install/{address} Vulcan TrackBrowserInstallation
+	// swagger:operation POST /v1/referral/track/install/{address} Vulcan TrackBrowserInstallation
 	//
 	// Tracks the Decentr browser installation.
 	//
@@ -250,7 +278,7 @@ func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http
 }
 
 func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /referral/track/stats/{address} Vulcan GetReferralTrackingStats
+	// swagger:operation GET /v1/referral/track/stats/{address} Vulcan GetReferralTrackingStats
 	//
 	// Returns a referral tracking stats of the given account
 	//
@@ -291,7 +319,7 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 
 // getOwnReferralCode return a referral code of the given account.
 func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /referral/code/{address} Vulcan GetOwnReferralCode
+	// swagger:operation GET /v1/referral/code/{address} Vulcan GetOwnReferralCode
 	//
 	// Returns a referral code of the given account
 	//
@@ -327,7 +355,7 @@ func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Request) {
-	// swagger:operation GET /referral/code/{address}/registration Vulcan GetRegistrationReferralCode
+	// swagger:operation GET /v1/referral/code/{address}/registration Vulcan GetRegistrationReferralCode
 	//
 	// Returns a referral code the account was registered with
 	//

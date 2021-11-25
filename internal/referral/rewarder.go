@@ -15,27 +15,30 @@ import (
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
+// Config ...
+type Config struct {
+	SenderReward   int
+	ReceiverReward int
+	ThresholdUPDV  int
+	ThresholdDays  int
+}
+
 // Rewarder ...
 type Rewarder struct {
 	storage storage.Storage
 	bmc     blockchain.Blockchain
 	brc     *rest.BlockchainRESTClient
-
-	senderReward   int
-	receiverReward int
-	uPDVThreshold  int
+	rc      Config
 }
 
 // NewRewarder creates a new instance of Rewarder.
 func NewRewarder(s storage.Storage, b blockchain.Blockchain, brc *rest.BlockchainRESTClient,
-	senderReward, receiverReward, uPDVThreshold int) *Rewarder {
+	rc Config) *Rewarder {
 	return &Rewarder{
-		storage:        s,
-		bmc:            b,
-		brc:            brc,
-		senderReward:   senderReward,
-		receiverReward: receiverReward,
-		uPDVThreshold:  uPDVThreshold,
+		storage: s,
+		bmc:     b,
+		brc:     brc,
+		rc:      rc,
 	}
 }
 
@@ -57,7 +60,7 @@ func (r *Rewarder) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (r *Rewarder) do(ctx context.Context) {
-	referrals, err := r.storage.GetUnconfirmedReferralTracking(ctx)
+	referrals, err := r.storage.GetUnconfirmedReferralTracking(ctx, r.rc.ThresholdDays)
 	if err != nil {
 		log.WithError(err).Error("failed to get unconfirmed referrals")
 		return
@@ -76,10 +79,10 @@ func (r *Rewarder) do(ctx context.Context) {
 
 		uPDVBalance := balanceInUPDV(resp)
 
-		if uPDVBalance > int64(r.uPDVThreshold) {
+		if uPDVBalance > int64(r.rc.ThresholdUPDV) {
 			r.reward(ctx, ref)
 		} else {
-			logger.Infof("balance %d less than threshold %d", uPDVBalance, r.uPDVThreshold)
+			logger.Infof("balance %d less than threshold %d", uPDVBalance, r.rc.ThresholdUPDV)
 		}
 	}
 }
@@ -93,13 +96,13 @@ func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking) {
 
 	if err := r.storage.InTx(ctx, func(s storage.Storage) error {
 		if err := r.storage.TransitionReferralTrackingToConfirmed(
-			ctx, ref.Receiver, r.senderReward, r.receiverReward); err != nil {
+			ctx, ref.Receiver, r.rc.SenderReward, r.rc.ReceiverReward); err != nil {
 			return fmt.Errorf("failed to transition referral to confirmed: %w", err)
 		}
 
 		stakes := []blockchain.Stake{
-			{Address: ref.Sender, Amount: int64(r.senderReward)},
-			{Address: ref.Receiver, Amount: int64(r.receiverReward)},
+			{Address: ref.Sender, Amount: int64(r.rc.SenderReward)},
+			{Address: ref.Receiver, Amount: int64(r.rc.ReceiverReward)},
 		}
 
 		if err := r.bmc.SendStakes(stakes); err != nil {
@@ -119,8 +122,8 @@ func (r *Rewarder) getLogger(ref *storage.ReferralTracking) *log.Entry {
 	return log.WithFields(log.Fields{
 		"sender":          ref.Sender,
 		"receiver":        ref.Receiver,
-		"sender reward":   r.senderReward,
-		"receiver reward": r.receiverReward,
+		"sender reward":   r.rc.SenderReward,
+		"receiver reward": r.rc.ReceiverReward,
 		"registered at":   ref.RegisteredAt,
 		"installed at":    ref.InstalledAt,
 	})

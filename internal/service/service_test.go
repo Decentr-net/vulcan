@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 
 	"github.com/golang/mock/gomock"
@@ -276,6 +278,23 @@ func TestService_Confirm(t *testing.T) {
 			assert.True(t, errors.Is(err, tc.err), fmt.Sprintf("wanted %s got %s", tc.err, err))
 		})
 	}
+}
+
+func Test_statsDeltaToGrowth(t *testing.T) {
+	date := time.Now()
+	day := 24 * time.Hour
+
+	stats := []*storage.RegisterStats{
+		{Date: date.Add(-2 * day), Value: 5},
+		{Date: date.Add(-1 * day), Value: 6},
+		{Date: date, Value: 7},
+	}
+
+	stats = statsDeltaToGrowth(stats, 100)
+
+	require.Equal(t, storage.RegisterStats{Date: date.Add(-2 * day), Value: 82}, *stats[0])
+	require.Equal(t, storage.RegisterStats{Date: date.Add(-1 * day), Value: 87}, *stats[1])
+	require.Equal(t, storage.RegisterStats{Date: date, Value: 93}, *stats[2])
 }
 
 func Test_getEmailHash(t *testing.T) {

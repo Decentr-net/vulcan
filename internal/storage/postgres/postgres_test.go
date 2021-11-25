@@ -329,7 +329,7 @@ func TestPg_GetUnconfirmedReferralTracking(t *testing.T) {
 	defer cleanup(t)
 
 	requireNoUnconfirmed := func() {
-		referrals, err := s.GetUnconfirmedReferralTracking(ctx)
+		referrals, err := s.GetUnconfirmedReferralTracking(ctx, 30)
 		require.NoError(t, err)
 		require.Len(t, referrals, 0)
 	}
@@ -359,7 +359,7 @@ func TestPg_GetUnconfirmedReferralTracking(t *testing.T) {
 	_, err = db.ExecContext(ctx, `UPDATE referral_tracking SET installed_at = NOW() - '31 day'::interval`)
 	require.NoError(t, err)
 
-	referrals, err := s.GetUnconfirmedReferralTracking(ctx)
+	referrals, err := s.GetUnconfirmedReferralTracking(ctx, 30)
 	require.NoError(t, err)
 	require.Len(t, referrals, 1)
 }

@@ -16,7 +16,7 @@
   },
   "basePath": "/v1",
   "paths": {
-    "/confirm": {
+    "/v1/confirm": {
       "post": {
         "consumes": [
           "application/json"
@@ -64,7 +64,7 @@
         }
       }
     },
-    "/referral/code/{address}": {
+    "/v1/referral/code/{address}": {
       "get": {
         "description": "Returns a referral code of the given account",
         "produces": [
@@ -96,7 +96,7 @@
         }
       }
     },
-    "/referral/code/{address}/registration": {
+    "/v1/referral/code/{address}/registration": {
       "get": {
         "description": "Returns a referral code the account was registered with",
         "produces": [
@@ -128,7 +128,33 @@
         }
       }
     },
-    "/referral/track/install/{address}": {
+    "/v1/referral/config": {
+      "get": {
+        "description": "Returns referral params",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "operationId": "RetReferralParams",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/ReferralConfig"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/v1/referral/track/install/{address}": {
       "post": {
         "consumes": [
           "application/json"
@@ -166,7 +192,7 @@
         }
       }
     },
-    "/referral/track/stats/{address}": {
+    "/v1/referral/track/stats/{address}": {
       "get": {
         "description": "Returns a referral tracking stats of the given account",
         "produces": [
@@ -198,7 +224,7 @@
         }
       }
     },
-    "/register": {
+    "/v1/register": {
       "post": {
         "consumes": [
           "application/json"
@@ -255,7 +281,7 @@
         }
       }
     },
-    "/register/stats": {
+    "/v1/register/stats": {
       "get": {
         "description": "Confirmed registrations stats",
         "consumes": [
@@ -284,7 +310,7 @@
         }
       }
     },
-    "/supply": {
+    "/v1/supply": {
       "get": {
         "produces": [
           "application/json"
@@ -350,6 +376,33 @@
         "code": {
           "type": "string",
           "x-go-name": "Code"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "ReferralConfig": {
+      "type": "object",
+      "title": "ReferralConfig ...",
+      "properties": {
+        "receiverReward": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ReceiverReward"
+        },
+        "senderReward": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "SenderReward"
+        },
+        "thresholdDays": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ThresholdDays"
+        },
+        "thresholdUpdv": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ThresholdUPDV"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"

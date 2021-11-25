@@ -56,6 +56,15 @@ type ReferralTrackingStatsResponse struct {
 	Last30Days ReferralTrackingStatsItem `json:"last30Days"`
 }
 
+// ReferralConfig ...
+// swagger:model
+type ReferralConfig struct {
+	SenderReward   int `json:"senderReward"`
+	ReceiverReward int `json:"receiverReward"`
+	ThresholdUPDV  int `json:"thresholdUpdv"`
+	ThresholdDays  int `json:"thresholdDays"`
+}
+
 // RegisterStats ...
 // swagger:model
 type RegisterStats struct {

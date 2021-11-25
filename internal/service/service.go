@@ -17,6 +17,7 @@ import (
 
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/mail"
+	"github.com/Decentr-net/vulcan/internal/referral"
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
@@ -51,6 +52,7 @@ type Service interface {
 	Confirm(ctx context.Context, owner, code string) error
 	GetRegisterStats(ctx context.Context) ([]*storage.RegisterStats, int, error)
 	GetOwnReferralCode(ctx context.Context, address string) (string, error)
+	GetReferralConfig() referral.Config
 	GetRegistrationReferralCode(ctx context.Context, address string) (string, error)
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
 	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
@@ -63,6 +65,8 @@ type service struct {
 	btc     blockchain.Blockchain
 	bmc     blockchain.Blockchain
 
+	rc referral.Config
+
 	initialTestStakes int64
 	initialMainStakes int64
 }
@@ -73,17 +77,23 @@ func New(
 	sender mail.Sender,
 	bt, bm blockchain.Blockchain,
 	initialTestNetStakes, initialMainNetStakes int64,
+	rc referral.Config,
 ) Service {
 	s := &service{
 		storage:           storage,
 		sender:            sender,
 		btc:               bt,
 		bmc:               bm,
+		rc:                rc,
 		initialTestStakes: initialTestNetStakes,
 		initialMainStakes: initialMainNetStakes,
 	}
 
 	return s
+}
+
+func (s *service) GetReferralConfig() referral.Config {
+	return s.rc
 }
 
 func (s *service) Register(ctx context.Context, email, address string, referralCode *string) error {
@@ -192,11 +202,11 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return fmt.Errorf("failed to update request: %w", err)
 	}
 
+	logger := log.WithField("referral_code", req.RegistrationReferralCode.String)
+
 	if req.RegistrationReferralCode.Valid {
 		// referral code has been provided during the registration, start tracking
 		if err := s.storage.CreateReferralTracking(ctx, req.Owner, req.RegistrationReferralCode.String); err != nil {
-			logger := log.WithField("referral_code", req.RegistrationReferralCode.String)
-
 			switch err {
 			case storage.ErrReferralTrackingExists:
 				logger.Warn("referral tracking already exists")
@@ -207,6 +217,8 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 			}
 		}
 	}
+
+	logger.Info("registration complete")
 
 	return nil
 }
@@ -288,7 +300,16 @@ func (s *service) GetRegisterStats(ctx context.Context) ([]*storage.RegisterStat
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get total:%w", err)
 	}
-	return stats, total, nil
+
+	return statsDeltaToGrowth(stats, total), total, nil
+}
+
+func statsDeltaToGrowth(stats []*storage.RegisterStats, total int) []*storage.RegisterStats {
+	for i := len(stats) - 1; i >= 0; i-- {
+		total -= stats[i].Value
+		stats[i].Value = total
+	}
+	return stats
 }
 
 func truncatePlusPart(email string) string {
