@@ -280,17 +280,17 @@ func TestService_Confirm(t *testing.T) {
 	}
 }
 
-func Test_statsDeltaToGrowth(t *testing.T) {
+func Test_transformStatsAsGrowth(t *testing.T) {
 	date := time.Now()
 	day := 24 * time.Hour
 
 	stats := []*storage.RegisterStats{
-		{Date: date.Add(-2 * day), Value: 5},
 		{Date: date.Add(-1 * day), Value: 6},
+		{Date: date.Add(-2 * day), Value: 5},
 		{Date: date, Value: 7},
 	}
 
-	stats = statsDeltaToGrowth(stats, 100)
+	transformStatsAsGrowth(stats, 100)
 
 	require.Equal(t, storage.RegisterStats{Date: date.Add(-2 * day), Value: 82}, *stats[0])
 	require.Equal(t, storage.RegisterStats{Date: date.Add(-1 * day), Value: 87}, *stats[1])

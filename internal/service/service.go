@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -301,15 +302,19 @@ func (s *service) GetRegisterStats(ctx context.Context) ([]*storage.RegisterStat
 		return nil, 0, fmt.Errorf("failed to get total:%w", err)
 	}
 
-	return statsDeltaToGrowth(stats, total), total, nil
+	transformStatsAsGrowth(stats, total)
+	return stats, total, nil
 }
 
-func statsDeltaToGrowth(stats []*storage.RegisterStats, total int) []*storage.RegisterStats {
+func transformStatsAsGrowth(stats []*storage.RegisterStats, total int) {
+	sort.Slice(stats, func(i, j int) bool {
+		return stats[i].Date.Before(stats[j].Date)
+	})
+
 	for i := len(stats) - 1; i >= 0; i-- {
 		total -= stats[i].Value
 		stats[i].Value = total
 	}
-	return stats
 }
 
 func truncatePlusPart(email string) string {
