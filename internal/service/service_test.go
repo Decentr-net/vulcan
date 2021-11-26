@@ -281,20 +281,27 @@ func TestService_Confirm(t *testing.T) {
 }
 
 func Test_transformStatsAsGrowth(t *testing.T) {
+	const (
+		day   = 24 * time.Hour
+		total = 10
+	)
+
 	date := time.Now()
-	day := 24 * time.Hour
 
 	stats := []*storage.RegisterStats{
-		{Date: date.Add(-1 * day), Value: 6},
-		{Date: date.Add(-2 * day), Value: 5},
-		{Date: date, Value: 7},
+		{Date: date.Add(-3 * day), Value: 1},
+		{Date: date.Add(-1 * day), Value: 3},
+		{Date: date.Add(-2 * day), Value: 2},
+		{Date: date, Value: 4},
 	}
 
-	transformStatsAsGrowth(stats, 100)
+	transformStatsAsGrowth(stats, total)
 
-	require.Equal(t, storage.RegisterStats{Date: date.Add(-2 * day), Value: 82}, *stats[0])
-	require.Equal(t, storage.RegisterStats{Date: date.Add(-1 * day), Value: 87}, *stats[1])
-	require.Equal(t, storage.RegisterStats{Date: date, Value: 93}, *stats[2])
+	//1 2 3 4 => 1 3 6 10
+	require.Equal(t, storage.RegisterStats{Date: date.Add(-3 * day), Value: 1}, *stats[0])
+	require.Equal(t, storage.RegisterStats{Date: date.Add(-2 * day), Value: 3}, *stats[1])
+	require.Equal(t, storage.RegisterStats{Date: date.Add(-1 * day), Value: 6}, *stats[2])
+	require.Equal(t, storage.RegisterStats{Date: date, Value: total}, *stats[3])
 }
 
 func Test_getEmailHash(t *testing.T) {

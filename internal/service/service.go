@@ -203,7 +203,14 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return fmt.Errorf("failed to update request: %w", err)
 	}
 
-	logger := log.WithField("referral_code", req.RegistrationReferralCode.String)
+	logger := log.WithFields(log.Fields{
+		"code":          req.Code,
+		"address":       req.Address,
+		"created_at":    req.CreatedAt,
+		"email":         req.Email,
+		"owner":         req.Owner,
+		"referral_code": req.RegistrationReferralCode.String,
+	})
 
 	if req.RegistrationReferralCode.Valid {
 		// referral code has been provided during the registration, start tracking
@@ -312,8 +319,9 @@ func transformStatsAsGrowth(stats []*storage.RegisterStats, total int) {
 	})
 
 	for i := len(stats) - 1; i >= 0; i-- {
-		total -= stats[i].Value
+		v := stats[i].Value
 		stats[i].Value = total
+		total -= v
 	}
 }
 
