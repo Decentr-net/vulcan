@@ -16,7 +16,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
