@@ -41,6 +41,10 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	//      description: bad request.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
+	//   '422':
+	//      description: referral code not found.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
 	//   '429':
 	//      description: minute didn't pass after last try to send email
 	//      schema:
@@ -71,6 +75,9 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 			api.WriteError(w, http.StatusTooManyRequests, "too many attempts")
 		case errors.Is(err, service.ErrAlreadyExists):
 			api.WriteError(w, http.StatusConflict, "email or address is already taken")
+		case errors.Is(err, service.ErrReferralCodeNotFound):
+			api.WriteError(w, http.StatusUnprocessableEntity, "referral code not found")
+			logrus.WithField("request", req).Warn("referral code not found")
 		case errors.Is(err, mail.ErrMailRejected):
 			logrus.WithField("request", req).WithError(err).Error("failed to send email with rejected status")
 			api.WriteError(w, http.StatusBadRequest, err.Error())
@@ -206,7 +213,7 @@ func (s *server) supply(w http.ResponseWriter, r *http.Request) {
 }
 
 // getReferralConfig returns referral config.
-func (s *server) getReferralConfig(w http.ResponseWriter, r *http.Request) {
+func (s *server) getReferralConfig(w http.ResponseWriter, _ *http.Request) {
 	// swagger:operation GET /v1/referral/config Vulcan RetReferralParams
 	//
 	// Returns referral params
@@ -217,20 +224,13 @@ func (s *server) getReferralConfig(w http.ResponseWriter, r *http.Request) {
 	// responses:
 	//   '200':
 	//     schema:
-	//       "$ref": "#/definitions/ReferralConfig"
+	//       "$ref": "#/definitions/Config"
 	//   '500':
 	//      description: internal server error.
 	//      schema:
 	//        "$ref": "#/definitions/Error"
 
-	c := s.s.GetReferralConfig()
-
-	api.WriteOK(w, http.StatusOK, ReferralConfig{
-		SenderReward:   c.SenderReward,
-		ReceiverReward: c.ReceiverReward,
-		ThresholdUPDV:  c.ThresholdUPDV,
-		ThresholdDays:  c.ThresholdDays,
-	})
+	api.WriteOK(w, http.StatusOK, s.s.GetReferralConfig())
 }
 
 // trackReferralBrowserInstallation tracks the Decentr browser installation.

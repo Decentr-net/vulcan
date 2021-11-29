@@ -32,24 +32,22 @@ type Stake struct {
 
 // Blockchain is interface for interacting with the blockchain.
 type Blockchain interface {
-	SendStakes(stakes []Stake) error
+	SendStakes(stakes []Stake, memo string) error
 }
 
 type blockchain struct {
-	b    *broadcaster.Broadcaster
-	memo string
+	b *broadcaster.Broadcaster
 }
 
 // New returns new instance of Blockchain.
-func New(b *broadcaster.Broadcaster, memo string) Blockchain {
+func New(b *broadcaster.Broadcaster) Blockchain {
 	return blockchain{
-		b:    b,
-		memo: memo,
+		b: b,
 	}
 }
 
 // SendStakes ...
-func (b blockchain) SendStakes(stakes []Stake) error {
+func (b blockchain) SendStakes(stakes []Stake, memo string) error {
 	msgs := make([]sdk.Msg, len(stakes))
 	for idx, stake := range stakes {
 		to, err := sdk.AccAddressFromBech32(stake.Address)
@@ -66,5 +64,5 @@ func (b blockchain) SendStakes(stakes []Stake) error {
 		}
 	}
 
-	return b.b.Broadcast(msgs, b.memo)
+	return b.b.Broadcast(msgs, memo)
 }

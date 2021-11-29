@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Decentr-net/vulcan/internal/referral"
+
 	"github.com/go-chi/chi"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -206,6 +208,78 @@ func Test_Confirm(t *testing.T) {
 			assert.JSONEq(t, tc.rdata, w.Body.String())
 		})
 	}
+}
+
+func Test_GetReferralConfig(t *testing.T) {
+	_, w, r := test.NewAPITestParameters(http.MethodGet, "v1/referral/config", nil)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	srv := servicemock.NewMockService(ctrl)
+	srv.EXPECT().GetReferralConfig().Return(referral.NewConfig(100, 30))
+
+	router := chi.NewRouter()
+
+	s := server{s: srv}
+	router.Get("/v1/referral/config", s.getReferralConfig)
+
+	router.ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{
+  "thresholdUpdv": 100,
+  "thresholdDays": 30,
+  "receiverReward": 10000000,
+  "senderBonus": [
+    {
+      "count": 100,
+      "reward": 100000000
+    },
+    {
+      "count": 250,
+      "reward": 250000000
+    },
+    {
+      "count": 500,
+      "reward": 500000000
+    },
+    {
+      "count": 1000,
+      "reward": 1000000000
+    },
+    {
+      "count": 2500,
+      "reward": 2500000000
+    },
+    {
+      "count": 10000,
+      "reward": 10000000000
+    }
+  ],
+  "senderRewardLevels": [
+    {
+      "from": 1,
+      "to": 100,
+      "reward": 10000000
+    },
+    {
+      "from": 101,
+      "to": 250,
+      "reward": 12500000
+    },
+    {
+      "from": 251,
+      "to": 500,
+      "reward": 15000000
+    },
+    {
+      "from": 501,
+      "to": null,
+      "reward": 20000000
+    }
+  ]
+}`, w.Body.String())
 }
 
 func Test_Circulating(t *testing.T) {

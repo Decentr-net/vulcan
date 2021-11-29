@@ -142,7 +142,7 @@
           "200": {
             "description": "",
             "schema": {
-              "$ref": "#/definitions/ReferralConfig"
+              "$ref": "#/definitions/Config"
             }
           },
           "500": {
@@ -266,6 +266,12 @@
               "$ref": "#/definitions/Error"
             }
           },
+          "422": {
+            "description": "referral code not found.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
           "429": {
             "description": "minute didn't pass after last try to send email",
             "schema": {
@@ -338,6 +344,59 @@
     }
   },
   "definitions": {
+    "Bonus": {
+      "type": "object",
+      "title": "Bonus ...",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Count"
+        },
+        "reward": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Reward"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/referral"
+    },
+    "Config": {
+      "type": "object",
+      "title": "Config ...",
+      "properties": {
+        "receiverReward": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ReceiverReward"
+        },
+        "senderBonus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Bonus"
+          },
+          "x-go-name": "SenderBonuses"
+        },
+        "senderRewardLevels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RewardLevel"
+          },
+          "x-go-name": "SenderRewardLevels"
+        },
+        "thresholdDays": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ThresholdDays"
+        },
+        "thresholdUpdv": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ThresholdUPDV"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/referral"
+    },
     "ConfirmRequest": {
       "type": "object",
       "title": "ConfirmRequest ...",
@@ -376,33 +435,6 @@
         "code": {
           "type": "string",
           "x-go-name": "Code"
-        }
-      },
-      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
-    },
-    "ReferralConfig": {
-      "type": "object",
-      "title": "ReferralConfig ...",
-      "properties": {
-        "receiverReward": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ReceiverReward"
-        },
-        "senderReward": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "SenderReward"
-        },
-        "thresholdDays": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ThresholdDays"
-        },
-        "thresholdUpdv": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ThresholdUPDV"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
@@ -488,6 +520,28 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "RewardLevel": {
+      "type": "object",
+      "title": "RewardLevel ...",
+      "properties": {
+        "from": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "From"
+        },
+        "reward": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Reward"
+        },
+        "to": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "To"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/referral"
     },
     "StatsItem": {
       "description": "Date is RFC3999 date, value is number of new accounts.",

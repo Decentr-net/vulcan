@@ -261,10 +261,10 @@ func TestService_Confirm(t *testing.T) {
 			if tc.getErr == nil {
 				btc.EXPECT().SendStakes([]blockchain.Stake{
 					{Address: tc.req.Address, Amount: testInitialStakes},
-				}).Return(tc.testSendErr)
+				}, "").Return(tc.testSendErr)
 				bmc.EXPECT().SendStakes([]blockchain.Stake{
 					{Address: tc.req.Address, Amount: mainInitialStakes},
-				}).Return(tc.mainSendErr)
+				}, "").Return(tc.mainSendErr)
 
 				if tc.mainSendErr == nil {
 					sn.EXPECT().SendWelcomeEmailAsync(ctx, tc.req.Email)
