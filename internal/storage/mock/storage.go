@@ -238,3 +238,18 @@ func (mr *MockStorageMockRecorder) GetUnconfirmedReferralTracking(ctx, days inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnconfirmedReferralTracking", reflect.TypeOf((*MockStorage)(nil).GetUnconfirmedReferralTracking), ctx, days)
 }
+
+// GetConfirmedReferralTrackingCount mocks base method
+func (m *MockStorage) GetConfirmedReferralTrackingCount(ctx context.Context, sender string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfirmedReferralTrackingCount", ctx, sender)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfirmedReferralTrackingCount indicates an expected call of GetConfirmedReferralTrackingCount
+func (mr *MockStorageMockRecorder) GetConfirmedReferralTrackingCount(ctx, sender interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfirmedReferralTrackingCount", reflect.TypeOf((*MockStorage)(nil).GetConfirmedReferralTrackingCount), ctx, sender)
+}

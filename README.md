@@ -72,8 +72,6 @@ go run cmd/vulcan/main.go \
 | blockchain.main.fee   | BLOCKCHAIN_MAIN_FEE    | 1udec | false | transaction fee
 | blockchain.test.initial_stake | BLOCKCHAIN_TEST_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
 | blockchain.main.initial_stake | BLOCKCHAIN_MAIN_INITIAL_STAKE | 1000000 | true | stakes count to be sent, 1DEC = 1000000 uDEC
-| referral.sender_reward      | REFERRAL_SENDER_REWARD    | 10 | true | referral sender reward uDEC
-| referral.receiver_reward   | REFERRAL_RECEIVER_REWARD   | 10 | true | referral sender reward uDEC
 | referral.threshold_updv   | REFERRAL_THRESHOLD_UPDV   | 100 | true | how many uPDV a user should obtain to get a referral reward
 | referral.threshold_days   | REFERRAL_THRESHOLD_DAYS   | 30 | true | how many days a user should wait to get a referral reward
 | supply.native_node | SUPPLY_NATIVE_NODE | https://zeus.testnet.decentr.xyz | true | native rest node address
@@ -98,8 +96,6 @@ go run cmd/vulcan/main.go \
 | blockchain.main.gas   | BLOCKCHAIN_MAIN_GAS    | 10 | false | gas amount
 | blockchain.main.fee   | BLOCKCHAIN_MAIN_FEE    | 1udec | false | transaction fee
 | blockchain.main.rest_node_url   | BLOCKCHAIN_MAIN_REST_NODE_URL    | http://hera.mainnet.decentr.xyz | false | REST endpoint url
-| referral.sender_reward      | REFERRAL_SENDER_REWARD    | 10 | true | referral sender reward uDEC
-| referral.receiver_reward   | REFERRAL_RECEIVER_REWARD   | 10 | true | referral sender reward uDEC
 | referral.threshold_updv   | REFERRAL_THRESHOLD_UPDV   | 100 | true | how many uPDV a user should obtain to get a referral reward
 | referral.threshold_days   | REFERRAL_THRESHOLD_DAYS   | 30 | true | how many days a user should wait to get a referral reward
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)

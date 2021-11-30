@@ -102,4 +102,6 @@ type Storage interface {
 	GetReferralTrackingStats(ctx context.Context, sender string) ([]*ReferralTrackingStats, error)
 	// GetUnconfirmedReferralTracking returns referral tracking installed more than given days  ago
 	GetUnconfirmedReferralTracking(ctx context.Context, days int) ([]*ReferralTracking, error)
+	// GetConfirmedReferralTrackingCount returns count of confirmed referrals
+	GetConfirmedReferralTrackingCount(ctx context.Context, sender string) (int, error)
 }

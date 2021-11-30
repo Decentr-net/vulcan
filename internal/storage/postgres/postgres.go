@@ -173,6 +173,14 @@ func (p pg) GetReferralTrackingStats(ctx context.Context, sender string) ([]*sto
 	return stats, err
 }
 
+func (p pg) GetConfirmedReferralTrackingCount(ctx context.Context, sender string) (int, error) {
+	var count int
+	err := sqlx.GetContext(ctx, p.ext, &count, `
+		SELECT COUNT(*) FROM referral_tracking 
+		WHERE status = 'confirmed' AND sender = $1`, sender)
+	return count, err
+}
+
 func (p pg) TransitionReferralTrackingToInstalled(ctx context.Context, receiver string) error {
 	_, err := p.ext.ExecContext(ctx, `
 				UPDATE referral_tracking

@@ -325,6 +325,36 @@ func TestPg_MarkReferralTrackingInstalled(t *testing.T) {
 	require.NoError(t, s.TransitionReferralTrackingToInstalled(ctx, receiverAddr))
 }
 
+func TestPg_GetConfirmedReferralTrackingCount(t *testing.T) {
+	defer cleanup(t)
+
+	// zero
+	count, err := s.GetConfirmedReferralTrackingCount(ctx, "sender")
+	require.NoError(t, err)
+	require.Zero(t, count)
+
+	const (
+		receiverAddr = "receiver"
+		senderArr    = "sender"
+	)
+
+	// registered
+	require.NoError(t, s.UpsertRequest(ctx, "owner",
+		"e@mail.com", senderArr, "code",
+		sql.NullString{},
+	))
+
+	r, err := s.GetRequestByOwner(ctx, "owner")
+	require.NoError(t, err)
+
+	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
+	require.NoError(t, s.TransitionReferralTrackingToConfirmed(ctx, receiverAddr, 10, 10))
+
+	count, err = s.GetConfirmedReferralTrackingCount(ctx, "sender")
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
 func TestPg_GetUnconfirmedReferralTracking(t *testing.T) {
 	defer cleanup(t)
 

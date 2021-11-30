@@ -47,6 +47,9 @@ var ErrReferralTrackingNotFound = fmt.Errorf("referral tracking not found")
 // ErrReferralTrackingInvalidStatus ...
 var ErrReferralTrackingInvalidStatus = fmt.Errorf("referral tracking has invalid status")
 
+// ErrReferralCodeNotFound ...
+var ErrReferralCodeNotFound = fmt.Errorf("referral code not found")
+
 // Service ...
 type Service interface {
 	Register(ctx context.Context, email, address string, referralCode *string) error
@@ -70,6 +73,9 @@ type service struct {
 
 	initialTestStakes int64
 	initialMainStakes int64
+
+	initialTestMemo string
+	initialMainMemo string
 }
 
 // New creates new instance of service.
@@ -78,6 +84,7 @@ func New(
 	sender mail.Sender,
 	bt, bm blockchain.Blockchain,
 	initialTestNetStakes, initialMainNetStakes int64,
+	initialTestMemo, initialMainMemo string,
 	rc referral.Config,
 ) Service {
 	s := &service{
@@ -88,6 +95,8 @@ func New(
 		rc:                rc,
 		initialTestStakes: initialTestNetStakes,
 		initialMainStakes: initialMainNetStakes,
+		initialTestMemo:   initialTestMemo,
+		initialMainMemo:   initialMainMemo,
 	}
 
 	return s
@@ -118,12 +127,9 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 		// check the given referral code exists
 		if _, err := s.storage.GetRequestByOwnReferralCode(ctx, *referralCode); err != nil {
 			if errors.Is(err, storage.ErrReferralCodeNotFound) {
-				log.WithField("referral_code", *referralCode).
-					Warn("referral code not found")
-				referralCodeAsNullString = sql.NullString{Valid: false}
-			} else {
-				return fmt.Errorf("failed to get request by own referral code: %w", err)
+				return ErrReferralCodeNotFound
 			}
+			return fmt.Errorf("failed to get request by own referral code: %w", err)
 		}
 	}
 
@@ -184,11 +190,11 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return ErrRequestNotFound
 	}
 
-	if err := s.btc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialTestStakes}}); err != nil {
+	if err := s.btc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialTestStakes}}, s.initialTestMemo); err != nil {
 		log.WithError(err).WithField("address", req.Address).Error("failed to send stakes on testnet")
 	}
 
-	if err := s.bmc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialMainStakes}}); err != nil {
+	if err := s.bmc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialMainStakes}}, s.initialMainMemo); err != nil {
 		return fmt.Errorf("failed to send stakes to %s on mainnet: %w", req.Address, err)
 	}
 

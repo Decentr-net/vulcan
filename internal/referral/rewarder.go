@@ -15,12 +15,79 @@ import (
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
+// Bonus ...
+type Bonus struct {
+	Count  int `json:"count"`
+	Reward int `json:"reward"`
+}
+
+// RewardLevel ...
+type RewardLevel struct {
+	From   int  `json:"from"`
+	To     *int `json:"to"`
+	Reward int  `json:"reward"`
+}
+
 // Config ...
+// swagger:model
 type Config struct {
-	SenderReward   int
-	ReceiverReward int
-	ThresholdUPDV  int
-	ThresholdDays  int
+	ThresholdUPDV      int           `json:"thresholdUpdv"`
+	ThresholdDays      int           `json:"thresholdDays"`
+	ReceiverReward     int           `json:"receiverReward"`
+	SenderBonuses      []Bonus       `json:"senderBonus"`
+	SenderRewardLevels []RewardLevel `json:"senderRewardLevels"`
+}
+
+// NewConfig creates a new instance of Config.
+func NewConfig(thresholdUPDV, thresholdDays int) Config {
+	intPrt := func(val int) *int {
+		return &val
+	}
+
+	toUPDV := func(val float64) int {
+		return int(val * float64(types.Denominator))
+	}
+
+	return Config{
+		ThresholdUPDV:  thresholdUPDV,
+		ThresholdDays:  thresholdDays,
+		ReceiverReward: 10000000,
+		SenderBonuses: []Bonus{
+			{Count: 100, Reward: toUPDV(100)},
+			{Count: 250, Reward: toUPDV(250)},
+			{Count: 500, Reward: toUPDV(500)},
+			{Count: 1000, Reward: toUPDV(1000)},
+			{Count: 2500, Reward: toUPDV(2500)},
+			{Count: 10000, Reward: toUPDV(10000)},
+		},
+		SenderRewardLevels: []RewardLevel{
+			{From: 1, To: intPrt(100), Reward: toUPDV(10)},
+			{From: 101, To: intPrt(250), Reward: toUPDV(12.5)},
+			{From: 251, To: intPrt(500), Reward: toUPDV(15)},
+			{From: 501, To: nil, Reward: toUPDV(20)},
+		},
+	}
+}
+
+// GetSenderBonus returns a bonus reward.
+func (c Config) GetSenderBonus(confirmedReferralsCount int) int {
+	for _, b := range c.SenderBonuses {
+		if b.Count == confirmedReferralsCount {
+			return b.Reward
+		}
+	}
+	return 0
+}
+
+// GetSenderReward returns a sender reward.
+func (c Config) GetSenderReward(confirmedReferralsCount int) int {
+	for _, r := range c.SenderRewardLevels {
+		if confirmedReferralsCount >= r.From && r.To != nil && confirmedReferralsCount <= *r.To {
+			return r.Reward
+		}
+	}
+
+	return c.SenderRewardLevels[len(c.SenderRewardLevels)-1].Reward
 }
 
 // Rewarder ...
@@ -80,7 +147,12 @@ func (r *Rewarder) do(ctx context.Context) {
 		uPDVBalance := balanceInUPDV(resp)
 
 		if uPDVBalance > int64(r.rc.ThresholdUPDV) {
-			r.reward(ctx, ref)
+			count, err := r.storage.GetConfirmedReferralTrackingCount(ctx, ref.Sender)
+			if err != nil {
+				logger.WithError(err).Error("failed to get confirmed referrals count")
+				return
+			}
+			r.reward(ctx, ref, count)
 		} else {
 			logger.Infof("balance %d less than threshold %d", uPDVBalance, r.rc.ThresholdUPDV)
 		}
@@ -91,21 +163,30 @@ func balanceInUPDV(resp *rest.TokenResponse) int64 {
 	return resp.Result.Balance.Sub(sdk.NewDec(1)).QuoInt64(types.Denominator).Int64() / types.Denominator
 }
 
-func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking) {
+func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking, confirmedReferralsCount int) {
 	logger := r.getLogger(ref)
+
+	senderReward := r.rc.GetSenderReward(confirmedReferralsCount)
+	senderBonus := r.rc.GetSenderBonus(confirmedReferralsCount)
+	totalSenderReward := senderReward + senderBonus
+
+	memo := "Decentr referral reward"
+	if senderBonus != 0 {
+		memo = "Decentr referral reward with bonus"
+	}
 
 	if err := r.storage.InTx(ctx, func(s storage.Storage) error {
 		if err := r.storage.TransitionReferralTrackingToConfirmed(
-			ctx, ref.Receiver, r.rc.SenderReward, r.rc.ReceiverReward); err != nil {
+			ctx, ref.Receiver, totalSenderReward, r.rc.ReceiverReward); err != nil {
 			return fmt.Errorf("failed to transition referral to confirmed: %w", err)
 		}
 
 		stakes := []blockchain.Stake{
-			{Address: ref.Sender, Amount: int64(r.rc.SenderReward)},
+			{Address: ref.Sender, Amount: int64(totalSenderReward)},
 			{Address: ref.Receiver, Amount: int64(r.rc.ReceiverReward)},
 		}
 
-		if err := r.bmc.SendStakes(stakes); err != nil {
+		if err := r.bmc.SendStakes(stakes, memo); err != nil {
 			return fmt.Errorf("failed to send stakes: %w", err)
 		}
 
@@ -120,11 +201,9 @@ func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking) {
 
 func (r *Rewarder) getLogger(ref *storage.ReferralTracking) *log.Entry {
 	return log.WithFields(log.Fields{
-		"sender":          ref.Sender,
-		"receiver":        ref.Receiver,
-		"sender reward":   r.rc.SenderReward,
-		"receiver reward": r.rc.ReceiverReward,
-		"registered at":   ref.RegisteredAt,
-		"installed at":    ref.InstalledAt,
+		"sender":        ref.Sender,
+		"receiver":      ref.Receiver,
+		"registered at": ref.RegisteredAt,
+		"installed at":  ref.InstalledAt,
 	})
 }
