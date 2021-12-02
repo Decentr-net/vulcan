@@ -116,10 +116,6 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 		return err
 	}
 
-	if err := s.sender.SendVerificationEmail(ctx, email, code); err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
-	}
-
 	var referralCodeAsNullString sql.NullString
 	if referralCode != nil {
 		referralCodeAsNullString = sql.NullString{Valid: true, String: *referralCode}
@@ -131,6 +127,10 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 			}
 			return fmt.Errorf("failed to get request by own referral code: %w", err)
 		}
+	}
+
+	if err := s.sender.SendVerificationEmail(ctx, email, code); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
 	}
 
 	if err := s.storage.UpsertRequest(ctx, owner, email, address, code, referralCodeAsNullString); err != nil {
@@ -220,7 +220,7 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 
 	if req.RegistrationReferralCode.Valid {
 		// referral code has been provided during the registration, start tracking
-		if err := s.storage.CreateReferralTracking(ctx, req.Owner, req.RegistrationReferralCode.String); err != nil {
+		if err := s.storage.CreateReferralTracking(ctx, req.Address, req.RegistrationReferralCode.String); err != nil {
 			switch err {
 			case storage.ErrReferralTrackingExists:
 				logger.Warn("referral tracking already exists")
@@ -265,6 +265,13 @@ func (s *service) TrackReferralBrowserInstallation(ctx context.Context, address 
 	if err := s.storage.TransitionReferralTrackingToInstalled(ctx, address); err != nil {
 		return fmt.Errorf("failed to mark referral tracking installed: %w", err)
 	}
+
+	log.WithFields(log.Fields{
+		"sender":        rt.Sender,
+		"receiver":      rt.Receiver,
+		"registered_at": rt.RegisteredAt,
+	}).Info("referral tracking installed")
+
 	return nil
 }
 
