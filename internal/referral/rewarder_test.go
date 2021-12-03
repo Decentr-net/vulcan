@@ -51,6 +51,7 @@ func TestConfig_GetSenderReward(t *testing.T) {
 		count int
 		want  int
 	}{
+		{0, 0},
 		{1, 10000000},
 		{100, 10000000},
 		{150, 12500000},

@@ -81,6 +81,10 @@ func (c Config) GetSenderBonus(confirmedReferralsCount int) int {
 
 // GetSenderReward returns a sender reward.
 func (c Config) GetSenderReward(confirmedReferralsCount int) int {
+	if confirmedReferralsCount == 0 {
+		return 0
+	}
+
 	for _, r := range c.SenderRewardLevels {
 		if confirmedReferralsCount >= r.From && r.To != nil && confirmedReferralsCount <= *r.To {
 			return r.Reward
@@ -152,7 +156,7 @@ func (r *Rewarder) do(ctx context.Context) {
 				logger.WithError(err).Error("failed to get confirmed referrals count")
 				return
 			}
-			r.reward(ctx, ref, count)
+			r.reward(ctx, ref, count+1)
 		} else {
 			logger.Infof("balance %d less than threshold %d", uPDVBalance, r.rc.ThresholdUPDV)
 		}

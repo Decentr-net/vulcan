@@ -172,7 +172,6 @@ func main() {
 			_, err := mandrillClient.Ping()
 			return err
 		}),
-		health.SubjectPinger("blockchain_testnet", bt.PingContext),
 		health.SubjectPinger("blockchain_mainnet", bm.PingContext),
 		health.SubjectPinger("supply", sup.PingContext),
 	)
