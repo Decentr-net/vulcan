@@ -190,10 +190,6 @@ func (s *service) Confirm(ctx context.Context, email, code string) error {
 		return ErrRequestNotFound
 	}
 
-	if err := s.btc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialTestStakes}}, s.initialTestMemo); err != nil {
-		log.WithError(err).WithField("address", req.Address).Error("failed to send stakes on testnet")
-	}
-
 	if err := s.bmc.SendStakes([]blockchain.Stake{{Address: req.Address, Amount: s.initialMainStakes}}, s.initialMainMemo); err != nil {
 		return fmt.Errorf("failed to send stakes to %s on mainnet: %w", req.Address, err)
 	}
