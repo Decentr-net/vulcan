@@ -253,6 +253,10 @@ func Test_GetReferralConfig(t *testing.T) {
       "reward": 2500000000
     },
     {
+      "count": 5000,
+      "reward": 5000000000
+    },
+    {
       "count": 10000,
       "reward": 10000000000
     }

@@ -58,6 +58,7 @@ func NewConfig(thresholdUPDV, thresholdDays int) Config {
 			{Count: 500, Reward: toUPDV(500)},
 			{Count: 1000, Reward: toUPDV(1000)},
 			{Count: 2500, Reward: toUPDV(2500)},
+			{Count: 5000, Reward: toUPDV(5000)},
 			{Count: 10000, Reward: toUPDV(10000)},
 		},
 		SenderRewardLevels: []RewardLevel{
