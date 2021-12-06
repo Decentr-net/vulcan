@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
@@ -48,21 +49,24 @@ func New(b *broadcaster.Broadcaster) Blockchain {
 
 // SendStakes ...
 func (b blockchain) SendStakes(stakes []Stake, memo string) error {
-	msgs := make([]sdk.Msg, len(stakes))
-	for idx, stake := range stakes {
-		to, err := sdk.AccAddressFromBech32(stake.Address)
-		if err != nil {
-			return fmt.Errorf("%w: %s", ErrInvalidAddress, stake.Address)
-		}
+	sendStakes := func() error {
+		messages := make([]sdk.Msg, len(stakes))
+		for idx, stake := range stakes {
+			to, err := sdk.AccAddressFromBech32(stake.Address)
+			if err != nil {
+				return fmt.Errorf("%w: %s", ErrInvalidAddress, stake.Address)
+			}
 
-		msgs[idx] = bank.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
-			Denom:  app.DefaultBondDenom,
-			Amount: sdk.NewInt(stake.Amount),
-		}})
-		if err := msgs[idx].ValidateBasic(); err != nil {
-			return err
+			messages[idx] = bank.NewMsgSend(b.b.From(), to, sdk.Coins{sdk.Coin{
+				Denom:  app.DefaultBondDenom,
+				Amount: sdk.NewInt(stake.Amount),
+			}})
+			if err := messages[idx].ValidateBasic(); err != nil {
+				return err
+			}
 		}
+		return b.b.Broadcast(messages, memo)
 	}
 
-	return b.b.Broadcast(msgs, memo)
+	return retry.Do(sendStakes, retry.Attempts(3))
 }
