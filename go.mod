@@ -9,6 +9,7 @@ require (
 	github.com/Decentr-net/go-api v0.0.7
 	github.com/Decentr-net/go-broadcaster v0.0.4
 	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cosmos/cosmos-sdk v0.39.2
 	github.com/ethereum/go-ethereum v1.10.8
 	github.com/getsentry/sentry-go v0.10.0 // indirect

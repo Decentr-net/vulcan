@@ -43,6 +43,9 @@ github.com/Microsoft/hcsshim/osversion
 github.com/StackExchange/wmi
 # github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 github.com/asaskevich/govalidator
+# github.com/avast/retry-go v3.0.0+incompatible
+## explicit
+github.com/avast/retry-go
 # github.com/bartekn/go-bip39 v0.0.0-20171116152956-a05967ea095d
 github.com/bartekn/go-bip39
 # github.com/beorn7/perks v1.0.1
