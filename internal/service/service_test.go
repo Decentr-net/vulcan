@@ -318,6 +318,53 @@ func TestService_Confirm(t *testing.T) {
 	}
 }
 
+func TestService_GiveStakes(t *testing.T) {
+	tt := []struct {
+		name          string
+		mockSetupFunc func(bc *blockchainmock.MockBlockchain)
+		err           error
+	}{
+		{
+			name: "success",
+			mockSetupFunc: func(bc *blockchainmock.MockBlockchain) {
+				bc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: testAddress, Amount: giveStakesAmount},
+				}, "").Return(nil)
+			},
+		},
+		{
+			name: "error",
+			mockSetupFunc: func(bc *blockchainmock.MockBlockchain) {
+				bc.EXPECT().SendStakes([]blockchain.Stake{
+					{Address: testAddress, Amount: giveStakesAmount},
+				}, "").Return(errTest)
+			},
+			err: errTest,
+		},
+	}
+
+	for i := range tt {
+		tc := tt[i]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+
+			bc := blockchainmock.NewMockBlockchain(ctrl)
+
+			ctx := context.Background()
+
+			s := &service{
+				bc: bc,
+			}
+
+			tc.mockSetupFunc(bc)
+
+			assert.ErrorIs(t, s.GiveStakes(ctx, testAddress), tc.err)
+		})
+	}
+}
+
 func Test_transformStatsAsGrowth(t *testing.T) {
 	const (
 		day   = 24 * time.Hour

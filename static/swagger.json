@@ -64,6 +64,37 @@
         }
       }
     },
+    "/v1/hesoyam/{address}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "summary": "Like a game cheat gives you test stakes. Works only for testnet.",
+        "operationId": "GiveStakes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "stakes were sent"
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/referral/code/{address}": {
       "get": {
         "description": "Returns a referral code of the given account",
@@ -74,6 +105,14 @@
           "Vulcan"
         ],
         "operationId": "GetOwnReferralCode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -106,6 +145,14 @@
           "Vulcan"
         ],
         "operationId": "GetRegistrationReferralCode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -167,6 +214,14 @@
         ],
         "summary": "Tracks the Decentr browser installation.",
         "operationId": "TrackBrowserInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "referral marked with installed status"
@@ -202,6 +257,14 @@
           "Vulcan"
         ],
         "operationId": "GetReferralTrackingStats",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

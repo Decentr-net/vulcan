@@ -57,7 +57,7 @@ func Test_Register(t *testing.T) {
 			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqg"}`),
 			serviceErr: errSkip,
 			rcode:      http.StatusBadRequest,
-			rdata:      `{"error": "invalid request: invalid address: decoding bech32 failed: checksum failed. Expected 6k4ypl, got rqkuqg."}`,
+			rdata:      `{"error": "invalid request: invalid address"}`,
 			rlog:       "",
 		},
 		{

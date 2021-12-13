@@ -26,6 +26,9 @@ import (
 const codeBytesSize = 3
 const throttlingInterval = time.Minute
 
+// nolint
+var giveStakesAmount = sdk.NewInt(1e9) // only for testnet
+
 var plustPartRegexp = regexp.MustCompile(`\+.+\@`) // nolint
 
 //go:generate mockgen -destination=./mock/service.go -package=mock -source=service.go
@@ -61,6 +64,8 @@ type Service interface {
 	GetRegistrationReferralCode(ctx context.Context, address string) (string, error)
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
 	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
+
+	GiveStakes(ctx context.Context, address string) error
 }
 
 // Service ...
@@ -312,6 +317,19 @@ func (s *service) GetRegisterStats(ctx context.Context) ([]*storage.RegisterStat
 
 	transformStatsAsGrowth(stats, total)
 	return stats, total, nil
+}
+
+func (s *service) GiveStakes(_ context.Context, address string) error {
+	if err := s.bc.SendStakes([]blockchain.Stake{
+		{
+			Address: address,
+			Amount:  giveStakesAmount,
+		},
+	}, ""); err != nil {
+		return fmt.Errorf("failed to give stakes: %w", err)
+	}
+
+	return nil
 }
 
 func transformStatsAsGrowth(stats []*storage.RegisterStats, total int) {

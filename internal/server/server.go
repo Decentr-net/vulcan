@@ -37,7 +37,7 @@ type server struct {
 }
 
 // SetupRouter setups handlers to chi router.
-func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout time.Duration) {
+func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout time.Duration, testMode bool) {
 	r.Use(
 		api.FileServerMiddleware("/docs", "static"),
 		api.LoggerMiddleware,
@@ -59,6 +59,10 @@ func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout tim
 		r.Get("/register/stats", srv.getRegisterStats)
 		r.Post("/confirm", srv.confirm)
 		r.Get("/supply", srv.supply)
+
+		if testMode {
+			r.Get("/hesoyam/{address}", srv.giveStakes)
+		}
 
 		r.Route("/referral", func(r chi.Router) {
 			r.Get("/config", srv.getReferralConfig)

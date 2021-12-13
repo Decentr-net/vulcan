@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -158,6 +159,7 @@ func main() {
 		sup,
 		r,
 		opts.RequestTimeout,
+		strings.Contains(opts.BlockchainNode, "testnet"),
 	)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),

@@ -247,6 +247,11 @@ func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http
 	// - application/json
 	// consumes:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     description: referral marked with installed status
@@ -288,6 +293,11 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 	// ---
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     schema:
@@ -329,6 +339,11 @@ func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 	// ---
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     schema:
@@ -365,6 +380,11 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 	// ---
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     schema:
@@ -391,6 +411,41 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	api.WriteOK(w, http.StatusOK, ReferralCodeResponse{Code: code})
+}
+
+func (s *server) giveStakes(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/hesoyam/{address} Vulcan GiveStakes
+	//
+	// Like a game cheat gives you test stakes. Works only for testnet.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
+	// responses:
+	//   '200':
+	//     description: stakes were sent
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	address := chi.URLParam(r, "address")
+	if !isAddressValid(address) {
+		api.WriteError(w, http.StatusBadRequest, "invalid address")
+		return
+	}
+
+	if err := s.s.GiveStakes(r.Context(), address); err != nil {
+		api.WriteInternalErrorf(r.Context(), w, "failed to give stakes: %s", err.Error())
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, EmptyResponse{})
 }
 
 func toReferralTrackingStatsItem(item storage.ReferralTrackingStats) ReferralTrackingStatsItem {
