@@ -48,7 +48,7 @@ var opts = struct {
 	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
 	BlockchainGas                uint64 `long:"blockchain.gas" env:"BLOCKCHAIN_GAS" default:"10" description:"gas amount"`
 	BlockchainFee                string `long:"blockchain.fee" env:"BLOCKCHAIN_FEE" default:"1udec" description:"transaction fee"`
-	BlockchainGRPCNodeURL        string `long:"blockchain.grpc_node_url" env:"BLOCKCHAIN_MAIN_GRPC_NODE_URL" default:"http://hera.mainnet.decentr.xyz" description:"GRPC endpoint URL"`
+	BlockchainGRPCNodeURL        string `long:"blockchain.grpc_node_url" env:"BLOCKCHAIN_GRPC_NODE_URL" default:"http://hera.mainnet.decentr.xyz" description:"GRPC endpoint URL"`
 
 	ReferralThresholdPDV  sdk.Dec `long:"referral.threshold_pdv" env:"REFERRAL_THRESHOLD_PDV" default:"0.000100" description:"how many PDV a user should obtain to get a referral reward'"`
 	ReferralThresholdDays int     `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
