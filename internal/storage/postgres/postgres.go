@@ -4,9 +4,11 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/jmoiron/sqlx"
@@ -19,6 +21,26 @@ var errBeginCalledWithinTx = errors.New("can not run in tx")
 
 type pg struct {
 	ext sqlx.ExtContext
+}
+
+type intDTO sdk.Int
+
+func (i intDTO) Value() (driver.Value, error) {
+	return sdk.Int(i).String(), nil
+}
+
+func (i *intDTO) Scan(value interface{}) error {
+	if value == nil {
+		*i = intDTO(sdk.ZeroInt())
+	}
+	switch t := value.(type) {
+	case int64:
+		*i = intDTO(sdk.NewInt(value.(int64)))
+	default:
+		return fmt.Errorf("failed to scan type %T into sdk.INT", t)
+	}
+
+	return nil
 }
 
 // New creates new instance of pg.
@@ -165,11 +187,27 @@ func (p pg) GetReferralTrackingByReceiver(ctx context.Context, receiver string) 
 }
 
 func (p pg) GetReferralTrackingStats(ctx context.Context, sender string) ([]*storage.ReferralTrackingStats, error) {
-	var stats []*storage.ReferralTrackingStats
-	err := sqlx.SelectContext(ctx, p.ext, &stats, `
+	var dto []*struct {
+		Registered int    `db:"registered"`
+		Installed  int    `db:"installed"`
+		Confirmed  int    `db:"confirmed"`
+		Reward     intDTO `db:"reward"`
+	}
+	err := sqlx.SelectContext(ctx, p.ext, &dto, `
 				SELECT * FROM referral_tracking_sender_stats($1, NULL)	
 				UNION ALL
 				SELECT * FROM referral_tracking_sender_stats($1, '30 days'::INTERVAL)`, sender)
+
+	stats := make([]*storage.ReferralTrackingStats, len(dto))
+	for i, v := range dto {
+		stats[i] = &storage.ReferralTrackingStats{
+			Registered: v.Registered,
+			Installed:  v.Installed,
+			Confirmed:  v.Confirmed,
+			Reward:     sdk.Int(v.Reward),
+		}
+	}
+
 	return stats, err
 }
 
@@ -194,14 +232,14 @@ func (p pg) TransitionReferralTrackingToInstalled(ctx context.Context, receiver 
 }
 
 func (p pg) TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string,
-	senderReward, receiverReward int) error {
+	senderReward, receiverReward sdk.Int) error {
 	_, err := p.ext.ExecContext(ctx, `
 				UPDATE referral_tracking
 				SET status = 'confirmed',
 					sender_reward = $2,
 					receiver_reward = $3,
 					confirmed_at = CURRENT_TIMESTAMP
-				WHERE receiver = $1`, receiver, senderReward, receiverReward)
+				WHERE receiver = $1`, receiver, intDTO(senderReward), intDTO(receiverReward))
 	if err != nil {
 		return fmt.Errorf("failed to exec query: %w", err)
 	}

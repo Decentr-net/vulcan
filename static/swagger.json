@@ -64,6 +64,37 @@
         }
       }
     },
+    "/v1/hesoyam/{address}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "summary": "Like a game cheat gives you test stakes. Works only for testnet.",
+        "operationId": "GiveStakes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "stakes were sent"
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/referral/code/{address}": {
       "get": {
         "description": "Returns a referral code of the given account",
@@ -74,6 +105,14 @@
           "Vulcan"
         ],
         "operationId": "GetOwnReferralCode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -106,6 +145,14 @@
           "Vulcan"
         ],
         "operationId": "GetRegistrationReferralCode",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -167,6 +214,14 @@
         ],
         "summary": "Tracks the Decentr browser installation.",
         "operationId": "TrackBrowserInstallation",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "referral marked with installed status"
@@ -202,6 +257,14 @@
           "Vulcan"
         ],
         "operationId": "GetReferralTrackingStats",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "code",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -354,21 +417,32 @@
           "x-go-name": "Count"
         },
         "reward": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Reward"
+          "$ref": "#/definitions/Int"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/referral"
+    },
+    "Coin": {
+      "description": "NOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.",
+      "type": "object",
+      "title": "Coin defines a token with a denomination and an amount.",
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/Int"
+        },
+        "denom": {
+          "type": "string",
+          "x-go-name": "Denom"
+        }
+      },
+      "x-go-package": "github.com/cosmos/cosmos-sdk/types"
     },
     "Config": {
       "type": "object",
       "title": "Config ...",
       "properties": {
         "receiverReward": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ReceiverReward"
+          "$ref": "#/definitions/Int"
         },
         "senderBonus": {
           "type": "array",
@@ -389,10 +463,8 @@
           "format": "int64",
           "x-go-name": "ThresholdDays"
         },
-        "thresholdUpdv": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ThresholdUPDV"
+        "thresholdPDV": {
+          "$ref": "#/definitions/Dec"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/referral"
@@ -412,6 +484,11 @@
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
     },
+    "Dec": {
+      "description": "NOTE: never use new(Dec) or else we will panic unmarshalling into the\nnil embedded big.Int",
+      "type": "object",
+      "x-go-package": "github.com/cosmos/cosmos-sdk/types"
+    },
     "EmptyResponse": {
       "type": "object",
       "title": "EmptyResponse ...",
@@ -427,6 +504,11 @@
         }
       },
       "x-go-package": "github.com/Decentr-net/go-api"
+    },
+    "Int": {
+      "description": "Int wraps big.Int with a 257 bit range bound\nChecks overflow, underflow and division by zero\nExists in range from -(2^256 - 1) to 2^256 - 1",
+      "type": "object",
+      "x-go-package": "github.com/cosmos/cosmos-sdk/types"
     },
     "ReferralCodeResponse": {
       "type": "object",
@@ -459,9 +541,7 @@
           "x-go-name": "Registered"
         },
         "reward": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Reward"
+          "$ref": "#/definitions/Coin"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
@@ -531,9 +611,7 @@
           "x-go-name": "From"
         },
         "reward": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Reward"
+          "$ref": "#/definitions/Int"
         },
         "to": {
           "type": "integer",

@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	m "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -348,7 +349,7 @@ func TestPg_GetConfirmedReferralTrackingCount(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, s.CreateReferralTracking(ctx, receiverAddr, r.OwnReferralCode))
-	require.NoError(t, s.TransitionReferralTrackingToConfirmed(ctx, receiverAddr, 10, 10))
+	require.NoError(t, s.TransitionReferralTrackingToConfirmed(ctx, receiverAddr, sdk.NewInt(10), sdk.NewInt(10)))
 
 	count, err = s.GetConfirmedReferralTrackingCount(ctx, "sender")
 	require.NoError(t, err)
@@ -402,12 +403,23 @@ func TestPg_GetReferralTrackingStats(t *testing.T) {
 		senderArr    = "sender"
 	)
 
+	statsEqual := func(exp, act storage.ReferralTrackingStats) {
+		require.Equal(t, exp.Installed, act.Installed)
+		require.Equal(t, exp.Registered, act.Registered)
+		require.Equal(t, exp.Confirmed, act.Confirmed)
+		if exp.Reward.IsNil() {
+			require.True(t, act.Reward.IsZero())
+		} else {
+			require.True(t, exp.Reward.Equal(act.Reward))
+		}
+	}
+
 	// empty
 	stats, err := s.GetReferralTrackingStats(ctx, senderArr)
 	require.NoError(t, err)
 	require.Len(t, stats, 2)
-	require.Equal(t, *stats[0], storage.ReferralTrackingStats{})
-	require.Equal(t, *stats[1], storage.ReferralTrackingStats{})
+	statsEqual(storage.ReferralTrackingStats{}, *stats[0])
+	statsEqual(storage.ReferralTrackingStats{}, *stats[1])
 
 	// registered
 	require.NoError(t, s.UpsertRequest(ctx, "owner",
@@ -422,10 +434,10 @@ func TestPg_GetReferralTrackingStats(t *testing.T) {
 	stats, err = s.GetReferralTrackingStats(ctx, senderArr)
 	require.NoError(t, err)
 	require.Len(t, stats, 2)
-	require.Equal(t, storage.ReferralTrackingStats{
+	statsEqual(storage.ReferralTrackingStats{
 		Registered: 1,
 	}, *stats[0])
-	require.Equal(t, storage.ReferralTrackingStats{
+	statsEqual(storage.ReferralTrackingStats{
 		Registered: 1,
 	}, *stats[1])
 
@@ -434,30 +446,30 @@ func TestPg_GetReferralTrackingStats(t *testing.T) {
 	stats, err = s.GetReferralTrackingStats(ctx, senderArr)
 	require.NoError(t, err)
 	require.Len(t, stats, 2)
-	require.Equal(t, storage.ReferralTrackingStats{
+	statsEqual(storage.ReferralTrackingStats{
 		Registered: 1,
 		Installed:  1,
 	}, *stats[0])
-	require.Equal(t, storage.ReferralTrackingStats{
+	statsEqual(storage.ReferralTrackingStats{
 		Registered: 1,
 		Installed:  1,
 	}, *stats[1])
 
 	// confirmed
-	require.NoError(t, s.TransitionReferralTrackingToConfirmed(ctx, receiverAddr, 10, 5))
+	require.NoError(t, s.TransitionReferralTrackingToConfirmed(ctx, receiverAddr, sdk.NewInt(10), sdk.NewInt(5)))
 	stats, err = s.GetReferralTrackingStats(ctx, senderArr)
 	require.NoError(t, err)
 	require.Len(t, stats, 2)
-	require.Equal(t, storage.ReferralTrackingStats{
+	statsEqual(storage.ReferralTrackingStats{
 		Registered: 1,
 		Installed:  1,
 		Confirmed:  1,
-		Reward:     10,
+		Reward:     sdk.NewInt(10),
 	}, *stats[0])
-	require.Equal(t, storage.ReferralTrackingStats{
+	statsEqual(storage.ReferralTrackingStats{
 		Registered: 1,
 		Installed:  1,
 		Confirmed:  1,
-		Reward:     10,
+		Reward:     sdk.NewInt(10),
 	}, *stats[1])
 }

@@ -1,24 +1,23 @@
 package supply
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-const nativeNode = "https://zeus.mainnet.decentr.xyz"
+//const nativeNode = "zeus.mainnet.decentr.xyz:9090"
+//
+//const ethNode = "" // nolint
 
-const ethNode = "" // nolint
-
-func TestBlockchain_GetNativeCirculating(t *testing.T) {
-	s := supply{nativeNodeURL: nativeNode}
-
-	v, err := s.getNativeCirculatingSupply(context.Background())
-	require.NoError(t, err)
-	require.NotZero(t, v)
-}
-
+//func TestBlockchain_GetNativeCirculating(t *testing.T) {
+//	s := supply{nativeNodeURL: nativeNode}
+//
+//	v, err := s.getNativeCirculatingSupply(context.Background())
+//	require.NoError(t, err)
+//	require.NotZero(t, v)
+//}
+//
 ////uncomment and set eth node addr to test
 //func TestBlockchain_GetERC20Circulating(t *testing.T) {
 //	s := supply{erc20NodeURL: ethNode}

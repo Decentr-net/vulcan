@@ -4,86 +4,90 @@ package referral
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/Decentr-net/decentr/x/token/types"
+	tokentypes "github.com/Decentr-net/decentr/x/token/types"
+
 	"github.com/Decentr-net/vulcan/internal/blockchain"
-	"github.com/Decentr-net/vulcan/internal/blockchain/rest"
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
+const denominator = 6
+
 // Bonus ...
 type Bonus struct {
-	Count  int `json:"count"`
-	Reward int `json:"reward"`
+	Count  int     `json:"count"`
+	Reward sdk.Int `json:"reward"`
 }
 
 // RewardLevel ...
 type RewardLevel struct {
-	From   int  `json:"from"`
-	To     *int `json:"to"`
-	Reward int  `json:"reward"`
+	From   int     `json:"from"`
+	To     *int    `json:"to"`
+	Reward sdk.Int `json:"reward"`
 }
 
 // Config ...
 // swagger:model
 type Config struct {
-	ThresholdUPDV      int           `json:"thresholdUpdv"`
+	ThresholdPDV       sdk.Dec       `json:"thresholdPDV"`
 	ThresholdDays      int           `json:"thresholdDays"`
-	ReceiverReward     int           `json:"receiverReward"`
+	ReceiverReward     sdk.Int       `json:"receiverReward"`
 	SenderBonuses      []Bonus       `json:"senderBonus"`
 	SenderRewardLevels []RewardLevel `json:"senderRewardLevels"`
 }
 
 // NewConfig creates a new instance of Config.
-func NewConfig(thresholdUPDV, thresholdDays int) Config {
+func NewConfig(thresholdPDV sdk.Dec, thresholdDays int) Config {
 	intPrt := func(val int) *int {
 		return &val
 	}
 
-	toUPDV := func(val float64) int {
-		return int(val * float64(types.Denominator))
+	toReward := func(val float64) sdk.Int {
+		s := strconv.FormatFloat(val, 'f', -1, 64)
+		return sdk.MustNewDecFromStr(s).Mul(sdk.NewIntWithDecimal(1, denominator).ToDec()).TruncateInt()
 	}
 
 	return Config{
-		ThresholdUPDV:  thresholdUPDV,
+		ThresholdPDV:   thresholdPDV,
 		ThresholdDays:  thresholdDays,
-		ReceiverReward: 10000000,
+		ReceiverReward: sdk.NewIntWithDecimal(10, 6),
 		SenderBonuses: []Bonus{
-			{Count: 100, Reward: toUPDV(100)},
-			{Count: 250, Reward: toUPDV(250)},
-			{Count: 500, Reward: toUPDV(500)},
-			{Count: 1000, Reward: toUPDV(1000)},
-			{Count: 2500, Reward: toUPDV(2500)},
-			{Count: 5000, Reward: toUPDV(5000)},
-			{Count: 10000, Reward: toUPDV(10000)},
+			{Count: 100, Reward: toReward(100)},
+			{Count: 250, Reward: toReward(250)},
+			{Count: 500, Reward: toReward(500)},
+			{Count: 1000, Reward: toReward(1000)},
+			{Count: 2500, Reward: toReward(2500)},
+			{Count: 5000, Reward: toReward(5000)},
+			{Count: 10000, Reward: toReward(10000)},
 		},
 		SenderRewardLevels: []RewardLevel{
-			{From: 1, To: intPrt(100), Reward: toUPDV(10)},
-			{From: 101, To: intPrt(250), Reward: toUPDV(12.5)},
-			{From: 251, To: intPrt(500), Reward: toUPDV(15)},
-			{From: 501, To: nil, Reward: toUPDV(20)},
+			{From: 1, To: intPrt(100), Reward: toReward(10)},
+			{From: 101, To: intPrt(250), Reward: toReward(12.5)},
+			{From: 251, To: intPrt(500), Reward: toReward(15)},
+			{From: 501, To: nil, Reward: toReward(20)},
 		},
 	}
 }
 
 // GetSenderBonus returns a bonus reward.
-func (c Config) GetSenderBonus(confirmedReferralsCount int) int {
+func (c Config) GetSenderBonus(confirmedReferralsCount int) sdk.Int {
 	for _, b := range c.SenderBonuses {
 		if b.Count == confirmedReferralsCount {
 			return b.Reward
 		}
 	}
-	return 0
+	return sdk.ZeroInt()
 }
 
 // GetSenderReward returns a sender reward.
-func (c Config) GetSenderReward(confirmedReferralsCount int) int {
+func (c Config) GetSenderReward(confirmedReferralsCount int) sdk.Int {
 	if confirmedReferralsCount == 0 {
-		return 0
+		return sdk.ZeroInt()
 	}
 
 	for _, r := range c.SenderRewardLevels {
@@ -99,12 +103,12 @@ func (c Config) GetSenderReward(confirmedReferralsCount int) int {
 type Rewarder struct {
 	storage storage.Storage
 	bmc     blockchain.Blockchain
-	brc     *rest.BlockchainRESTClient
+	brc     tokentypes.QueryClient
 	rc      Config
 }
 
 // NewRewarder creates a new instance of Rewarder.
-func NewRewarder(s storage.Storage, b blockchain.Blockchain, brc *rest.BlockchainRESTClient,
+func NewRewarder(s storage.Storage, b blockchain.Blockchain, brc tokentypes.QueryClient,
 	rc Config) *Rewarder {
 	return &Rewarder{
 		storage: s,
@@ -143,15 +147,21 @@ func (r *Rewarder) do(ctx context.Context) {
 	for _, ref := range referrals {
 		logger := r.getLogger(ref)
 
-		resp, err := r.brc.GetTokenBalance(ctx, ref.Receiver)
+		address, err := sdk.AccAddressFromBech32(ref.Receiver)
+		if err != nil {
+			logger.WithError(err).Error("failed to parse address")
+			continue
+		}
+
+		resp, err := r.brc.Balance(ctx, &tokentypes.BalanceRequest{
+			Address: address,
+		})
 		if err != nil {
 			logger.WithError(err).Error("failed to get PDV token balance")
 			continue
 		}
 
-		uPDVBalance := balanceInUPDV(resp)
-
-		if uPDVBalance > int64(r.rc.ThresholdUPDV) {
+		if resp.Balance.Dec.GT(r.rc.ThresholdPDV) {
 			count, err := r.storage.GetConfirmedReferralTrackingCount(ctx, ref.Sender)
 			if err != nil {
 				logger.WithError(err).Error("failed to get confirmed referrals count")
@@ -159,13 +169,9 @@ func (r *Rewarder) do(ctx context.Context) {
 			}
 			r.reward(ctx, ref, count+1)
 		} else {
-			logger.Infof("balance %d less than threshold %d", uPDVBalance, r.rc.ThresholdUPDV)
+			logger.Infof("balance %d less than threshold %d", resp.Balance.Dec, r.rc.ThresholdPDV)
 		}
 	}
-}
-
-func balanceInUPDV(resp *rest.TokenResponse) int64 {
-	return resp.Result.Balance.Sub(sdk.NewDec(1)).QuoInt64(types.Denominator).Int64() / types.Denominator
 }
 
 func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking, confirmedReferralsCount int) {
@@ -173,10 +179,10 @@ func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking, co
 
 	senderReward := r.rc.GetSenderReward(confirmedReferralsCount)
 	senderBonus := r.rc.GetSenderBonus(confirmedReferralsCount)
-	totalSenderReward := senderReward + senderBonus
+	totalSenderReward := senderReward.Add(senderBonus)
 
 	memo := "Decentr referral reward"
-	if senderBonus != 0 {
+	if !senderBonus.IsZero() {
 		memo = "Decentr referral reward with bonus"
 	}
 
@@ -187,8 +193,8 @@ func (r *Rewarder) reward(ctx context.Context, ref *storage.ReferralTracking, co
 		}
 
 		stakes := []blockchain.Stake{
-			{Address: ref.Sender, Amount: int64(totalSenderReward)},
-			{Address: ref.Receiver, Amount: int64(r.rc.ReceiverReward)},
+			{Address: ref.Sender, Amount: totalSenderReward},
+			{Address: ref.Receiver, Amount: r.rc.ReceiverReward},
 		}
 
 		if err := r.bmc.SendStakes(stakes, memo); err != nil {

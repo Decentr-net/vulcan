@@ -5,14 +5,17 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/Decentr-net/vulcan/internal/storage"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 
+	"github.com/Decentr-net/decentr/config"
 	"github.com/Decentr-net/go-api"
+
 	"github.com/Decentr-net/vulcan/internal/mail"
 	"github.com/Decentr-net/vulcan/internal/service"
+	"github.com/Decentr-net/vulcan/internal/storage"
 )
 
 // register sends email with link to create new wallet.
@@ -244,6 +247,11 @@ func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http
 	// - application/json
 	// consumes:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     description: referral marked with installed status
@@ -285,6 +293,11 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 	// ---
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     schema:
@@ -326,6 +339,11 @@ func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 	// ---
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     schema:
@@ -362,6 +380,11 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 	// ---
 	// produces:
 	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
 	// responses:
 	//   '200':
 	//     schema:
@@ -390,11 +413,46 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 	api.WriteOK(w, http.StatusOK, ReferralCodeResponse{Code: code})
 }
 
+func (s *server) giveStakes(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/hesoyam/{address} Vulcan GiveStakes
+	//
+	// Like a game cheat gives you test stakes. Works only for testnet.
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: code
+	//   in: path
+	//   required: true
+	//   type: string
+	// responses:
+	//   '200':
+	//     description: stakes were sent
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	address := chi.URLParam(r, "address")
+	if !isAddressValid(address) {
+		api.WriteError(w, http.StatusBadRequest, "invalid address")
+		return
+	}
+
+	if err := s.s.GiveStakes(r.Context(), address); err != nil {
+		api.WriteInternalErrorf(r.Context(), w, "failed to give stakes: %s", err.Error())
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, EmptyResponse{})
+}
+
 func toReferralTrackingStatsItem(item storage.ReferralTrackingStats) ReferralTrackingStatsItem {
 	return ReferralTrackingStatsItem{
 		Registered: item.Registered,
 		Installed:  item.Installed,
 		Confirmed:  item.Confirmed,
-		Reward:     item.Reward,
+		Reward:     sdk.NewCoin(config.DefaultBondDenom, item.Reward),
 	}
 }

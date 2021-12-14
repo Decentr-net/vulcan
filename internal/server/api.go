@@ -43,10 +43,10 @@ type ReferralCodeResponse struct {
 // ReferralTrackingStatsItem ...
 // swagger:model
 type ReferralTrackingStatsItem struct {
-	Registered int `json:"registered"`
-	Installed  int `json:"installed"`
-	Confirmed  int `json:"confirmed"`
-	Reward     int `json:"reward"`
+	Registered int      `json:"registered"`
+	Installed  int      `json:"installed"`
+	Confirmed  int      `json:"confirmed"`
+	Reward     sdk.Coin `json:"reward"`
 }
 
 // ReferralTrackingStatsResponse ...
@@ -74,14 +74,17 @@ func (r RegisterRequest) validate() error {
 	if !isEmailValid(r.Email.String()) {
 		return fmt.Errorf("%w: invalid email", errInvalidRequest)
 	}
-
-	if addr, err := sdk.AccAddressFromBech32(r.Address); err != nil {
-		return fmt.Errorf("%w: invalid address: %s", errInvalidRequest, err.Error())
-	} else if len(addr) == 0 {
-		return fmt.Errorf("%w: invalid address: can not be empty", errInvalidRequest)
+	if !isAddressValid(r.Address) {
+		return fmt.Errorf("%w: invalid address", errInvalidRequest)
 	}
 
 	return nil
+}
+
+func isAddressValid(s string) bool {
+	_, err := sdk.AccAddressFromBech32(s)
+
+	return err == nil && len(s) != 0
 }
 
 func isEmailValid(e string) bool {

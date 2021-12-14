@@ -4,7 +4,6 @@ package mandrill
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -15,7 +14,6 @@ import (
 
 const mandrillSentStatus = "sent"
 const mandrillQueuedStatus = "queued"
-const mandrillRejectedStatus = "rejected"
 
 type sender struct {
 	config *Config
@@ -42,8 +40,8 @@ func New(client *mandrill.Client, config *Config) mail.Sender {
 	return s
 }
 
-// SendVerificationEmail sends an email to account owner.
-func (s *sender) SendVerificationEmail(_ context.Context, email, code string) error {
+// SendVerificationEmailAsyncfulltesагдд sends an email to account owner.
+func (s *sender) SendVerificationEmailAsync(_ context.Context, email, code string) {
 	message := mandrill.Message{
 		Subject:   s.config.VerificationSubject,
 		FromEmail: s.config.FromEmail,
@@ -55,21 +53,26 @@ func (s *sender) SendVerificationEmail(_ context.Context, email, code string) er
 
 	message.AddRecipient(email, "", "to")
 
-	responses, err := s.client.MessagesSendTemplate(&message, s.config.VerificationTemplateName, nil)
-	if err != nil {
-		return err
-	}
-
-	for _, v := range responses {
-		if v.Status != mandrillSentStatus && v.Status != mandrillQueuedStatus {
-			if v.Status == mandrillRejectedStatus {
-				return fmt.Errorf("%w: %s", mail.ErrMailRejected, v.RejectionReason)
-			}
-			return fmt.Errorf("failed to send verification email(%s) to %s: %s - %s", v.Id, v.Email, v.Status, v.RejectionReason) // nolint: goerr113
+	go func() {
+		responses, err := s.client.MessagesSendTemplate(&message, s.config.VerificationTemplateName, nil)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"email": email,
+			}).WithError(err).Error("failed to send email")
 		}
-	}
 
-	return nil
+		for _, v := range responses {
+			if v.Status != mandrillSentStatus && v.Status != mandrillQueuedStatus {
+				log.WithFields(log.Fields{
+					"email":  email,
+					"reason": v.RejectionReason,
+					"id":     v.Id,
+					"status": v.Status,
+				}).WithError(mail.ErrMailRejected).Error("failed to send email")
+				return
+			}
+		}
+	}()
 }
 
 // SendWelcomeEmailAsync sends an welcome email in async mode.

@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	cliflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/go-chi/chi"
 	"github.com/golang-migrate/migrate/v4"
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -23,8 +24,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 
-	"github.com/Decentr-net/decentr/app"
 	"github.com/Decentr-net/go-broadcaster"
 	"github.com/Decentr-net/logrus/sentry"
 
@@ -57,34 +58,23 @@ var opts = struct {
 	MandrillFromName                      string `long:"mandrill.from_name" env:"MANDRILL_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
 	MandrillFromEmail                     string `long:"mandrill.from_email" env:"MANDRILL_FROM_EMAIL" default:"noreply@decentrdev.com" description:"email for emails sender"`
 
-	BlockchainTestNode               string `long:"blockchain.test.node" env:"BLOCKCHAIN_TEST_NODE" default:"http://zeus.mainnet.decentr.xyz:26657" description:"decentr node address"`
-	BlockchainTestFrom               string `long:"blockchain.test.from" env:"BLOCKCHAIN_TEST_FROM" description:"decentr account name to send stakes" required:"true"`
-	BlockchainTestTxMemo             string `long:"blockchain.test.tx_memo" env:"BLOCKCHAIN_TEST_TX_MEMO" description:"decentr tx's memo'"`
-	BlockchainTestChainID            string `long:"blockchain.test.chain_id" env:"BLOCKCHAIN_TEST_CHAIN_ID" default:"testnet" description:"decentr chain id"`
-	BlockchainTestClientHome         string `long:"blockchain.test.client_home" env:"BLOCKCHAIN_TEST_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
-	BlockchainTestKeyringBackend     string `long:"blockchain.test.keyring_backend" env:"BLOCKCHAIN_TEST_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
-	BlockchainTestKeyringPromptInput string `long:"blockchain.test.keyring_prompt_input" env:"BLOCKCHAIN_TEST_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
-	BlockchainTestGas                uint64 `long:"blockchain.test.gas" env:"BLOCKCHAIN_TEST_GAS" default:"10" description:"gas amount"`
-	BlockchainTestFee                string `long:"blockchain.test.fee" env:"BLOCKCHAIN_TEST_FEE" default:"1udec" description:"transaction fee"`
-
-	BlockchainMainNode               string `long:"blockchain.main.node" env:"BLOCKCHAIN_MAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
-	BlockchainMainFrom               string `long:"blockchain.main.from" env:"BLOCKCHAIN_MAIN_FROM" description:"decentr account name to send stakes" required:"true"`
-	BlockchainMainTxMemo             string `long:"blockchain.main.tx_memo" env:"BLOCKCHAIN_MAIN_TX_MEMO" description:"decentr tx's memo'"`
-	BlockchainMainChainID            string `long:"blockchain.main.chain_id" env:"BLOCKCHAIN_MAIN_CHAIN_ID" default:"testnet" description:"decentr chain id"`
-	BlockchainMainClientHome         string `long:"blockchain.main.client_home" env:"BLOCKCHAIN_MAIN_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
-	BlockchainMainKeyringBackend     string `long:"blockchain.main.keyring_backend" env:"BLOCKCHAIN_MAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
-	BlockchainMainKeyringPromptInput string `long:"blockchain.main.keyring_prompt_input" env:"BLOCKCHAIN_MAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
-	BlockchainMainGas                uint64 `long:"blockchain.main.gas" env:"BLOCKCHAIN_MAIN_GAS" default:"10" description:"gas amount"`
-	BlockchainMainFee                string `long:"blockchain.main.fee" env:"BLOCKCHAIN_MAIN_FEE" default:"1udec" description:"transaction fee"`
+	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
+	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes" required:"true"`
+	BlockchainTxMemo             string `long:"blockchain.tx_memo" env:"BLOCKCHAIN_TX_MEMO" description:"decentr tx's memo'"`
+	BlockchainChainID            string `long:"blockchain.chain_id" env:"BLOCKCHAIN_CHAIN_ID" default:"testnet" description:"decentr chain id"`
+	BlockchainClientHome         string `long:"blockchain.client_home" env:"BLOCKCHAIN_CLIENT_HOME" default:"~/.decentrcli" description:"decentrcli home directory"`
+	BlockchainKeyringBackend     string `long:"blockchain.keyring_backend" env:"BLOCKCHAIN_KEYRING_BACKEND" default:"test" description:"decentrcli keyring backend"`
+	BlockchainKeyringPromptInput string `long:"blockchain.keyring_prompt_input" env:"BLOCKCHAIN_KEYRING_PROMPT_INPUT" description:"decentrcli keyring prompt input"`
+	BlockchainGas                uint64 `long:"blockchain.gas" env:"BLOCKCHAIN_GAS" default:"10" description:"gas amount"`
+	BlockchainFee                string `long:"blockchain.fee" env:"BLOCKCHAIN_FEE" default:"1udec" description:"transaction fee"`
 
 	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
 
-	InitialTestStakes int64 `long:"blockchain.test.initial_stakes" env:"BLOCKCHAIN_TEST_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
-	InitialMainStakes int64 `long:"blockchain.main.initial_stakes" env:"BLOCKCHAIN_MAIN_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
+	InitialStakes sdk.Int `long:"blockchain.initial_stakes" env:"BLOCKCHAIN_INITIAL_STAKES" default:"1000000" description:"stakes count to be sent"`
 
-	ReferralThresholdUPDV int `long:"referral.threshold_updv" env:"REFERRAL_THRESHOLD_UPDV" default:"100" description:"how many uPDV a user should obtain to get a referral reward'"`
-	ReferralThresholdDays int `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
+	ReferralThresholdPDV  sdk.Dec `long:"referral.threshold_pdv" env:"REFERRAL_THRESHOLD_PDV" default:"0.000100" description:"how many PDV a user should obtain to get a referral reward'"`
+	ReferralThresholdDays int     `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
 
 	SupplyNativeNode string `long:"supply.native_node" env:"SUPPLY_NATIVE_NODE" default:"https://zeus.testnet.decentr.xyz" description:"native rest node address"`
 	SupplyERC20Node  string `long:"supply.erc20_node" env:"SUPPLY_ERC20_NODE" default:"" description:"erc20 node address"`
@@ -144,27 +134,32 @@ func main() {
 		FromEmail:                opts.MandrillFromEmail,
 	})
 
-	sup := supply.New(opts.SupplyNativeNode, opts.SupplyERC20Node)
-	bt := mustGetTestBroadcaster()
-	bm := mustGetMainBroadcaster()
+	nativeNodeConn, err := grpc.Dial(
+		opts.SupplyNativeNode,
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create grpc conn to native node")
+	}
 
-	rc := referral.NewConfig(opts.ReferralThresholdUPDV, opts.ReferralThresholdDays)
+	sup := supply.New(banktypes.NewQueryClient(nativeNodeConn), opts.SupplyERC20Node)
+	bc := mustGetBroadcaster()
+
+	rc := referral.NewConfig(opts.ReferralThresholdPDV, opts.ReferralThresholdDays)
 
 	server.SetupRouter(
 		service.New(
 			postgres.New(db),
 			mailSender,
-			blockchain.New(bt),
-			blockchain.New(bm),
-			opts.InitialTestStakes,
-			opts.InitialMainStakes,
-			opts.BlockchainTestTxMemo,
-			opts.BlockchainMainTxMemo,
+			blockchain.New(bc),
+			opts.InitialStakes,
+			opts.BlockchainTxMemo,
 			rc,
 		),
 		sup,
 		r,
 		opts.RequestTimeout,
+		strings.Contains(opts.BlockchainNode, "testnet"),
 	)
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
@@ -172,7 +167,7 @@ func main() {
 			_, err := mandrillClient.Ping()
 			return err
 		}),
-		health.SubjectPinger("blockchain_mainnet", bm.PingContext),
+		health.SubjectPinger("blockchain", bc.PingContext),
 		health.SubjectPinger("supply", sup.PingContext),
 	)
 
@@ -249,49 +244,21 @@ func mustGetDB() *sql.DB {
 	return db
 }
 
-func mustGetTestBroadcaster() *broadcaster.Broadcaster {
-	fee, err := sdk.ParseCoin(opts.BlockchainTestFee)
+func mustGetBroadcaster() *broadcaster.Broadcaster {
+	fee, err := sdk.ParseCoinNormalized(opts.BlockchainFee)
 	if err != nil {
 		logrus.WithError(err).Error("failed to parse fee")
 	}
 
-	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
-		CLIHome:            opts.BlockchainTestClientHome,
-		KeyringBackend:     opts.BlockchainTestKeyringBackend,
-		KeyringPromptInput: opts.BlockchainTestKeyringPromptInput,
-		NodeURI:            opts.BlockchainTestNode,
+	b, err := broadcaster.New(broadcaster.Config{
+		KeyringRootDir:     opts.BlockchainClientHome,
+		KeyringBackend:     opts.BlockchainKeyringBackend,
+		KeyringPromptInput: opts.BlockchainKeyringPromptInput,
+		NodeURI:            opts.BlockchainNode,
 		BroadcastMode:      cliflags.BroadcastSync,
-		From:               opts.BlockchainTestFrom,
-		ChainID:            opts.BlockchainTestChainID,
-		GenesisKeyPass:     keys.DefaultKeyPass,
-		Gas:                opts.BlockchainTestGas,
-		GasAdjust:          1.2,
-		Fees:               sdk.Coins{fee},
-	})
-
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to create test broadcaster")
-	}
-
-	return b
-}
-
-func mustGetMainBroadcaster() *broadcaster.Broadcaster {
-	fee, err := sdk.ParseCoin(opts.BlockchainMainFee)
-	if err != nil {
-		logrus.WithError(err).Error("failed to parse fee")
-	}
-
-	b, err := broadcaster.New(app.MakeCodec(), broadcaster.Config{
-		CLIHome:            opts.BlockchainMainClientHome,
-		KeyringBackend:     opts.BlockchainMainKeyringBackend,
-		KeyringPromptInput: opts.BlockchainMainKeyringPromptInput,
-		NodeURI:            opts.BlockchainMainNode,
-		BroadcastMode:      cliflags.BroadcastSync,
-		From:               opts.BlockchainMainFrom,
-		ChainID:            opts.BlockchainMainChainID,
-		GenesisKeyPass:     keys.DefaultKeyPass,
-		Gas:                opts.BlockchainMainGas,
+		From:               opts.BlockchainFrom,
+		ChainID:            opts.BlockchainChainID,
+		Gas:                opts.BlockchainGas,
 		GasAdjust:          1.2,
 		Fees:               sdk.Coins{fee},
 	})

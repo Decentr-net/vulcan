@@ -82,6 +82,7 @@ linters:
     - gomnd
     - funlen
     - gofumpt
+    - goerr113
     - testpackage
 
 issues:
@@ -97,7 +98,6 @@ issues:
         - gochecknoglobals
         - lll
         - noctx
-        - goerr113
 
     - path: _mock\.go
       linters:

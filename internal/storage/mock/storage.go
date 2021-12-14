@@ -8,6 +8,7 @@ import (
 	context "context"
 	sql "database/sql"
 	storage "github.com/Decentr-net/vulcan/internal/storage"
+	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -181,7 +182,7 @@ func (mr *MockStorageMockRecorder) TransitionReferralTrackingToInstalled(ctx, re
 }
 
 // TransitionReferralTrackingToConfirmed mocks base method
-func (m *MockStorage) TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string, senderReward, receiverReward int) error {
+func (m *MockStorage) TransitionReferralTrackingToConfirmed(ctx context.Context, receiver string, senderReward, receiverReward types.Int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransitionReferralTrackingToConfirmed", ctx, receiver, senderReward, receiverReward)
 	ret0, _ := ret[0].(error)

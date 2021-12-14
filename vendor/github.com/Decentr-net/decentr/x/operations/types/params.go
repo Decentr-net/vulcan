@@ -3,18 +3,18 @@ package types
 import (
 	"fmt"
 
+	"github.com/Decentr-net/decentr/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 const (
 	DefaultParamspace = ModuleName
-	DefaultDenom      = "udec"
 )
 
 var (
-	DefaultSupervisors = make([]string, 0)
-	DefaultMinGasPrice = sdk.NewDecCoinFromDec(DefaultDenom, sdk.MustNewDecFromStr("0.025"))
+	DefaultSupervisors = []sdk.AccAddress(nil)
+	DefaultMinGasPrice = sdk.NewDecCoinFromDec(config.DefaultBondDenom, sdk.MustNewDecFromStr("0.025"))
 )
 
 var (
@@ -23,13 +23,26 @@ var (
 	KeyMinGasPrice = []byte("MinGasPrice")
 )
 
-// ParamKeyTable type declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable(
-		params.NewParamSetPair(KeySupervisors, &DefaultSupervisors, validateSupervisors),
-		params.NewParamSetPair(KeyFixedGas, FixedGasParams{}, validateFixedGasParams),
-		params.NewParamSetPair(KeyMinGasPrice, &DefaultMinGasPrice, validateMinGasPrice),
-	)
+// ParamKeyTable for operations module
+func ParamKeyTable() paramtypes.KeyTable {
+	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
+}
+
+func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(KeySupervisors, &p.Supervisors, validateSupervisors),
+		paramtypes.NewParamSetPair(KeyFixedGas, &p.FixedGas, validateFixedGasParams),
+		paramtypes.NewParamSetPair(KeyMinGasPrice, &p.MinGasPrice, validateMinGasPrice),
+	}
+}
+
+// DefaultParams returns a default set of parameters.
+func DefaultParams() Params {
+	return Params{
+		Supervisors: DefaultSupervisors,
+		FixedGas:    DefaultFixedGasParams(),
+		MinGasPrice: DefaultMinGasPrice,
+	}
 }
 
 func validateMinGasPrice(i interface{}) error {
@@ -38,55 +51,68 @@ func validateMinGasPrice(i interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if coin.Amount.IsZero() {
-		return fmt.Errorf("amount cannot be zero")
+	if !coin.IsValid() {
+		return fmt.Errorf("coin is invalid")
+	}
+
+	if coin.IsNegative() {
+		return fmt.Errorf("coin amount is negative")
+	}
+
+	if coin.IsZero() {
+		return fmt.Errorf("coin amount is zero")
 	}
 
 	return nil
 }
 
 func validateSupervisors(i interface{}) error {
-	owners, ok := i.([]string)
+	s, ok := i.([]sdk.AccAddress)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	for _, owner := range owners {
-		if _, err := sdk.AccAddressFromBech32(owner); err != nil {
-			return fmt.Errorf("%s is an invalid supervisor address, err=%w", owner, err)
+	for i, v := range s {
+		if err := sdk.VerifyAddressFormat(v); err != nil {
+			return fmt.Errorf("invalid supervisor %d", i+1)
 		}
 	}
+
 	return nil
 }
 
-type FixedGasParams struct {
-	ResetAccount      sdk.Gas `json:"delete_account" yaml:"delete_account"`
-	DistributeRewards sdk.Gas `json:"distribute_rewards" yaml:"distribute_rewards"`
-}
-
-func NewFixedGasParams(resetAccount, distributeReward sdk.Gas) FixedGasParams {
+func NewFixedGasParams(resetAccount, distributeReward, banAccount sdk.Gas) FixedGasParams {
 	return FixedGasParams{
 		ResetAccount:      resetAccount,
 		DistributeRewards: distributeReward,
+		BanAccount:        banAccount,
 	}
 }
 
 func DefaultFixedGasParams() FixedGasParams {
-	return NewFixedGasParams(100, 100)
+	return NewFixedGasParams(0, 0, 0)
 }
 
 func validateFixedGasParams(i interface{}) error {
-	v, ok := i.(FixedGasParams)
+	_, ok := i.(FixedGasParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if v.ResetAccount <= 0 {
-		return fmt.Errorf("reset account be positive: %d", v.ResetAccount)
+	return nil
+}
+
+func (p Params) Validate() error {
+	if err := validateSupervisors(p.Supervisors); err != nil {
+		return fmt.Errorf("invalid supervisors: %w", err)
 	}
 
-	if v.DistributeRewards <= 0 {
-		return fmt.Errorf("distribute rewards be positive: %d", v.DistributeRewards)
+	if err := validateFixedGasParams(p.FixedGas); err != nil {
+		return fmt.Errorf("invalid fixed_gas: %w", err)
+	}
+
+	if err := validateMinGasPrice(p.MinGasPrice); err != nil {
+		return fmt.Errorf("invalid min_gas_price: %w", err)
 	}
 
 	return nil

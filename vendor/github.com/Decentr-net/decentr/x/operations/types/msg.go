@@ -5,18 +5,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-type Reward struct {
-	Receiver sdk.AccAddress `json:"receiver"`
-	ID       uint64         `json:"id"`
-	Reward   uint64         `json:"reward"`
-}
-
-// MsgDistributeRewards defines a CreatePDV message
-type MsgDistributeRewards struct {
-	Owner   sdk.AccAddress `json:"owner"`
-	Rewards []Reward       `json:"rewards"`
-}
-
 // NewMsgDistributeRewards is a constructor function for MsgDistributeRewards
 func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistributeRewards {
 	return MsgDistributeRewards{
@@ -25,33 +13,41 @@ func NewMsgDistributeRewards(owner sdk.AccAddress, rewards []Reward) MsgDistribu
 	}
 }
 
+func NewReward(address sdk.AccAddress, reward sdk.Dec) Reward {
+	return Reward{
+		Receiver: address,
+		Reward:   sdk.DecProto{Dec: reward},
+	}
+}
+
 // Route should return the name of the module
-func (msg MsgDistributeRewards) Route() string { return RouterKey }
+func (m MsgDistributeRewards) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgDistributeRewards) Type() string { return "distribute_rewards" }
+func (m MsgDistributeRewards) Type() string { return "distribute_rewards" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgDistributeRewards) ValidateBasic() error {
-	if msg.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+func (m MsgDistributeRewards) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
 	}
 
-	if len(msg.Rewards) > 1000 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Number of rewards can't be greater than 1000")
+	if len(m.Rewards) == 0 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty rewards list")
 	}
 
-	for _, reward := range msg.Rewards {
-		if reward.Receiver.Empty() {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Receiver is empty")
+	if len(m.Rewards) > 1000 {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "more than 1000 rewards")
+	}
+
+	for i, v := range m.Rewards {
+		if err := sdk.VerifyAddressFormat(v.Receiver); err != nil {
+			return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid reward %d: invalid receiver", i+1)
 		}
 
-		if reward.Reward == 0 {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "Reward can't be zero")
-		}
-
-		if reward.ID == 0 {
-			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "ID can't be zero")
+		reward := v.Reward.Dec
+		if reward.IsNil() || reward.IsZero() || reward.IsNegative() {
+			return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "invalid reward %d: invalid reward", i+1)
 		}
 	}
 
@@ -59,50 +55,154 @@ func (msg MsgDistributeRewards) ValidateBasic() error {
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgDistributeRewards) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+func (m MsgDistributeRewards) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgDistributeRewards) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
+func (m MsgDistributeRewards) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Owner}
 }
 
-type MsgResetAccount struct {
-	Owner        sdk.AccAddress `json:"owner"`
-	AccountOwner sdk.AccAddress `json:"accountOwner"`
-}
-
-func NewMsgResetAccount(owner, accountOwner sdk.AccAddress) MsgResetAccount {
+func NewMsgResetAccount(owner, address sdk.AccAddress) MsgResetAccount {
 	return MsgResetAccount{
-		Owner:        owner,
-		AccountOwner: accountOwner,
+		Owner:   owner,
+		Address: address,
 	}
 }
 
 // Route should return the name of the module
-func (msg MsgResetAccount) Route() string { return RouterKey }
+func (m MsgResetAccount) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgResetAccount) Type() string { return "reset_account" }
+func (m MsgResetAccount) Type() string { return "reset_account" }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgResetAccount) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+func (m MsgResetAccount) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgResetAccount) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
+func (m MsgResetAccount) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Owner}
 }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgResetAccount) ValidateBasic() error {
-	if msg.Owner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "Owner is empty")
+func (m MsgResetAccount) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
 	}
-	if msg.AccountOwner.Empty() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "AccountOwner is empty")
+
+	if err := sdk.VerifyAddressFormat(m.Address); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid address")
+	}
+
+	return nil
+}
+
+func NewMsgBanAccount(owner, address sdk.AccAddress, ban bool) MsgBanAccount {
+	return MsgBanAccount{
+		Owner:   owner,
+		Address: address,
+		Ban:     ban,
+	}
+}
+
+// Route should return the name of the module
+func (m MsgBanAccount) Route() string { return RouterKey }
+
+// Type should return the action
+func (m MsgBanAccount) Type() string { return "ban_account" }
+
+// GetSignBytes encodes the message for signing
+func (m MsgBanAccount) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+// GetSigners defines whose signature is required
+func (m MsgBanAccount) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (m MsgBanAccount) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
+	}
+
+	if err := sdk.VerifyAddressFormat(m.Address); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid address")
+	}
+
+	return nil
+}
+
+func NewMsgMint(owner sdk.AccAddress, coin sdk.Coin) MsgMint {
+	return MsgMint{
+		Owner: owner,
+		Coin:  coin,
+	}
+}
+
+// Route should return the name of the module
+func (m MsgMint) Route() string { return RouterKey }
+
+// Type should return the action
+func (m MsgMint) Type() string { return "mint" }
+
+// GetSignBytes encodes the message for signing
+func (m MsgMint) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+// GetSigners defines whose signature is required
+func (m MsgMint) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (m MsgMint) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
+	}
+
+	if m.Coin.IsNil() || !m.Coin.IsValid() || m.Coin.IsZero() || m.Coin.IsNegative() {
+		return sdkerrors.ErrInvalidRequest.Wrap("invalid coin")
+	}
+	return nil
+}
+
+func NewMsgBurn(owner sdk.AccAddress, coin sdk.Coin) MsgBurn {
+	return MsgBurn{
+		Owner: owner,
+		Coin:  coin,
+	}
+}
+
+// Route should return the name of the module
+func (m MsgBurn) Route() string { return RouterKey }
+
+// Type should return the action
+func (m MsgBurn) Type() string { return "burn" }
+
+// GetSignBytes encodes the message for signing
+func (m MsgBurn) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(&m))
+}
+
+// GetSigners defines whose signature is required
+func (m MsgBurn) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Owner}
+}
+
+// ValidateBasic runs stateless checks on the message
+func (m MsgBurn) ValidateBasic() error {
+	if err := sdk.VerifyAddressFormat(m.Owner); err != nil {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid owner")
+	}
+
+	if m.Coin.IsNil() || !m.Coin.IsValid() || m.Coin.IsZero() || m.Coin.IsNegative() {
+		return sdkerrors.ErrInvalidRequest.Wrap("invalid coin")
 	}
 	return nil
 }
