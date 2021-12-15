@@ -745,7 +745,6 @@ github.com/tendermint/go-amino
 github.com/tendermint/spm/cosmoscmd
 github.com/tendermint/spm/openapiconsole
 # github.com/tendermint/tendermint v0.34.14
-## explicit
 github.com/tendermint/tendermint/abci/client
 github.com/tendermint/tendermint/abci/example/code
 github.com/tendermint/tendermint/abci/example/counter
