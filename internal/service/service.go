@@ -66,15 +66,15 @@ type Service interface {
 type service struct {
 	storage storage.Storage
 	sender  mail.Sender
-	btc     blockchain.Blockchain
-	bmc     blockchain.Blockchain
+	//btc     blockchain.Blockchain
+	bmc blockchain.Blockchain
 
 	rc referral.Config
 
-	initialTestStakes int64
+	//initialTestStakes int64
 	initialMainStakes int64
 
-	initialTestMemo string
+	//initialTestMemo string
 	initialMainMemo string
 }
 
@@ -82,21 +82,24 @@ type service struct {
 func New(
 	storage storage.Storage,
 	sender mail.Sender,
-	bt, bm blockchain.Blockchain,
-	initialTestNetStakes, initialMainNetStakes int64,
-	initialTestMemo, initialMainMemo string,
+	//bt, bm blockchain.Blockchain,
+	bm blockchain.Blockchain,
+	//initialTestNetStakes, initialMainNetStakes int64,
+	initialMainNetStakes int64,
+	//initialTestMemo, initialMainMemo string,
+	initialMainMemo string,
 	rc referral.Config,
 ) Service {
 	s := &service{
-		storage:           storage,
-		sender:            sender,
-		btc:               bt,
-		bmc:               bm,
-		rc:                rc,
-		initialTestStakes: initialTestNetStakes,
+		storage: storage,
+		sender:  sender,
+		//btc:               bt,
+		bmc: bm,
+		rc:  rc,
+		//initialTestStakes: initialTestNetStakes,
 		initialMainStakes: initialMainNetStakes,
-		initialTestMemo:   initialTestMemo,
-		initialMainMemo:   initialMainMemo,
+		//initialTestMemo:   initialTestMemo,
+		initialMainMemo: initialMainMemo,
 	}
 
 	return s

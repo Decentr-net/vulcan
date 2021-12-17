@@ -108,9 +108,9 @@ func TestService_Register(t *testing.T) {
 			ctx := context.Background()
 
 			s := &service{
-				storage:           st,
-				sender:            sender,
-				initialTestStakes: testInitialStakes,
+				storage: st,
+				sender:  sender,
+				//initialTestStakes: testInitialStakes,
 				initialMainStakes: mainInitialStakes,
 			}
 
@@ -169,8 +169,8 @@ func TestService_GetReferralCode(t *testing.T) {
 			st := storagemock.NewMockStorage(ctrl)
 
 			s := &service{
-				storage:           st,
-				initialTestStakes: testInitialStakes,
+				storage: st,
+				//initialTestStakes: testInitialStakes,
 				initialMainStakes: mainInitialStakes,
 			}
 
@@ -248,11 +248,11 @@ func TestService_Confirm(t *testing.T) {
 			ctx := context.Background()
 
 			s := &service{
-				storage:           st,
-				sender:            sn,
-				btc:               btc,
-				bmc:               bmc,
-				initialTestStakes: testInitialStakes,
+				storage: st,
+				sender:  sn,
+				//btc:               btc,
+				bmc: bmc,
+				//initialTestStakes: testInitialStakes,
 				initialMainStakes: mainInitialStakes,
 			}
 
