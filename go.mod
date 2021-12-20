@@ -3,7 +3,7 @@ module github.com/Decentr-net/vulcan
 go 1.16
 
 require (
-	github.com/Decentr-net/decentr v1.5.0
+	github.com/Decentr-net/decentr v1.5.5
 	github.com/Decentr-net/go-api v0.1.0
 	github.com/Decentr-net/go-broadcaster v0.1.0
 	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
@@ -24,7 +24,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/testcontainers/testcontainers-go v0.11.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/grpc v1.40.0
+	google.golang.org/grpc v1.42.0
 )
 
 replace (

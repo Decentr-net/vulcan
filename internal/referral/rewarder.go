@@ -154,7 +154,7 @@ func (r *Rewarder) do(ctx context.Context) {
 		}
 
 		resp, err := r.brc.Balance(ctx, &tokentypes.BalanceRequest{
-			Address: address,
+			Address: address.String(),
 		})
 		if err != nil {
 			logger.WithError(err).Error("failed to get PDV token balance")
