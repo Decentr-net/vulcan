@@ -85,7 +85,7 @@ func New(
 	storage storage.Storage,
 	sender mail.Sender,
 	bc blockchain.Blockchain,
-	initialNetStakes sdk.Int,
+	initialStakes sdk.Int,
 	initialMemo string,
 	rc referral.Config,
 ) Service {
@@ -94,7 +94,7 @@ func New(
 		sender:        sender,
 		bc:            bc,
 		rc:            rc,
-		initialStakes: initialNetStakes,
+		initialStakes: initialStakes,
 		initialMemo:   initialMemo,
 	}
 
