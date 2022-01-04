@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/Decentr-net/decentr v1.5.5
 	github.com/Decentr-net/go-api v0.1.0
-	github.com/Decentr-net/go-broadcaster v0.1.0
+	github.com/Decentr-net/go-broadcaster v0.1.1
 	github.com/Decentr-net/logrus v0.7.2-0.20210316223658-7a9b48625189
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/cosmos/cosmos-sdk v0.44.3
