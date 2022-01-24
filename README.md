@@ -85,7 +85,7 @@ go run cmd/vulcan/main.go \
 | blockchain.keyring_prompt_input   | BLOCKCHAIN_KEYRING_PROMPT_INPUT    | | false | decentrcli keyring prompt input
 | blockchain.gas   | BLOCKCHAIN_GAS    | 10 | false | gas amount
 | blockchain.fee   | BLOCKCHAIN_FEE    | 1udec | false | transaction fee
-| blockchain.grpc_node_url   | BLOCKCHAIN_GRPC_NODE_URL    | http://hera.mainnet.decentr.xyz | false | GRPC endpoint url
+| blockchain.grpc_node_url   | BLOCKCHAIN_GRPC_NODE_URL    | hera.mainnet.decentr.xyz:9090 | false | GRPC endpoint url
 | referral.threshold_pdv   | REFERRAL_THRESHOLD_PDV   | 0.000100 | true | how many uPDV a user should obtain to get a referral reward
 | referral.threshold_days   | REFERRAL_THRESHOLD_DAYS   | 30 | true | how many days a user should wait to get a referral reward
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
