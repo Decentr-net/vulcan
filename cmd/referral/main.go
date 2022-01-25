@@ -50,8 +50,8 @@ var opts = struct {
 	BlockchainFee                string `long:"blockchain.fee" env:"BLOCKCHAIN_FEE" default:"1udec" description:"transaction fee"`
 	BlockchainGRPCNodeURL        string `long:"blockchain.grpc_node_url" env:"BLOCKCHAIN_GRPC_NODE_URL" default:"hera.mainnet.decentr.xyz:9090" description:"GRPC endpoint URL"`
 
-	ReferralThresholdPDV  sdk.Dec `long:"referral.threshold_pdv" env:"REFERRAL_THRESHOLD_PDV" default:"0.000100" description:"how many PDV a user should obtain to get a referral reward'"`
-	ReferralThresholdDays int     `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
+	ReferralThresholdPDV  string `long:"referral.threshold_pdv" env:"REFERRAL_THRESHOLD_PDV" default:"0.000100" description:"how many PDV a user should obtain to get a referral reward'"`
+	ReferralThresholdDays int    `long:"referral.threshold_days" env:"REFERRAL_THRESHOLD_DAYS" default:"30" description:"how many days a user should wait to get a referral reward'"`
 
 	LogLevel  string `long:"log.level" env:"LOG_LEVEL" default:"info" description:"Log level" choice:"debug" choice:"info" choice:"warning" choice:"error"`
 	SentryDSN string `long:"sentry.dsn" env:"SENTRY_DSN" description:"sentry dsn"`
@@ -114,7 +114,7 @@ func main() {
 				mustGetDB()),
 			blockchain.New(mustGetBroadcaster()),
 			tokentypes.NewQueryClient(nativeNodeConn),
-			referral.NewConfig(opts.ReferralThresholdPDV, opts.ReferralThresholdDays),
+			referral.NewConfig(sdk.MustNewDecFromStr(opts.ReferralThresholdPDV), opts.ReferralThresholdDays),
 		).Run(ctx, time.Hour)
 		return nil
 	})
