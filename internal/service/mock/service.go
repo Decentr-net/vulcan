@@ -152,16 +152,16 @@ func (mr *MockServiceMockRecorder) GetReferralTrackingStats(ctx, address interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralTrackingStats", reflect.TypeOf((*MockService)(nil).GetReferralTrackingStats), ctx, address)
 }
 
-// GiveStakes mocks base method
-func (m *MockService) GiveStakes(ctx context.Context, address string) error {
+// RegisterTestnetAccount mocks base method
+func (m *MockService) RegisterTestnetAccount(ctx context.Context, address string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GiveStakes", ctx, address)
+	ret := m.ctrl.Call(m, "RegisterTestnetAccount", ctx, address)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// GiveStakes indicates an expected call of GiveStakes
-func (mr *MockServiceMockRecorder) GiveStakes(ctx, address interface{}) *gomock.Call {
+// RegisterTestnetAccount indicates an expected call of RegisterTestnetAccount
+func (mr *MockServiceMockRecorder) RegisterTestnetAccount(ctx, address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GiveStakes", reflect.TypeOf((*MockService)(nil).GiveStakes), ctx, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterTestnetAccount", reflect.TypeOf((*MockService)(nil).RegisterTestnetAccount), ctx, address)
 }

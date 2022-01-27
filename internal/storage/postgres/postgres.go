@@ -9,10 +9,10 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	log "github.com/sirupsen/logrus"
-
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Decentr-net/vulcan/internal/storage"
 )
@@ -151,6 +151,16 @@ func (p pg) UpsertRequest(ctx context.Context, owner, email, address, code strin
 	}
 
 	return nil
+}
+
+func (p pg) CreateTestnetConfirmedRequest(ctx context.Context, address string) error {
+	uniqueValue := "[testnet]" + uuid.New().String()
+
+	_, err := p.ext.ExecContext(ctx, `
+			INSERT INTO request (owner, email, address, code, created_at, confirmed_at, registration_referral_code)
+			VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL) ON CONFLICT(address) DO NOTHING 
+	`, uniqueValue, uniqueValue, address, uniqueValue)
+	return err
 }
 
 func (p pg) CreateReferralTracking(ctx context.Context, receiver string, referralCode string) error {

@@ -178,6 +178,7 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		case errors.Is(err, service.ErrAlreadyConfirmed):
+			logrus.WithField("request", req).Warn("already confirmed")
 			api.WriteError(w, http.StatusConflict, "already confirmed")
 		default:
 			api.WriteInternalErrorf(r.Context(), w, "failed to confirm registration: %s", err.Error())
@@ -319,7 +320,7 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to get referral tracking stats: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, "failed to get %s referral tracking stats: %s", address, err.Error())
 		}
 		return
 	}
@@ -413,7 +414,7 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 	api.WriteOK(w, http.StatusOK, ReferralCodeResponse{Code: code})
 }
 
-func (s *server) giveStakes(w http.ResponseWriter, r *http.Request) {
+func (s *server) registerTestnetAccount(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /v1/hesoyam/{address} Vulcan GiveStakes
 	//
 	// Like a game cheat gives you test stakes. Works only for testnet.
@@ -440,7 +441,7 @@ func (s *server) giveStakes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.s.GiveStakes(r.Context(), address); err != nil {
+	if err := s.s.RegisterTestnetAccount(r.Context(), address); err != nil {
 		api.WriteInternalErrorf(r.Context(), w, "failed to give stakes: %s", err.Error())
 		return
 	}

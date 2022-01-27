@@ -65,7 +65,7 @@ type Service interface {
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
 	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
 
-	GiveStakes(ctx context.Context, address string) error
+	RegisterTestnetAccount(ctx context.Context, address string) error
 }
 
 // Service ...
@@ -319,7 +319,7 @@ func (s *service) GetRegisterStats(ctx context.Context) ([]*storage.RegisterStat
 	return stats, total, nil
 }
 
-func (s *service) GiveStakes(_ context.Context, address string) error {
+func (s *service) RegisterTestnetAccount(ctx context.Context, address string) error {
 	if err := s.bc.SendStakes([]blockchain.Stake{
 		{
 			Address: address,
@@ -327,6 +327,10 @@ func (s *service) GiveStakes(_ context.Context, address string) error {
 		},
 	}, ""); err != nil {
 		return fmt.Errorf("failed to give stakes: %w", err)
+	}
+
+	if err := s.storage.CreateTestnetConfirmedRequest(ctx, address); err != nil {
+		return fmt.Errorf("failed to create confirmed request: %w", err)
 	}
 
 	return nil
