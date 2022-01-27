@@ -261,7 +261,7 @@ func (p pg) GetConfirmedRegistrationsStats(ctx context.Context) ([]*storage.Regi
 	err := sqlx.SelectContext(ctx, p.ext, &stats, `
 				SELECT confirmed_at::DATE as date, COUNT(*) as value
 				FROM request
-				WHERE confirmed_at IS NOT NULL AND confirmed_at > NOW() -'30 day'::INTERVAL
+				WHERE confirmed_at IS NOT NULL AND confirmed_at > NOW() -'90 day'::INTERVAL
 				GROUP BY date
 				ORDER BY date DESC
 	`)
