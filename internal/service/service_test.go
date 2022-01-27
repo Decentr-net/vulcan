@@ -318,23 +318,25 @@ func TestService_Confirm(t *testing.T) {
 	}
 }
 
-func TestService_GiveStakes(t *testing.T) {
+func TestService_RegisterTestnetAccount(t *testing.T) {
 	tt := []struct {
 		name          string
-		mockSetupFunc func(bc *blockchainmock.MockBlockchain)
+		mockSetupFunc func(bc *blockchainmock.MockBlockchain, storage *storagemock.MockStorage)
 		err           error
 	}{
 		{
 			name: "success",
-			mockSetupFunc: func(bc *blockchainmock.MockBlockchain) {
+			mockSetupFunc: func(bc *blockchainmock.MockBlockchain, storage *storagemock.MockStorage) {
 				bc.EXPECT().SendStakes([]blockchain.Stake{
 					{Address: testAddress, Amount: giveStakesAmount},
 				}, "").Return(nil)
+
+				storage.EXPECT().CreateTestnetConfirmedRequest(gomock.Any(), testAddress).Return(nil)
 			},
 		},
 		{
 			name: "error",
-			mockSetupFunc: func(bc *blockchainmock.MockBlockchain) {
+			mockSetupFunc: func(bc *blockchainmock.MockBlockchain, storage *storagemock.MockStorage) {
 				bc.EXPECT().SendStakes([]blockchain.Stake{
 					{Address: testAddress, Amount: giveStakesAmount},
 				}, "").Return(errTest)
@@ -351,16 +353,18 @@ func TestService_GiveStakes(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			bc := blockchainmock.NewMockBlockchain(ctrl)
+			storage := storagemock.NewMockStorage(ctrl)
 
 			ctx := context.Background()
 
 			s := &service{
-				bc: bc,
+				bc:      bc,
+				storage: storage,
 			}
 
-			tc.mockSetupFunc(bc)
+			tc.mockSetupFunc(bc, storage)
 
-			assert.ErrorIs(t, s.GiveStakes(ctx, testAddress), tc.err)
+			assert.ErrorIs(t, s.RegisterTestnetAccount(ctx, testAddress), tc.err)
 		})
 	}
 }

@@ -1,4 +1,5 @@
-//+build integration
+//go:build integration
+// +build integration
 
 package postgres
 
@@ -269,6 +270,20 @@ func TestPg_GetRequestByOwner(t *testing.T) {
 
 	_, err = s.GetRequestByAddress(ctx, "not_exists")
 	assert.True(t, errors.Is(err, storage.ErrNotFound))
+}
+
+func TestPg_CreateConfirmedRequest(t *testing.T) {
+	defer cleanup(t)
+
+	const addr1 = "addr1"
+
+	require.NoError(t, s.CreateTestnetConfirmedRequest(context.Background(), addr1))
+	require.NoError(t, s.CreateTestnetConfirmedRequest(context.Background(), addr1))
+	require.NoError(t, s.CreateTestnetConfirmedRequest(context.Background(), "addr2"))
+
+	req, err := s.GetRequestByAddress(ctx, addr1)
+	require.NoError(t, err)
+	require.Equal(t, addr1, req.Address)
 }
 
 func TestPg_GetReferralTrackingByReceiver(t *testing.T) {

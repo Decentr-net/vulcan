@@ -16,6 +16,7 @@ require (
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/golang-migrate/migrate/v4 v4.12.2
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.2.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/keighl/mandrill v0.0.0-20170605120353-1775dd4b3b41

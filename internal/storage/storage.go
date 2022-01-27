@@ -90,6 +90,8 @@ type Storage interface {
 	GetRequestByAddress(ctx context.Context, address string) (*Request, error)
 	// SetConfirmed sets request confirmed.
 	SetConfirmed(ctx context.Context, owner string) error
+	// CreateTestnetConfirmedRequest creates a confirmed request. Must be used only in Testnet.
+	CreateTestnetConfirmedRequest(ctx context.Context, address string) error
 	// UpsertRequest inserts request into storage.
 	UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error
 	// CreateReferralTracking creates a new referral tracking

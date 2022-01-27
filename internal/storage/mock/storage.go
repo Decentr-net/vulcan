@@ -139,6 +139,20 @@ func (mr *MockStorageMockRecorder) SetConfirmed(ctx, owner interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConfirmed", reflect.TypeOf((*MockStorage)(nil).SetConfirmed), ctx, owner)
 }
 
+// CreateTestnetConfirmedRequest mocks base method
+func (m *MockStorage) CreateTestnetConfirmedRequest(ctx context.Context, address string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTestnetConfirmedRequest", ctx, address)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateTestnetConfirmedRequest indicates an expected call of CreateTestnetConfirmedRequest
+func (mr *MockStorageMockRecorder) CreateTestnetConfirmedRequest(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTestnetConfirmedRequest", reflect.TypeOf((*MockStorage)(nil).CreateTestnetConfirmedRequest), ctx, address)
+}
+
 // UpsertRequest mocks base method
 func (m *MockStorage) UpsertRequest(ctx context.Context, owner, email, address, code string, referralCode sql.NullString) error {
 	m.ctrl.T.Helper()

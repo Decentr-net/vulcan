@@ -61,7 +61,7 @@ func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout tim
 		r.Get("/supply", srv.supply)
 
 		if testMode {
-			r.Get("/hesoyam/{address}", srv.giveStakes)
+			r.Get("/hesoyam/{address}", srv.registerTestnetAccount)
 		}
 
 		r.Route("/referral", func(r chi.Router) {
