@@ -22,9 +22,10 @@ type EmptyResponse struct{}
 // swagger:model
 type RegisterRequest struct {
 	// required: true
-	Email        strfmt.Email `json:"email"`
-	Address      string       `json:"address"`
-	ReferralCode *string      `json:"referralCode"`
+	Email             strfmt.Email `json:"email"`
+	Address           string       `json:"address"`
+	ReferralCode      *string      `json:"referralCode"`
+	RecaptchaResponse string       `json:"recaptchaResponse"`
 }
 
 // ConfirmRequest ...
@@ -76,6 +77,10 @@ func (r RegisterRequest) validate() error {
 	}
 	if !isAddressValid(r.Address) {
 		return fmt.Errorf("%w: invalid address", errInvalidRequest)
+	}
+
+	if r.ReferralCode != nil && len(r.RecaptchaResponse) == 0 {
+		return fmt.Errorf("%w: empty recaptcha response", errInvalidRequest)
 	}
 
 	return nil

@@ -72,6 +72,17 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.ReferralCode != nil {
+		if err := s.s.CheckRecaptcha(r.Context(), "register", req.RecaptchaResponse); err != nil {
+			if !errors.Is(err, service.ErrRecaptcha) {
+				api.WriteInternalErrorf(r.Context(), w, "failed to check recaptcha: %s", err.Error())
+				return
+			}
+			api.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
 	if err := s.s.Register(r.Context(), req.Email.String(), req.Address, req.ReferralCode); err != nil {
 		switch {
 		case errors.Is(err, service.ErrTooManyAttempts):

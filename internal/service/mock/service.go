@@ -165,3 +165,17 @@ func (mr *MockServiceMockRecorder) RegisterTestnetAccount(ctx, address interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterTestnetAccount", reflect.TypeOf((*MockService)(nil).RegisterTestnetAccount), ctx, address)
 }
+
+// CheckRecaptcha mocks base method
+func (m *MockService) CheckRecaptcha(ctx context.Context, action, recaptchaResponse string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckRecaptcha", ctx, action, recaptchaResponse)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckRecaptcha indicates an expected call of CheckRecaptcha
+func (mr *MockServiceMockRecorder) CheckRecaptcha(ctx, action, recaptchaResponse interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckRecaptcha", reflect.TypeOf((*MockService)(nil).CheckRecaptcha), ctx, action, recaptchaResponse)
+}

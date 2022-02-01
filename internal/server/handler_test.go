@@ -28,62 +28,95 @@ var (
 
 func Test_Register(t *testing.T) {
 	tt := []struct {
-		name         string
-		body         []byte
-		serviceErr   error
-		rcode        int
-		rdata        string
-		rlog         string
-		referralCode string
+		name   string
+		body   []byte
+		mockFn func(srv *servicemock.MockService)
+		rcode  int
+		rdata  string
+		rlog   string
 	}{
 		{
-			name:       "success",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
-			serviceErr: nil,
-			rcode:      http.StatusOK,
-			rdata:      `{}`,
-			rlog:       "",
+			name: "success",
+			body: []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
+			mockFn: func(srv *servicemock.MockService) {
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", nil).Return(nil)
+			},
+			rcode: http.StatusOK,
+			rdata: `{}`,
+			rlog:  "",
 		},
 		{
-			name:       "invalid email",
-			body:       []byte(`{"email":"decentrdecentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
-			serviceErr: errSkip,
-			rcode:      http.StatusBadRequest,
-			rdata:      `{"error": "invalid request: invalid email"}`,
-			rlog:       "",
+			name:  "invalid email",
+			body:  []byte(`{"email":"decentrdecentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
+			rcode: http.StatusBadRequest,
+			rdata: `{"error": "invalid request: invalid email"}`,
+			rlog:  "",
 		},
 		{
-			name:       "invalid address",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqg"}`),
-			serviceErr: errSkip,
-			rcode:      http.StatusBadRequest,
-			rdata:      `{"error": "invalid request: invalid address"}`,
-			rlog:       "",
+			name:  "invalid address",
+			body:  []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqg"}`),
+			rcode: http.StatusBadRequest,
+			rdata: `{"error": "invalid request: invalid address"}`,
+			rlog:  "",
 		},
 		{
-			name:       "already registered",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
-			serviceErr: service.ErrAlreadyExists,
-			rcode:      http.StatusConflict,
-			rdata:      `{"error": "email or address is already taken"}`,
-			rlog:       "",
+			name:  "invalid recaptcha",
+			body:  []byte(`{"email":"decentr@decentr.xyz", "address":"decentr1vg085ra5hw8mx5rrheqf8fruks0xv4urqkuqg", "referralCode": "abcdef12", "recaptchaResponse": ""}`),
+			rcode: http.StatusBadRequest,
+			rdata: `{"error": "invalid request: invalid address"}`,
+			rlog:  "",
 		},
 		{
-			name:       "internal error",
-			body:       []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
-			serviceErr: errTest,
-			rcode:      http.StatusInternalServerError,
-			rdata:      `{"error": "internal error"}`,
-			rlog:       "failed to register request",
+			name: "captcha isn't passed",
+			body: []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", "referralCode": "abcdef12", "recaptchaResponse": "213"}`),
+			mockFn: func(srv *servicemock.MockService) {
+				srv.EXPECT().CheckRecaptcha(gomock.Not(gomock.Nil()), "register", "213").Return(service.ErrRecaptcha)
+			},
+			rcode: http.StatusBadRequest,
+			rdata: `{"error": "recaptcha error"}`,
+			rlog:  "",
 		},
 		{
-			name:         "referral code",
-			body:         []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", "referralCode": "abcdef12"}`),
-			serviceErr:   nil,
-			rcode:        http.StatusOK,
-			rdata:        `{}`,
-			rlog:         "",
-			referralCode: "abcdef12",
+			name: "captcha error",
+			body: []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", "referralCode": "abcdef12", "recaptchaResponse": "213"}`),
+			mockFn: func(srv *servicemock.MockService) {
+				srv.EXPECT().CheckRecaptcha(gomock.Not(gomock.Nil()), "register", "213").Return(errTest)
+			},
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error": "internal error"}`,
+			rlog:  "",
+		},
+		{
+			name: "already registered",
+			body: []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
+			mockFn: func(srv *servicemock.MockService) {
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", nil).Return(service.ErrAlreadyExists)
+			},
+			rcode: http.StatusConflict,
+			rdata: `{"error": "email or address is already taken"}`,
+			rlog:  "",
+		},
+		{
+			name: "internal error",
+			body: []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m"}`),
+			mockFn: func(srv *servicemock.MockService) {
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", nil).Return(errTest)
+			},
+			rcode: http.StatusInternalServerError,
+			rdata: `{"error": "internal error"}`,
+			rlog:  "failed to register request",
+		},
+		{
+			name: "referral code",
+			body: []byte(`{"email":"decentr@decentr.xyz", "address":"decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", "referralCode": "abcdef12", "recaptchaResponse": "213"}`),
+			mockFn: func(srv *servicemock.MockService) {
+				referralCode := "abcdef12"
+				srv.EXPECT().CheckRecaptcha(gomock.Not(gomock.Nil()), "register", "213").Return(nil)
+				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", &referralCode).Return(nil)
+			},
+			rcode: http.StatusOK,
+			rdata: `{}`,
+			rlog:  "",
 		},
 	}
 
@@ -98,11 +131,8 @@ func Test_Register(t *testing.T) {
 			defer ctrl.Finish()
 
 			srv := servicemock.NewMockService(ctrl)
-
-			if tc.referralCode != "" {
-				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", &tc.referralCode).Return(tc.serviceErr)
-			} else if tc.serviceErr != errSkip {
-				srv.EXPECT().Register(gomock.Not(gomock.Nil()), "decentr@decentr.xyz", "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m", nil).Return(tc.serviceErr)
+			if tc.mockFn != nil {
+				tc.mockFn(srv)
 			}
 
 			router := chi.NewRouter()

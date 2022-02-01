@@ -7,8 +7,11 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -35,6 +38,9 @@ var plustPartRegexp = regexp.MustCompile(`\+.+\@`) // nolint
 
 // ErrAlreadyExists is returned when request is already created for requested email or address.
 var ErrAlreadyExists = fmt.Errorf("email or address is already taken")
+
+// ErrRecaptcha is returned when captcha isn't passed.
+var ErrRecaptcha = fmt.Errorf("recaptcha error")
 
 // ErrAlreadyConfirmed is returned when request is already confirmed.
 var ErrAlreadyConfirmed = fmt.Errorf("already confirmed")
@@ -66,6 +72,8 @@ type Service interface {
 	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
 
 	RegisterTestnetAccount(ctx context.Context, address string) error
+
+	CheckRecaptcha(ctx context.Context, action, recaptchaResponse string) error
 }
 
 // Service ...
@@ -74,7 +82,8 @@ type service struct {
 	sender  mail.Sender
 	bc      blockchain.Blockchain
 
-	rc referral.Config
+	rc              referral.Config
+	recaptchaSecret string
 
 	initialStakes sdk.Int
 	initialMemo   string
@@ -88,14 +97,16 @@ func New(
 	initialStakes sdk.Int,
 	initialMemo string,
 	rc referral.Config,
+	recaptchaSecret string,
 ) Service {
 	s := &service{
-		storage:       storage,
-		sender:        sender,
-		bc:            bc,
-		rc:            rc,
-		initialStakes: initialStakes,
-		initialMemo:   initialMemo,
+		storage:         storage,
+		sender:          sender,
+		bc:              bc,
+		rc:              rc,
+		recaptchaSecret: recaptchaSecret,
+		initialStakes:   initialStakes,
+		initialMemo:     initialMemo,
 	}
 
 	return s
@@ -331,6 +342,57 @@ func (s *service) RegisterTestnetAccount(ctx context.Context, address string) er
 
 	if err := s.storage.CreateTestnetConfirmedRequest(ctx, address); err != nil {
 		return fmt.Errorf("failed to create confirmed request: %w", err)
+	}
+
+	return nil
+}
+
+func (s *service) CheckRecaptcha(ctx context.Context, action, recaptchaResponse string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://www.google.com/recaptcha/api/siteverify", nil)
+	if err != nil {
+		return err
+	}
+
+	// Add necessary request parameters.
+	q := url.Values{}
+	q.Add("secret", s.recaptchaSecret)
+	q.Add("response", recaptchaResponse)
+	req.URL.RawQuery = q.Encode()
+
+	// Make request
+	c := http.Client{Timeout: time.Second * 5}
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close() // nolint
+
+	// Decode response.
+	var body struct {
+		Success     bool      `json:"success"`
+		Score       float64   `json:"score"`
+		Action      string    `json:"action"`
+		ChallengeTS time.Time `json:"challenge_ts"`
+		Hostname    string    `json:"hostname"`
+		ErrorCodes  []string  `json:"error-codes"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return fmt.Errorf("failed to unmarshal recaptcha response: %w", err)
+	}
+
+	// Check recaptcha verification success.
+	if !body.Success {
+		return fmt.Errorf("%w: unsuccessful recaptcha verify request", ErrRecaptcha)
+	}
+
+	// Check response score.
+	if body.Score < 0.5 {
+		return fmt.Errorf("%w: lower received score than expected", ErrRecaptcha)
+	}
+
+	// Check response action.
+	if body.Action != action {
+		return fmt.Errorf("%w: mismatched recaptcha action", ErrRecaptcha)
 	}
 
 	return nil
