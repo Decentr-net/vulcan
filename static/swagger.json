@@ -575,6 +575,10 @@
           "format": "email",
           "x-go-name": "Email"
         },
+        "recaptchaResponse": {
+          "type": "string",
+          "x-go-name": "RecaptchaResponse"
+        },
         "referralCode": {
           "type": "string",
           "x-go-name": "ReferralCode"

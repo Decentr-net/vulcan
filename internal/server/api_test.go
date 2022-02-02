@@ -17,40 +17,45 @@ func TestRegisterRequest_Validate(t *testing.T) {
 		{
 			name: "invalid_email_1",
 			req: RegisterRequest{
-				Email:   "111@mailru",
-				Address: testAddress,
+				Email:             "111@mailru",
+				Address:           testAddress,
+				RecaptchaResponse: "123",
 			},
 			valid: false,
 		},
 		{
 			name: "valid_email_1",
 			req: RegisterRequest{
-				Email:   "111@mail.ru",
-				Address: testAddress,
+				Email:             "111@mail.ru",
+				Address:           testAddress,
+				RecaptchaResponse: "123",
 			},
 			valid: true,
 		},
 		{
 			name: "valid_email_2",
 			req: RegisterRequest{
-				Email:   "111+111@mail.ru",
-				Address: testAddress,
+				Email:             "111+111@mail.ru",
+				Address:           testAddress,
+				RecaptchaResponse: "123",
 			},
 			valid: true,
 		},
 		{
 			name: "invalid_address_1",
 			req: RegisterRequest{
-				Email:   "111+111@mail.ru",
-				Address: "18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m",
+				Email:             "111+111@mail.ru",
+				Address:           "18c2phdrfjkggr4afwf3rw4h4xsjvfhh2gl7t4m",
+				RecaptchaResponse: "123",
 			},
 			valid: false,
 		},
 		{
 			name: "invalid_address_1",
 			req: RegisterRequest{
-				Email:   "111+111@mail.ru",
-				Address: "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2g",
+				Email:             "111+111@mail.ru",
+				Address:           "decentr18c2phdrfjkggr4afwf3rw4h4xsjvfhh2g",
+				RecaptchaResponse: "123",
 			},
 			valid: false,
 		},
