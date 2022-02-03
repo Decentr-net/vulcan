@@ -72,7 +72,7 @@ func Test_Register(t *testing.T) {
 			mockFn: func(srv *servicemock.MockService) {
 				srv.EXPECT().CheckRecaptcha(gomock.Not(gomock.Nil()), "register", "213").Return(service.ErrRecaptcha)
 			},
-			rcode: http.StatusBadRequest,
+			rcode: http.StatusLocked,
 			rdata: `{"error": "recaptcha error"}`,
 			rlog:  "",
 		},

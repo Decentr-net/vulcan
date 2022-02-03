@@ -78,7 +78,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 				api.WriteInternalErrorf(r.Context(), w, "failed to check recaptcha: %s", err.Error())
 				return
 			}
-			api.WriteError(w, http.StatusBadRequest, err.Error())
+			api.WriteError(w, http.StatusLocked, err.Error())
 			return
 		}
 	}
