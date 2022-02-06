@@ -273,7 +273,8 @@ func (p pg) GetUnconfirmedReferralTracking(ctx context.Context, days int) ([]*st
 	err := sqlx.SelectContext(ctx, p.ext, &rt, fmt.Sprintf(`
 				SELECT *
 				FROM referral_tracking
-				WHERE status = 'installed' AND installed_at < NOW() -'%d day'::INTERVAL
+				WHERE status = 'installed' AND installed_at < NOW() -'%d day'::INTERVAL AND
+					sender NOT IN (SELECT address FROM request WHERE referral_banned)
 	`, days))
 	return rt, err
 }

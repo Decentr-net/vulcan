@@ -408,6 +408,13 @@ func TestPg_GetUnconfirmedReferralTracking(t *testing.T) {
 	referrals, err := s.GetUnconfirmedReferralTracking(ctx, 30)
 	require.NoError(t, err)
 	require.Len(t, referrals, 1)
+
+	//banned
+	_, err = db.ExecContext(ctx, `UPDATE request SET referral_banned = TRUE WHERE address = $1`, senderArr)
+	require.NoError(t, err)
+
+	// when banned there should be no unconfirmed referrals
+	requireNoUnconfirmed()
 }
 
 func TestPg_GetReferralTrackingStats(t *testing.T) {
