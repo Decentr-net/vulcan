@@ -131,11 +131,21 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 		referralCodeAsNullString = sql.NullString{Valid: true, String: *referralCode}
 
 		// check the given referral code exists
-		if _, err := s.storage.GetRequestByOwnReferralCode(ctx, *referralCode); err != nil {
+		var (
+			req *storage.Request
+			err error
+		)
+		if req, err = s.storage.GetRequestByOwnReferralCode(ctx, *referralCode); err != nil {
 			if errors.Is(err, storage.ErrReferralCodeNotFound) {
 				return ErrReferralCodeNotFound
 			}
 			return fmt.Errorf("failed to get request by own referral code: %w", err)
+		}
+
+		if req.ReferralBanned {
+			log.WithField("address", req.Address).WithField("referral code", req.OwnReferralCode).
+				Warn("referral code banned")
+			return ErrReferralCodeNotFound
 		}
 	}
 

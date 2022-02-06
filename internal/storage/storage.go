@@ -34,6 +34,7 @@ type Request struct {
 	ConfirmedAt              sql.NullTime   `db:"confirmed_at"`
 	OwnReferralCode          string         `db:"own_referral_code"`
 	RegistrationReferralCode sql.NullString `db:"registration_referral_code"`
+	ReferralBanned           bool           `db:"referral_banned"`
 }
 
 // ReferralStatus represents a referral workflow status: registered -> installed -> confirmed.
