@@ -182,7 +182,7 @@ func mustGetDB() *sql.DB {
 	return db
 }
 
-func mustGetBroadcaster() *broadcaster.Broadcaster {
+func mustGetBroadcaster() broadcaster.Broadcaster {
 	fee, err := sdk.ParseCoinNormalized(opts.BlockchainFee)
 	if err != nil {
 		logrus.WithError(err).Error("failed to parse fee")

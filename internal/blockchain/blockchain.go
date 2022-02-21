@@ -35,11 +35,11 @@ type Blockchain interface {
 }
 
 type blockchain struct {
-	b *broadcaster.Broadcaster
+	b broadcaster.Broadcaster
 }
 
 // New returns new instance of Blockchain.
-func New(b *broadcaster.Broadcaster) Blockchain {
+func New(b broadcaster.Broadcaster) Blockchain {
 	return blockchain{
 		b: b,
 	}
