@@ -118,7 +118,7 @@ func getAddresses(db *sqlx.DB) ([]string, error) {
 	return aa, nil
 }
 
-func mustGetMainBroadcaster() *broadcaster.Broadcaster {
+func mustGetMainBroadcaster() broadcaster.Broadcaster {
 	fee, err := sdk.ParseCoinNormalized(opts.BlockchainMainFee)
 	if err != nil {
 		logrus.WithError(err).Error("failed to parse fee")
