@@ -20,7 +20,7 @@ import (
 
 //go:generate mockgen -destination=./mock/supply.go -package=mock -source=supply.go
 
-const udecDenominator = 10e6
+const udecDenominator = 1e6
 
 // nolint
 var (
