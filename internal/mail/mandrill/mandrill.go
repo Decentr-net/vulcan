@@ -40,7 +40,7 @@ func New(client *mandrill.Client, config *Config) mail.Sender {
 	return s
 }
 
-// SendVerificationEmailAsyncfulltesагдд sends an email to account owner.
+// SendVerificationEmailAsync sends an email to account owner.
 func (s *sender) SendVerificationEmailAsync(_ context.Context, email, code string) {
 	message := mandrill.Message{
 		Subject:   s.config.VerificationSubject,

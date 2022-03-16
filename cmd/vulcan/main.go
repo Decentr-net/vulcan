@@ -20,7 +20,6 @@ import (
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
-	mc "github.com/keighl/mandrill"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -28,10 +27,9 @@ import (
 
 	"github.com/Decentr-net/go-broadcaster"
 	"github.com/Decentr-net/logrus/sentry"
-
 	"github.com/Decentr-net/vulcan/internal/blockchain"
 	"github.com/Decentr-net/vulcan/internal/health"
-	"github.com/Decentr-net/vulcan/internal/mail/mandrill"
+	"github.com/Decentr-net/vulcan/internal/mail/gmail"
 	"github.com/Decentr-net/vulcan/internal/referral"
 	"github.com/Decentr-net/vulcan/internal/server"
 	"github.com/Decentr-net/vulcan/internal/service"
@@ -58,6 +56,12 @@ var opts = struct {
 	MandrillWelcomeEmailTemplateName      string `long:"mandrill.welcome_email_template_name" env:"MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME" description:"mandrill's welcome template to be sent" required:"true"`
 	MandrillFromName                      string `long:"mandrill.from_name" env:"MANDRILL_FROM_NAME" default:"decentr.xyz" description:"name for emails sender"`
 	MandrillFromEmail                     string `long:"mandrill.from_email" env:"MANDRILL_FROM_EMAIL" default:"noreply@decentrdev.com" description:"email for emails sender"`
+
+	GmailVerificationEmailSubject string `long:"gmail.verification_email_subject" env:"GMAIL_VERIFICATION_EMAIL_SUBJECT" default:"Decentr - Verification" description:"subject for verification emails"`
+	GmailWelcomeEmailSubject      string `long:"gmail.welcome_email_subject" env:"GMAIL_WELCOME_EMAIL_SUBJECT" default:"Decentr - Verified" description:"subject for welcome emails"`
+	GmailFromName                 string `long:"gmail.from_name" env:"GMAIL_FROM_NAME" default:"Decentr" description:"name for emails sender"`
+	GmailFromEmail                string `long:"gmail.from_email" env:"GMAIL_FROM_EMAIL" default:"no-reply@decentrdev.com" description:"email for emails sender"`
+	GmailFromPassword             string `long:"gmail.from_password" env:"GMAIL_FROM_PASSWORD" default:"" description:"password for emails sender"`
 
 	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
 	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes" required:"true"`
@@ -125,14 +129,12 @@ func main() {
 
 	db := mustGetDB()
 
-	mandrillClient := mc.ClientWithKey(opts.MandrillAPIKey)
-
-	mailSender := mandrill.New(mandrillClient, &mandrill.Config{
-		VerificationSubject:      opts.MandrillVerificationEmailSubject,
-		VerificationTemplateName: opts.MandrillVerificationEmailTemplateName,
-		WelcomeSubject:           opts.MandrillWelcomeEmailSubject,
-		WelcomeTemplateName:      opts.MandrillWelcomeEmailTemplateName,
-		FromEmail:                opts.MandrillFromEmail,
+	mailSender := gmail.New(&gmail.Config{
+		VerificationSubject: opts.GmailVerificationEmailSubject,
+		WelcomeSubject:      opts.GmailWelcomeEmailSubject,
+		FromName:            opts.GmailFromName,
+		FromEmail:           opts.GmailFromEmail,
+		FromPassword:        opts.GmailFromPassword,
 	})
 
 	nativeNodeConn, err := grpc.Dial(
@@ -163,12 +165,9 @@ func main() {
 		opts.RequestTimeout,
 		strings.Contains(opts.BlockchainNode, "testnet"),
 	)
+
 	health.SetupRouter(r,
 		health.SubjectPinger("postgres", db.PingContext),
-		health.SubjectPinger("mandrill", func(_ context.Context) error {
-			_, err := mandrillClient.Ping()
-			return err
-		}),
 		health.SubjectPinger("blockchain", bc.PingContext),
 		health.SubjectPinger("supply", sup.PingContext),
 	)
