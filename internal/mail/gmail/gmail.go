@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	host = "smtp.gmail.com"
+	host = "smtp-relay.gmail.com"
 )
 
 // nolint:gochecknoglobals
@@ -109,6 +109,6 @@ func (s *sender) sendEmail(subj, to, body string) error {
 	headerMime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	return smtp.SendMail(
-		host+":587", s.auth, s.config.FromName, []string{to},
+		host+":587", s.auth, s.config.FromEmail, []string{to},
 		[]byte(headerSubj+headerTo+headerMime+body))
 }
