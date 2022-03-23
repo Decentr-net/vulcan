@@ -396,7 +396,7 @@ func (s *service) CheckRecaptcha(ctx context.Context, action, recaptchaResponse 
 	}
 
 	// Check response score.
-	if body.Score < 0.5 {
+	if body.Score < 0.8 {
 		return fmt.Errorf("%w: lower received score than expected", ErrRecaptcha)
 	}
 
