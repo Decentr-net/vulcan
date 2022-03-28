@@ -24,7 +24,7 @@ func RecovererMiddleware(next http.Handler) http.Handler {
 				logging.GetLogger(r.Context()).Infof(
 					"service recovered from panic stack=%s", string(debug.Stack()))
 
-				WriteInternalError(r.Context(), w, spew.Sdump(rvr))
+				WriteInternalError(r.Context(), w, nil, spew.Sdump(rvr))
 			}
 		}()
 

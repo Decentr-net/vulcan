@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -75,7 +76,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	if req.ReferralCode != nil {
 		if err := s.s.CheckRecaptcha(r.Context(), "register", req.RecaptchaResponse); err != nil {
 			if !errors.Is(err, service.ErrRecaptcha) {
-				api.WriteInternalErrorf(r.Context(), w, "failed to check recaptcha: %s", err.Error())
+				api.WriteInternalErrorf(r.Context(), w, err, "failed to check recaptcha")
 				return
 			}
 			api.WriteError(w, http.StatusLocked, err.Error())
@@ -96,7 +97,7 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 			logrus.WithField("request", req).WithError(err).Error("failed to send email with rejected status")
 			api.WriteError(w, http.StatusBadRequest, err.Error())
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to register request: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, err, "failed to register request")
 		}
 		return
 	}
@@ -127,7 +128,7 @@ func (s *server) getRegisterStats(w http.ResponseWriter, r *http.Request) {
 
 	dbStats, total, err := s.s.GetRegisterStats(r.Context())
 	if err != nil {
-		api.WriteInternalErrorf(r.Context(), w, "failed to get accounts stats: %s", err.Error())
+		api.WriteInternalErrorf(r.Context(), w, err, "failed to get accounts stats")
 		return
 	}
 
@@ -192,7 +193,7 @@ func (s *server) confirm(w http.ResponseWriter, r *http.Request) {
 			logrus.WithField("request", req).Warn("already confirmed")
 			api.WriteError(w, http.StatusConflict, "already confirmed")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to confirm registration: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, err, "failed to confirm registration")
 		}
 		return
 	}
@@ -220,7 +221,7 @@ func (s *server) supply(w http.ResponseWriter, r *http.Request) {
 
 	amount, err := s.sup.GetCirculatingSupply()
 	if err != nil {
-		api.WriteInternalErrorf(r.Context(), w, "failed to get supply: %s", err.Error())
+		api.WriteInternalErrorf(r.Context(), w, err, "failed to get supply")
 		return
 	}
 
@@ -289,7 +290,7 @@ func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http
 		case errors.Is(err, service.ErrReferralTrackingInvalidStatus):
 			api.WriteError(w, http.StatusConflict, "status is installed or confirmed")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to track browser installation: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, err, "failed to track browser installation")
 		}
 		return
 	}
@@ -331,7 +332,8 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to get %s referral tracking stats: %s", address, err.Error())
+			api.WriteInternalErrorf(r.Context(), w,
+				fmt.Errorf("stats %s failed:%w", address, err), "failed to get referral tracking stats")
 		}
 		return
 	}
@@ -377,7 +379,7 @@ func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to get own referral code: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, err, "failed to get own referral code")
 		}
 		return
 	}
@@ -418,7 +420,7 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 		case errors.Is(err, service.ErrRequestNotFound):
 			api.WriteError(w, http.StatusNotFound, "not found")
 		default:
-			api.WriteInternalErrorf(r.Context(), w, "failed to get registered referral code: %s", err.Error())
+			api.WriteInternalErrorf(r.Context(), w, err, "failed to get registered referral code")
 		}
 		return
 	}
@@ -453,7 +455,7 @@ func (s *server) registerTestnetAccount(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := s.s.RegisterTestnetAccount(r.Context(), address); err != nil {
-		api.WriteInternalErrorf(r.Context(), w, "failed to give stakes: %s", err.Error())
+		api.WriteInternalErrorf(r.Context(), w, err, "failed to give stakes")
 		return
 	}
 
