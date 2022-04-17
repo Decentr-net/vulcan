@@ -77,7 +77,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "code",
+            "name": "address",
             "in": "path",
             "required": true
           }
@@ -108,7 +108,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "code",
+            "name": "address",
             "in": "path",
             "required": true
           }
@@ -148,7 +148,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "code",
+            "name": "address",
             "in": "path",
             "required": true
           }
@@ -217,7 +217,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "code",
+            "name": "address",
             "in": "path",
             "required": true
           }
@@ -260,7 +260,7 @@
         "parameters": [
           {
             "type": "string",
-            "name": "code",
+            "name": "address",
             "in": "path",
             "required": true
           }

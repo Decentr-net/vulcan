@@ -261,7 +261,7 @@ func (s *server) trackReferralBrowserInstallation(w http.ResponseWriter, r *http
 	// consumes:
 	// - application/json
 	// parameters:
-	// - name: code
+	// - name: address
 	//   in: path
 	//   required: true
 	//   type: string
@@ -307,7 +307,7 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 	// produces:
 	// - application/json
 	// parameters:
-	// - name: code
+	// - name: address
 	//   in: path
 	//   required: true
 	//   type: string
@@ -354,7 +354,7 @@ func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 	// produces:
 	// - application/json
 	// parameters:
-	// - name: code
+	// - name: address
 	//   in: path
 	//   required: true
 	//   type: string
@@ -395,7 +395,7 @@ func (s *server) getRegistrationReferralCode(w http.ResponseWriter, r *http.Requ
 	// produces:
 	// - application/json
 	// parameters:
-	// - name: code
+	// - name: address
 	//   in: path
 	//   required: true
 	//   type: string
@@ -436,7 +436,7 @@ func (s *server) registerTestnetAccount(w http.ResponseWriter, r *http.Request) 
 	// produces:
 	// - application/json
 	// parameters:
-	// - name: code
+	// - name: address
 	//   in: path
 	//   required: true
 	//   type: string
