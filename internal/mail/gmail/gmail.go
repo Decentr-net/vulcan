@@ -14,10 +14,6 @@ import (
 	"github.com/Decentr-net/vulcan/internal/mail"
 )
 
-const (
-	host = "smtp-relay.gmail.com"
-)
-
 // nolint:gochecknoglobals
 var (
 	//go:embed tmpl/*.html
@@ -28,6 +24,9 @@ var (
 type Config struct {
 	VerificationSubject string
 	WelcomeSubject      string
+
+	SMTPHost string
+	SMTPPort int
 
 	FromName     string
 	FromPassword string
@@ -43,7 +42,7 @@ type sender struct {
 
 // New returns new instance of mandrill sender.
 func New(config *Config) mail.Sender {
-	auth := smtp.PlainAuth(config.FromName, config.FromEmail, config.FromPassword, host)
+	auth := smtp.PlainAuth(config.FromName, config.FromEmail, config.FromPassword, config.SMTPHost)
 	return &sender{
 		auth:      auth,
 		config:    config,
@@ -109,6 +108,7 @@ func (s *sender) sendEmail(subj, to, body string) error {
 	headerMime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 	return smtp.SendMail(
-		host+":587", s.auth, s.config.FromEmail, []string{to},
+		fmt.Sprintf("%s:%d", s.config.SMTPHost, s.config.SMTPPort),
+		s.auth, s.config.FromEmail, []string{to},
 		[]byte(headerSubj+headerTo+headerMime+body))
 }
