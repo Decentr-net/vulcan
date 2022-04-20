@@ -62,6 +62,8 @@ var opts = struct {
 	GmailFromName                 string `long:"gmail.from_name" env:"GMAIL_FROM_NAME" default:"Decentr" description:"name for emails sender"`
 	GmailFromEmail                string `long:"gmail.from_email" env:"GMAIL_FROM_EMAIL" default:"no-reply@decentrdev.com" description:"email for emails sender"`
 	GmailFromPassword             string `long:"gmail.from_password" env:"GMAIL_FROM_PASSWORD" default:"" description:"password for emails sender"`
+	GmailSMTPHost                 string `long:"gmail.smtp_host" env:"GMAIL_SMTP_HOST" default:"smtp.gmail.com" description:"SMTP host"`
+	GmailSMTPPort                 int    `long:"gmail.smtp_port" env:"GMAIL_SMTP_PORT" default:"587" description:"SMTP port"`
 
 	BlockchainNode               string `long:"blockchain.node" env:"BLOCKCHAIN_NODE" default:"http://zeus.testnet.decentr.xyz:26657" description:"decentr node address"`
 	BlockchainFrom               string `long:"blockchain.from" env:"BLOCKCHAIN_FROM" description:"decentr account name to send stakes" required:"true"`
@@ -135,6 +137,9 @@ func main() {
 		FromName:            opts.GmailFromName,
 		FromEmail:           opts.GmailFromEmail,
 		FromPassword:        opts.GmailFromPassword,
+
+		SMTPPort: opts.GmailSMTPPort,
+		SMTPHost: opts.GmailSMTPHost,
 	})
 
 	nativeNodeConn, err := grpc.Dial(

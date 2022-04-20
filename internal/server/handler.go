@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -71,6 +72,18 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 	if err := req.validate(); err != nil {
 		api.WriteError(w, http.StatusBadRequest, err.Error())
 		return
+	}
+
+	forbiddenDomains := []string{
+		"capetown.ml", "norwegischlernen.info", "registeryourself.ml",
+		"billgates.tk", "aircase.tk", "qweasd.ga"}
+
+	for _, d := range forbiddenDomains {
+		if strings.Contains(req.Email.String(), d) {
+			logrus.WithField("email", req.Email.String()).Warn("forbidden domain")
+			api.WriteError(w, http.StatusBadRequest, "forbidden domain")
+			return
+		}
 	}
 
 	if req.ReferralCode != nil {
