@@ -417,6 +417,16 @@ func TestPg_GetUnconfirmedReferralTracking(t *testing.T) {
 	requireNoUnconfirmed()
 }
 
+func TestPg_DoesEmailHaveFraudDomain(t *testing.T) {
+	check, err := s.DoesEmailHaveFraudDomain(context.Background(), "valid@gmail.com")
+	require.NoError(t, err)
+	require.False(t, check)
+
+	check, err = s.DoesEmailHaveFraudDomain(context.Background(), "forbidden@aircase.tk")
+	require.NoError(t, err)
+	require.True(t, check)
+}
+
 func TestPg_GetReferralTrackingStats(t *testing.T) {
 	defer cleanup(t)
 

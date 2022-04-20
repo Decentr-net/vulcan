@@ -288,6 +288,14 @@ func (p pg) GetConfirmedRegistrationsTotal(ctx context.Context) (int, error) {
 	return total, err
 }
 
+func (p pg) DoesEmailHaveFraudDomain(ctx context.Context, email string) (bool, error) {
+	var check bool
+	err := sqlx.GetContext(ctx, p.ext, &check,
+		`SELECT EXISTS(SELECT * FROM email_fraud_domains WHERE $1 LIKE '%'||domain)`, email)
+
+	return check, err
+}
+
 func isUniqueViolationErr(err error, constraint string) bool {
 	if err1, ok := err.(*pq.Error); ok &&
 		err1.Code == "23505" && err1.Constraint == constraint {

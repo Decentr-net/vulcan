@@ -109,4 +109,6 @@ type Storage interface {
 	GetUnconfirmedReferralTracking(ctx context.Context, days int) ([]*ReferralTracking, error)
 	// GetConfirmedReferralTrackingCount returns count of confirmed referrals
 	GetConfirmedReferralTrackingCount(ctx context.Context, sender string) (int, error)
+	// DoesEmailHaveFraudDomain check if the given email has fraud domain
+	DoesEmailHaveFraudDomain(ctx context.Context, email string) (bool, error)
 }

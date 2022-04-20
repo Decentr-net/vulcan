@@ -268,3 +268,18 @@ func (mr *MockStorageMockRecorder) GetConfirmedReferralTrackingCount(ctx, sender
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfirmedReferralTrackingCount", reflect.TypeOf((*MockStorage)(nil).GetConfirmedReferralTrackingCount), ctx, sender)
 }
+
+// DoesEmailHaveFraudDomain mocks base method
+func (m *MockStorage) DoesEmailHaveFraudDomain(ctx context.Context, email string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DoesEmailHaveFraudDomain", ctx, email)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DoesEmailHaveFraudDomain indicates an expected call of DoesEmailHaveFraudDomain
+func (mr *MockStorageMockRecorder) DoesEmailHaveFraudDomain(ctx, email interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesEmailHaveFraudDomain", reflect.TypeOf((*MockStorage)(nil).DoesEmailHaveFraudDomain), ctx, email)
+}
