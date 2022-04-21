@@ -42,6 +42,7 @@ func TestService_Register(t *testing.T) {
 			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
 				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
 				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
+				s.EXPECT().DoesEmailHaveFraudDomain(gomock.Any(), testEmail).Return(false, nil)
 				var code string
 				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).DoAndReturn(
 					func(_ context.Context, _, _, _, c string, _ sql.NullString) error {
@@ -80,6 +81,7 @@ func TestService_Register(t *testing.T) {
 		{
 			name: "not confirmed request already exists",
 			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().DoesEmailHaveFraudDomain(gomock.Any(), testEmail).Return(false, nil)
 				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
 				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(&storage.Request{Owner: getEmailHash(testEmail), Email: testEmail, Address: testAddress, Code: testCode}, nil)
 				var code string
@@ -112,6 +114,7 @@ func TestService_Register(t *testing.T) {
 		{
 			name: "errAddressIsBusy",
 			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().DoesEmailHaveFraudDomain(gomock.Any(), testEmail).Return(false, nil)
 				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
 				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
 				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).Return(storage.ErrAddressIsTaken)
@@ -121,6 +124,7 @@ func TestService_Register(t *testing.T) {
 		{
 			name: "setFailed",
 			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().DoesEmailHaveFraudDomain(gomock.Any(), testEmail).Return(false, nil)
 				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
 				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
 				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).Return(errTest)
@@ -130,6 +134,7 @@ func TestService_Register(t *testing.T) {
 		{
 			name: "senderFailed",
 			mockSetupFunc: func(s *storagemock.MockStorage, m *mailmock.MockSender) {
+				s.EXPECT().DoesEmailHaveFraudDomain(gomock.Any(), testEmail).Return(false, nil)
 				s.EXPECT().GetRequestByAddress(gomock.Any(), testAddress).Return(nil, storage.ErrNotFound)
 				s.EXPECT().GetRequestByOwner(gomock.Any(), testOwner).Return(nil, storage.ErrNotFound)
 				s.EXPECT().UpsertRequest(gomock.Any(), testOwner, testEmail, testAddress, gomock.Not(gomock.Len(0)), sql.NullString{}).Return(nil)

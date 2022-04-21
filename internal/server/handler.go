@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -74,18 +73,6 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	forbiddenDomains := []string{
-		"capetown.ml", "norwegischlernen.info", "registeryourself.ml",
-		"billgates.tk", "aircase.tk", "qweasd.ga"}
-
-	for _, d := range forbiddenDomains {
-		if strings.Contains(req.Email.String(), d) {
-			logrus.WithField("email", req.Email.String()).Warn("forbidden domain")
-			api.WriteError(w, http.StatusBadRequest, "forbidden domain")
-			return
-		}
-	}
-
 	if req.ReferralCode != nil {
 		if err := s.s.CheckRecaptcha(r.Context(), "register", req.RecaptchaResponse); err != nil {
 			if !errors.Is(err, service.ErrRecaptcha) {
@@ -101,6 +88,9 @@ func (s *server) register(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrTooManyAttempts):
 			api.WriteError(w, http.StatusTooManyRequests, "too many attempts")
+		case errors.Is(err, service.ErrFraudEmail):
+			logrus.WithField("request", req).WithError(err).Warn("registration from fraud domain")
+			api.WriteError(w, http.StatusBadRequest, err.Error())
 		case errors.Is(err, service.ErrAlreadyExists):
 			api.WriteError(w, http.StatusConflict, "email or address is already taken")
 		case errors.Is(err, service.ErrReferralCodeNotFound):

@@ -60,6 +60,9 @@ var ErrReferralTrackingInvalidStatus = fmt.Errorf("referral tracking has invalid
 // ErrReferralCodeNotFound ...
 var ErrReferralCodeNotFound = fmt.Errorf("referral code not found")
 
+// ErrFraudEmail ...
+var ErrFraudEmail = fmt.Errorf("email from fraud domain")
+
 // Service ...
 type Service interface {
 	Register(ctx context.Context, email, address string, referralCode *string) error
@@ -124,6 +127,15 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 
 	if err := s.checkRegistrationConflicts(ctx, email, address); err != nil {
 		return err
+	}
+
+	isFraud, err := s.storage.DoesEmailHaveFraudDomain(ctx, email)
+	if err != nil {
+		return fmt.Errorf("failed to check for fraud: %w", err)
+	}
+
+	if isFraud {
+		return ErrFraudEmail
 	}
 
 	var referralCodeAsNullString sql.NullString
