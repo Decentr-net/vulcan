@@ -3,7 +3,6 @@
 // The Vulcan is an users' wallets creator.
 //
 //     Schemes: https
-//     BasePath: /v1
 //     Version: 1.0.0
 //
 //     Produces:

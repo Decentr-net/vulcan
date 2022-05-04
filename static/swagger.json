@@ -14,7 +14,6 @@
     "title": "Vulcan",
     "version": "1.0.0"
   },
-  "basePath": "/v1",
   "paths": {
     "/v1/confirm": {
       "post": {
