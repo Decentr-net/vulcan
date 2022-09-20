@@ -70,5 +70,7 @@ func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout tim
 			r.Post("/track/install/{address}", srv.trackReferralBrowserInstallation)
 			r.Get("/track/stats/{address}", srv.getReferralTrackingStats)
 		})
+
+		r.Post("/dloan", srv.createDLoan)
 	})
 }

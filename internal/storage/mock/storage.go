@@ -283,3 +283,32 @@ func (mr *MockStorageMockRecorder) DoesEmailHaveFraudDomain(ctx, email interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesEmailHaveFraudDomain", reflect.TypeOf((*MockStorage)(nil).DoesEmailHaveFraudDomain), ctx, email)
 }
+
+// CreateDLoan mocks base method
+func (m *MockStorage) CreateDLoan(ctx context.Context, address, firstName, lastName string, pdv float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDLoan", ctx, address, firstName, lastName, pdv)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateDLoan indicates an expected call of CreateDLoan
+func (mr *MockStorageMockRecorder) CreateDLoan(ctx, address, firstName, lastName, pdv interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDLoan", reflect.TypeOf((*MockStorage)(nil).CreateDLoan), ctx, address, firstName, lastName, pdv)
+}
+
+// GetDLoans mocks base method
+func (m *MockStorage) GetDLoans(ctx context.Context) ([]*storage.DLoan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDLoans", ctx)
+	ret0, _ := ret[0].([]*storage.DLoan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDLoans indicates an expected call of GetDLoans
+func (mr *MockStorageMockRecorder) GetDLoans(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDLoans", reflect.TypeOf((*MockStorage)(nil).GetDLoans), ctx)
+}

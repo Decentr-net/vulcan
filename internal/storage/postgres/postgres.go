@@ -184,6 +184,20 @@ func (p pg) CreateReferralTracking(ctx context.Context, receiver string, referra
 	return nil
 }
 
+func (p pg) CreateDLoan(ctx context.Context, address, firstName, lastName string, pdv float64) error {
+	_, err := p.ext.ExecContext(ctx, `
+			INSERT INTO dloan (address, first_name, last_name, pdv, created_at)
+			VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP) 
+	`, address, firstName, lastName, pdv)
+	return err
+}
+
+func (p pg) GetDLoans(ctx context.Context) (loans []*storage.DLoan, err error) {
+	err = sqlx.SelectContext(ctx, p.ext, &loans, `
+				SELECT * FROM dloan ORDER BY created_at`)
+	return loans, err
+}
+
 func (p pg) GetReferralTrackingByReceiver(ctx context.Context, receiver string) (*storage.ReferralTracking, error) {
 	var r storage.ReferralTracking
 	if err := sqlx.GetContext(ctx, p.ext, &r, `SELECT * FROM referral_tracking WHERE receiver=$1`, receiver); err != nil {

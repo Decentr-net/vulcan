@@ -122,6 +122,8 @@ func cleanup(t *testing.T) {
 	require.NoError(t, err)
 	_, err = db.ExecContext(ctx, "DELETE FROM request")
 	require.NoError(t, err)
+	_, err = db.ExecContext(ctx, "DELETE FROM dloan")
+	require.NoError(t, err)
 }
 
 func TestPg_InsertRequest(t *testing.T) {
@@ -198,6 +200,25 @@ func dateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()
 	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func TestPg_CreateDLoan(t *testing.T) {
+	defer cleanup(t)
+
+	require.NoError(t, s.CreateDLoan(ctx, "address",
+		"firstName", "lastName", 50.56))
+
+	loans, err := s.GetDLoans(ctx)
+	require.NoError(t, err)
+	require.Len(t, loans, 1)
+
+	loan := loans[0]
+
+	assert.Equal(t, "address", loan.Address)
+	assert.Equal(t, "firstName", loan.FirstName)
+	assert.Equal(t, "lastName", loan.LastName)
+	assert.False(t, loan.CreatedAt.IsZero())
+	assert.NotZero(t, loan.ID)
 }
 
 func TestPg_CreateReferralTracking(t *testing.T) {

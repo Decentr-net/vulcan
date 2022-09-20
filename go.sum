@@ -953,6 +953,10 @@ github.com/jmhodges/levigo v1.0.0 h1:q5EC36kV79HWeTBWsod3mG11EgStG3qArTKcvlksN1U
 github.com/jmhodges/levigo v1.0.0/go.mod h1:Q6Qx+uH3RAqyK4rFQroq9RL7mdkABMcfhEI+nNuzMJQ=
 github.com/jmoiron/sqlx v1.2.0 h1:41Ip0zITnmWNR/vHV+S4m+VoUivnWY5E4OJfLZjCJMA=
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
+github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22 h1:jKUP9TQ0c7X3w6+IPyMit07RE42MtTWNd77sN2cHngQ=
+github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22/go.mod h1:u0Jo4f2dNlTJeeOywkM6bLwxq6gC3pZ9rEFHn3AhTdk=
+github.com/johntdyer/slackrus v0.0.0-20220912135606-861993969176 h1:mCyZ3I3X8dfGONa75jsm+kR2NGQ75G1nOEqBpOWmfh8=
+github.com/johntdyer/slackrus v0.0.0-20220912135606-861993969176/go.mod h1:Os76XccxUropk/YSAJ8JBPPOo3qeeue2AazgrDXf6Fc=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/jonboulle/clockwork v0.2.0/go.mod h1:Pkfl5aHPm1nk2H9h0bjmnJD/BcgbGXUBGnn1kMkgxc8=
 github.com/jpillora/backoff v1.0.0/go.mod h1:J/6gKK9jxlEcS3zixgDgUAsiuZ7yrSoa/FX5e0EB2j4=

@@ -20,6 +20,7 @@ import (
 	migratep "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jessevdk/go-flags"
+	"github.com/johntdyer/slackrus"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -85,6 +86,9 @@ var opts = struct {
 
 	SupplyNativeNode string `long:"supply.native_node" env:"SUPPLY_NATIVE_NODE" default:"https://zeus.testnet.decentr.xyz" description:"native rest node address"`
 	SupplyERC20Node  string `long:"supply.erc20_node" env:"SUPPLY_ERC20_NODE" default:"" description:"erc20 node address"`
+
+	SlackHookURL string `long:"slack.hook-url" env:"SLACK_HOOK_URL" description:"slack hook url"`
+	SlackChannel string `long:"slack.channel" env:"SLACK_CHANNEL" default:"alerts-dloan" description:"slack channel"`
 }{}
 
 var errTerminated = errors.New("terminated")
@@ -125,6 +129,16 @@ func main() {
 	} else {
 		logrus.Info("empty sentry dsn")
 		logrus.Warn("skip sentry initialization")
+	}
+
+	if opts.SlackHookURL != "" && opts.SlackChannel != "" {
+		logrus.AddHook(&slackrus.SlackrusHook{
+			HookURL:        opts.SlackHookURL,
+			AcceptedLevels: []logrus.Level{logrus.DebugLevel},
+			Channel:        opts.SlackChannel,
+			IconEmoji:      ":bread:",
+			Username:       "vulcan",
+		})
 	}
 
 	r := chi.NewMux()

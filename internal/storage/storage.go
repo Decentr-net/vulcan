@@ -37,6 +37,16 @@ type Request struct {
 	ReferralBanned           bool           `db:"referral_banned"`
 }
 
+// DLoan ...
+type DLoan struct {
+	ID        int       `db:"id"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
+	Address   string    `db:"address"`
+	PDV       float64   `db:"pdv"`
+	CreatedAt time.Time `db:"created_at"`
+}
+
 // ReferralStatus represents a referral workflow status: registered -> installed -> confirmed.
 type ReferralStatus string
 
@@ -109,6 +119,10 @@ type Storage interface {
 	GetUnconfirmedReferralTracking(ctx context.Context, days int) ([]*ReferralTracking, error)
 	// GetConfirmedReferralTrackingCount returns count of confirmed referrals
 	GetConfirmedReferralTrackingCount(ctx context.Context, sender string) (int, error)
-	// DoesEmailHaveFraudDomain check if the given email has fraud domain
+	// DoesEmailHaveFraudDomain checks if the given email has fraud domain
 	DoesEmailHaveFraudDomain(ctx context.Context, email string) (bool, error)
+	// CreateDLoan creates a dLoan.
+	CreateDLoan(ctx context.Context, address, firstName, lastName string, pdv float64) error
+	// GetDLoans returns a list of DLoans.
+	GetDLoans(ctx context.Context) ([]*DLoan, error)
 }

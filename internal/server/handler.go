@@ -347,6 +347,48 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// createDLoan creates a new dloan request.
+func (s *server) createDLoan(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation POST /v1/dloan Vulcan CreateDLoan
+	//
+	// Creates dLoan request
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: request
+	//   in: body
+	//   required: true
+	//   schema:
+	//     '$ref': '#/definitions/DLoanRequest'
+	// responses:
+	//   '200':
+	//     description: dloan created.
+	//     schema:
+	//       "$ref": "#/definitions/EmptyResponse"
+	//   '400':
+	//      description: bad request.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+	var req DLoanRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		api.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := s.s.CreateDLoanRequest(r.Context(), req.Address, req.FirstName, req.LastName, req.PDV); err != nil {
+		api.WriteInternalErrorf(r.Context(), w, err, "failed to create dLoan request")
+		return
+	}
+
+	api.WriteOK(w, http.StatusOK, EmptyResponse{})
+}
+
 // getOwnReferralCode return a referral code of the given account.
 func (s *server) getOwnReferralCode(w http.ResponseWriter, r *http.Request) {
 	// swagger:operation GET /v1/referral/code/{address} Vulcan GetOwnReferralCode
