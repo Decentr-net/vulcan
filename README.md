@@ -37,20 +37,20 @@ go run cmd/vulcan/main.go \
 ## Parameters
 ### vulcand
 | CLI param         | Environment var          | Default | Required | Description
-|---------------|------------------|---------------|-------|---------------------------------
-| http.host         | HTTP_HOST         | 0.0.0.0  | true | host to bind server
-| http.port    | HTTP_PORT    | 8080  | true | port to listen
+|---------------|------------------|-------------|-------|---------------------------------
+| http.host         | HTTP_HOST         | 0.0.0.0 | true | host to bind server
+| http.port    | HTTP_PORT    | 8080 | true | port to listen
 | http.request-timeout | HTTP_REQUEST_TIMEOUT | 45s | false | request processing timeout
 | http.recaptcha_secret | HTTP_RECAPTCHA_SECRET | | true | recaptcha secret
-| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable  | true | postgres dsn
+| postgres    | POSTGRES    | host=localhost port=5432 user=postgres password=root sslmode=disable | true | postgres dsn
 | postgres.max_open_connections    | POSTGRES_MAX_OPEN_CONNECTIONS    | 0 | true | postgres maximal open connections count, 0 means unlimited
 | postgres.max_idle_connections    | POSTGRES_MAX_IDLE_CONNECTIONS    | 5 | true | postgres maximal idle connections count
 | postgres.migrations    | POSTGRES_MIGRATIONS    | /migrations/postgres | true | postgres migrations directory
-| mandrill.api_key    | MANDRILL_API_KEY   |  | true |  mandrillapp.com api key
+| mandrill.api_key    | MANDRILL_API_KEY   | | true |  mandrillapp.com api key
 | mandrill.verification_email_subject    | MANDRILL_VERIFICATION_EMAIL_SUBJECT    | decentr.xyz - Verification | false | subject for verification emails
-| mandrill.verification_email_template_name    | MANDRILL_VERIFICATION_EMAIL_TEMPLATE_NAME    |  | true | mandrill's verification template to be sent
+| mandrill.verification_email_template_name    | MANDRILL_VERIFICATION_EMAIL_TEMPLATE_NAME    | | true | mandrill's verification template to be sent
 | mandrill.welcome_email_subject    | MANDRILL_WELCOME_EMAIL_SUBJECT    | decentr.xyz - Verification | false | subject for welcome emails
-| mandrill.welcome_email_template_name    | MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME    |  | true | mandrill's welcome template to be sent
+| mandrill.welcome_email_template_name    | MANDRILL_WELCOME_EMAIL_TEMPLATE_NAME    | | true | mandrill's welcome template to be sent
 | mandrill.from_name    | MANDRILL_FROM_NAME    | decentr.xyz | false | name for emails sender
 | mandrill.from_email    | MANDRILL_FROM_NAME    | noreply@decentrdev.com | true | email for emails sender
 | blockchain.node   | BLOCKCHAIN_NODE    | http://zeus.mainnet.decentr.xyz:26657 | true | decentr node address
@@ -66,9 +66,11 @@ go run cmd/vulcan/main.go \
 | referral.threshold_pdv   | REFERRAL_THRESHOLD_PDV   | 100 | true | how many uPDV a user should obtain to get a referral reward
 | referral.threshold_days   | REFERRAL_THRESHOLD_DAYS   | 30 | true | how many days a user should wait to get a referral reward
 | supply.native_node | SUPPLY_NATIVE_NODE | https://zeus.testnet.decentr.xyz | true | native rest node address
-| supply.erc20_node | SUPPLY_ERC20_NODE |  | true | erc20 node address
+| supply.erc20_node | SUPPLY_ERC20_NODE | | true | erc20 node address
 | log.level   | LOG_LEVEL   | info | false | level of logger (debug,info,warn,error)
-| sentry.dsn    | SENTRY_DSN    |  | sentry dsn
+| sentry.dsn    | SENTRY_DSN    | | sentry dsn
+| slack.hook-url   | SLACK_HOOK_URL  | | false     | slack hook url
+| slack.channel    | SLACK_CHANNEL   |alerts-dloan| false     | slack channel
 
 ### referrald
 | CLI param         | Environment var          | Default | Required | Description

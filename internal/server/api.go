@@ -35,6 +35,15 @@ type ConfirmRequest struct {
 	Code  string `json:"code"`
 }
 
+// DLoanRequest ...
+// swagger:model
+type DLoanRequest struct {
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Address   string  `json:"walletAddress"`
+	PDV       float64 `json:"pdvRate"`
+}
+
 // ReferralCodeResponse ...
 // swagger:model
 type ReferralCodeResponse struct {

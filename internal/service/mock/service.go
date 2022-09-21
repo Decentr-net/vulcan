@@ -152,6 +152,20 @@ func (mr *MockServiceMockRecorder) GetReferralTrackingStats(ctx, address interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferralTrackingStats", reflect.TypeOf((*MockService)(nil).GetReferralTrackingStats), ctx, address)
 }
 
+// CreateDLoanRequest mocks base method
+func (m *MockService) CreateDLoanRequest(ctx context.Context, address, firstName, lastName string, pdv float64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDLoanRequest", ctx, address, firstName, lastName, pdv)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateDLoanRequest indicates an expected call of CreateDLoanRequest
+func (mr *MockServiceMockRecorder) CreateDLoanRequest(ctx, address, firstName, lastName, pdv interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDLoanRequest", reflect.TypeOf((*MockService)(nil).CreateDLoanRequest), ctx, address, firstName, lastName, pdv)
+}
+
 // RegisterTestnetAccount mocks base method
 func (m *MockService) RegisterTestnetAccount(ctx context.Context, address string) error {
 	m.ctrl.T.Helper()

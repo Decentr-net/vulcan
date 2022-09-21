@@ -73,6 +73,7 @@ type Service interface {
 	GetRegistrationReferralCode(ctx context.Context, address string) (string, error)
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
 	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
+	CreateDLoanRequest(ctx context.Context, address, firstName, lastName string, pdv float64) error
 
 	RegisterTestnetAccount(ctx context.Context, address string) error
 
@@ -169,6 +170,24 @@ func (s *service) Register(ctx context.Context, email, address string, referralC
 	}
 
 	s.sender.SendVerificationEmailAsync(ctx, email, code)
+
+	return nil
+}
+
+func (s *service) CreateDLoanRequest(ctx context.Context, address, firstName, lastName string, pdv float64) error {
+	if err := s.storage.CreateDLoan(ctx, address, firstName, lastName, pdv); err != nil {
+		if errors.Is(err, storage.ErrAddressIsTaken) {
+			return ErrAlreadyExists
+		}
+		return fmt.Errorf("failed to create dLoan request: %w", err)
+	}
+
+	log.WithFields(log.Fields{
+		"address":   address,
+		"firstName": firstName,
+		"lastName":  lastName,
+		"pdv":       pdv,
+	}).Debug("dLoan request") // slack hook
 
 	return nil
 }

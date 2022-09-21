@@ -63,6 +63,48 @@
         }
       }
     },
+    "/v1/dloan": {
+      "post": {
+        "description": "Creates dLoan request",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "operationId": "CreateDLoan",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DLoanRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "dloan created.",
+            "schema": {
+              "$ref": "#/definitions/EmptyResponse"
+            }
+          },
+          "400": {
+            "description": "bad request.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/hesoyam/{address}": {
       "get": {
         "produces": [
@@ -479,6 +521,30 @@
         "email": {
           "type": "string",
           "x-go-name": "Email"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "DLoanRequest": {
+      "type": "object",
+      "title": "DLoanRequest ...",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "x-go-name": "FirstName"
+        },
+        "lastName": {
+          "type": "string",
+          "x-go-name": "LastName"
+        },
+        "pdvRate": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PDV"
+        },
+        "walletAddress": {
+          "type": "string",
+          "x-go-name": "Address"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"

@@ -613,6 +613,11 @@ github.com/jmhodges/levigo
 ## explicit
 github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
+# github.com/johntdyer/slack-go v0.0.0-20180213144715-95fac1160b22
+github.com/johntdyer/slack-go
+# github.com/johntdyer/slackrus v0.0.0-20220912135606-861993969176
+## explicit
+github.com/johntdyer/slackrus
 # github.com/keighl/mandrill v0.0.0-20170605120353-1775dd4b3b41
 ## explicit
 github.com/keighl/mandrill
