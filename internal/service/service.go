@@ -183,11 +183,12 @@ func (s *service) CreateDLoanRequest(ctx context.Context, address, firstName, la
 	}
 
 	log.WithFields(log.Fields{
+		"sender":    "slack",
 		"address":   address,
 		"firstName": firstName,
 		"lastName":  lastName,
 		"pdv":       pdv,
-	}).Debug("dLoan request") // slack hook
+	}).Info("dLoan request")
 
 	return nil
 }

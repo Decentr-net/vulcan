@@ -99,7 +99,6 @@ func main() {
 	parser.LongDescription = "Vulcan"
 
 	_, err := parser.Parse()
-
 	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
 			parser.WriteHelp(os.Stdout)
@@ -134,10 +133,15 @@ func main() {
 	if opts.SlackHookURL != "" && opts.SlackChannel != "" {
 		logrus.AddHook(&slackrus.SlackrusHook{
 			HookURL:        opts.SlackHookURL,
-			AcceptedLevels: []logrus.Level{logrus.DebugLevel},
+			AcceptedLevels: []logrus.Level{logrus.InfoLevel},
 			Channel:        opts.SlackChannel,
 			IconEmoji:      ":bread:",
 			Username:       "vulcan",
+			Filters: []slackrus.Filter{
+				func(entry *logrus.Entry) bool {
+					return entry.Data["sender"] == "slack"
+				},
+			},
 		})
 	}
 
