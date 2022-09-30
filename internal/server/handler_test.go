@@ -180,6 +180,46 @@ func Test_GetRegisterStats(t *testing.T) {
 		w.Body.String())
 }
 
+func Test_ListDLoans(t *testing.T) {
+	_, w, r := test.NewAPITestParameters(http.MethodGet, "v1/dloan?take=25&skip=5", nil)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	srv := servicemock.NewMockService(ctrl)
+	srv.EXPECT().ListDloanRequests(gomock.Any(), 25, 5).Return([]*storage.DLoan{
+		{ID: 1},
+		{ID: 2},
+	}, nil)
+
+	router := chi.NewRouter()
+
+	s := server{s: srv}
+	router.Get("/v1/dloan", s.listDLoans)
+
+	router.ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `[
+  {
+    "id": 1,
+    "firstName": "",
+    "lastName": "",
+    "walletAddress": "",
+    "pdvRate": 0,
+    "createdAt": "0001-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "firstName": "",
+    "lastName": "",
+    "walletAddress": "",
+    "pdvRate": 0,
+    "createdAt": "0001-01-01T00:00:00Z"
+  }
+]`, w.Body.String())
+}
+
 func Test_Confirm(t *testing.T) {
 	tt := []struct {
 		name       string

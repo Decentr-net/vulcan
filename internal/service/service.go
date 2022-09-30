@@ -74,6 +74,7 @@ type Service interface {
 	TrackReferralBrowserInstallation(ctx context.Context, address string) error
 	GetReferralTrackingStats(ctx context.Context, address string) ([]*storage.ReferralTrackingStats, error)
 	CreateDLoanRequest(ctx context.Context, address, firstName, lastName string, pdv float64) error
+	ListDloanRequests(ctx context.Context, take, skip int) ([]*storage.DLoan, error)
 
 	RegisterTestnetAccount(ctx context.Context, address string) error
 
@@ -191,6 +192,10 @@ func (s *service) CreateDLoanRequest(ctx context.Context, address, firstName, la
 	}).Info("dLoan request")
 
 	return nil
+}
+
+func (s *service) ListDloanRequests(ctx context.Context, take, skip int) ([]*storage.DLoan, error) {
+	return s.storage.GetDLoans(ctx, take, skip)
 }
 
 func (s *service) checkRegistrationConflicts(ctx context.Context, email, address string) error {

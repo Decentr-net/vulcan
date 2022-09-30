@@ -299,16 +299,16 @@ func (mr *MockStorageMockRecorder) CreateDLoan(ctx, address, firstName, lastName
 }
 
 // GetDLoans mocks base method
-func (m *MockStorage) GetDLoans(ctx context.Context) ([]*storage.DLoan, error) {
+func (m *MockStorage) GetDLoans(ctx context.Context, take, skip int) ([]*storage.DLoan, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDLoans", ctx)
+	ret := m.ctrl.Call(m, "GetDLoans", ctx, take, skip)
 	ret0, _ := ret[0].([]*storage.DLoan)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetDLoans indicates an expected call of GetDLoans
-func (mr *MockStorageMockRecorder) GetDLoans(ctx interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) GetDLoans(ctx, take, skip interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDLoans", reflect.TypeOf((*MockStorage)(nil).GetDLoans), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDLoans", reflect.TypeOf((*MockStorage)(nil).GetDLoans), ctx, take, skip)
 }

@@ -72,5 +72,6 @@ func SetupRouter(s service.Service, sup supply.Supply, r chi.Router, timeout tim
 		})
 
 		r.Post("/dloan", srv.createDLoan)
+		r.Get("/dloan", srv.listDLoans)
 	})
 }

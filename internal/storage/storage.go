@@ -124,5 +124,5 @@ type Storage interface {
 	// CreateDLoan creates a dLoan.
 	CreateDLoan(ctx context.Context, address, firstName, lastName string, pdv float64) error
 	// GetDLoans returns a list of DLoans.
-	GetDLoans(ctx context.Context) ([]*DLoan, error)
+	GetDLoans(ctx context.Context, take, skip int) ([]*DLoan, error)
 }

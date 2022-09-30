@@ -208,7 +208,7 @@ func TestPg_CreateDLoan(t *testing.T) {
 	require.NoError(t, s.CreateDLoan(ctx, "address",
 		"firstName", "lastName", 50.56))
 
-	loans, err := s.GetDLoans(ctx)
+	loans, err := s.GetDLoans(ctx, 10, 0)
 	require.NoError(t, err)
 	require.Len(t, loans, 1)
 
