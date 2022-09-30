@@ -44,6 +44,17 @@ type DLoanRequest struct {
 	PDV       float64 `json:"pdvRate"`
 }
 
+// DLoan ...
+// swagger:model
+type DLoan struct {
+	ID        int     `json:"id"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Address   string  `json:"walletAddress"`
+	PDV       float64 `json:"pdvRate"`
+	CreatedAt string  `json:"createdAt"`
+}
+
 // ReferralCodeResponse ...
 // swagger:model
 type ReferralCodeResponse struct {

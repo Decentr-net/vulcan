@@ -64,6 +64,46 @@
       }
     },
     "/v1/dloan": {
+      "get": {
+        "description": "List dLoan requests",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Vulcan"
+        ],
+        "operationId": "ListDLoans",
+        "parameters": [
+          {
+            "maximum": 50,
+            "minimum": 1,
+            "default": 50,
+            "description": "number of loans to take",
+            "name": "take",
+            "in": "query"
+          },
+          {
+            "default": 0,
+            "description": "number of loans to skip",
+            "name": "skip",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/DLoan"
+            }
+          },
+          "500": {
+            "description": "internal server error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Creates dLoan request",
         "produces": [
@@ -521,6 +561,39 @@
         "email": {
           "type": "string",
           "x-go-name": "Email"
+        }
+      },
+      "x-go-package": "github.com/Decentr-net/vulcan/internal/server"
+    },
+    "DLoan": {
+      "type": "object",
+      "title": "DLoan ...",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "x-go-name": "CreatedAt"
+        },
+        "firstName": {
+          "type": "string",
+          "x-go-name": "FirstName"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ID"
+        },
+        "lastName": {
+          "type": "string",
+          "x-go-name": "LastName"
+        },
+        "pdvRate": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PDV"
+        },
+        "walletAddress": {
+          "type": "string",
+          "x-go-name": "Address"
         }
       },
       "x-go-package": "github.com/Decentr-net/vulcan/internal/server"

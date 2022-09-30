@@ -192,9 +192,9 @@ func (p pg) CreateDLoan(ctx context.Context, address, firstName, lastName string
 	return err
 }
 
-func (p pg) GetDLoans(ctx context.Context) (loans []*storage.DLoan, err error) {
+func (p pg) GetDLoans(ctx context.Context, take, skip int) (loans []*storage.DLoan, err error) {
 	err = sqlx.SelectContext(ctx, p.ext, &loans, `
-				SELECT * FROM dloan ORDER BY created_at`)
+				SELECT * FROM dloan ORDER BY created_at LIMIT $1 OFFSET $2`, take, skip)
 	return loans, err
 }
 

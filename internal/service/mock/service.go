@@ -166,6 +166,21 @@ func (mr *MockServiceMockRecorder) CreateDLoanRequest(ctx, address, firstName, l
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDLoanRequest", reflect.TypeOf((*MockService)(nil).CreateDLoanRequest), ctx, address, firstName, lastName, pdv)
 }
 
+// ListDloanRequests mocks base method
+func (m *MockService) ListDloanRequests(ctx context.Context, take, skip int) ([]*storage.DLoan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDloanRequests", ctx, take, skip)
+	ret0, _ := ret[0].([]*storage.DLoan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListDloanRequests indicates an expected call of ListDloanRequests
+func (mr *MockServiceMockRecorder) ListDloanRequests(ctx, take, skip interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDloanRequests", reflect.TypeOf((*MockService)(nil).ListDloanRequests), ctx, take, skip)
+}
+
 // RegisterTestnetAccount mocks base method
 func (m *MockService) RegisterTestnetAccount(ctx context.Context, address string) error {
 	m.ctrl.T.Helper()

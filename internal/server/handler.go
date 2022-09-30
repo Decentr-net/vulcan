@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -345,6 +347,69 @@ func (s *server) getReferralTrackingStats(w http.ResponseWriter, r *http.Request
 		Total:      toReferralTrackingStatsItem(*stats[0]),
 		Last30Days: toReferralTrackingStatsItem(*stats[1]),
 	})
+}
+
+// listDLoans returns a list of dloans.
+func (s *server) listDLoans(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /v1/dloan Vulcan ListDLoans
+	//
+	// List dLoan requests
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: take
+	//   description: number of loans to take
+	//   in: query
+	//   required: false
+	//   default: 50
+	//   minimum: 1
+	//   maximum: 50
+	// - name: skip
+	//   description: number of loans to skip
+	//   in: query
+	//   required: false
+	//   default: 0
+	// responses:
+	//   '200':
+	//     schema:
+	//       "$ref": "#/definitions/DLoan"
+	//   '500':
+	//      description: internal server error.
+	//      schema:
+	//        "$ref": "#/definitions/Error"
+
+	take, _ := strconv.Atoi(r.FormValue("take"))
+	skip, _ := strconv.Atoi(r.FormValue("skip"))
+
+	if take <= 0 || take > 50 {
+		take = 50
+	}
+
+	if skip < 0 {
+		skip = 0
+	}
+
+	loans, err := s.s.ListDloanRequests(r.Context(), take, skip)
+	if err != nil {
+		api.WriteInternalErrorf(r.Context(), w, err, "failed to list dLoans")
+		return
+	}
+
+	apiLoans := make([]*DLoan, len(loans))
+	for idx, loan := range loans {
+		apiLoans[idx] = &DLoan{
+			ID:        loan.ID,
+			FirstName: loan.FirstName,
+			LastName:  loan.LastName,
+			Address:   loan.Address,
+			PDV:       loan.PDV,
+			CreatedAt: loan.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	api.WriteOK(w, http.StatusOK, apiLoans)
 }
 
 // createDLoan creates a new dloan request.
